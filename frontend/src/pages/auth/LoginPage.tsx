@@ -42,7 +42,6 @@ export default function LoginPage() {
             <LoginForm />
           </div>
 
-          {/* Footer kecil */}
           <p className="px-8 text-center text-sm text-slate-500 w-full mt-auto">
             HRIS v1.0 &copy; 2026.
           </p>

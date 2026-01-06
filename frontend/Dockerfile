@@ -19,6 +19,10 @@ RUN npm install -g pnpm@9.15.0
 # Install dependencies with frozen lockfile for reproducible builds
 RUN pnpm install --frozen-lockfile --prod=false
 
+# Declare build arguments
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
+
 # Copy application source code
 COPY . .
 

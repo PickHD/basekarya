@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import LoginPage from "@/pages/auth/LoginPage"; // <-- Import Halaman Baru
+import LoginPage from "@/pages/auth/LoginPage";
+import { Toaster } from "@/components/ui/sonner";
 import DashboardLayout from "./components/layout/DashboardLayout";
 
 // Dummy Pages
@@ -27,6 +28,8 @@ function App() {
           <Route path="*" element={<div>404 Not Found</div>} />
         </Route>
       </Routes>
+
+      <Toaster position="top-right" richColors />
     </BrowserRouter>
   );
 }

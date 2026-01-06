@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -17,6 +16,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import { useLogin } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   username: z.string().min(1, {
@@ -30,7 +31,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export function LoginForm() {
-  const [isLoading, setIsLoading] = useState(false);
+  const { mutate: login, isPending, error } = useLogin();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -41,13 +42,20 @@ export function LoginForm() {
   });
 
   async function onSubmit(data: FormValues) {
-    setIsLoading(true);
-    console.log("Form Submitted:", data);
+    login(data, {
+      onSuccess: () => {
+        toast.success("Login successful", {
+          description: "Welcome back to HRIS Dashboard.",
+        });
+      },
+      onError: (err: any) => {
+        const msg = err.response?.data?.message || "Login Failed";
 
-    setTimeout(() => {
-      setIsLoading(false);
-      alert("Login Simulation Success! Check console for data.");
-    }, 2000);
+        toast.error("Authentication failed", {
+          description: msg,
+        });
+      },
+    });
   }
 
   return (
@@ -93,14 +101,19 @@ export function LoginForm() {
               </FormItem>
             )}
           />
-        </div>
 
+          {error && (
+            <div className="text-red-500 text-sm font-medium">
+              {(error as any).response?.data?.message || "Something when wrong"}
+            </div>
+          )}
+        </div>
         <Button
           type="submit"
           className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-6 transition-all duration-200"
-          disabled={isLoading}
+          disabled={isPending}
         >
-          {isLoading ? (
+          {isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Authenticating...
