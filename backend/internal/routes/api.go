@@ -23,7 +23,11 @@ func newRouter(container *bootstrap.Container) *Router {
 
 func (r *Router) setupMiddleware() {
 	r.app.Use(middleware.Recover())
-	r.app.Use(middleware.CORS())
+	r.app.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:8080", "http://127.0.0.1:8080"},
+		AllowMethods: []string{echo.GET, echo.PUT, echo.POST, echo.DELETE},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+	}))
 	r.app.Use(middleware.RequestID())
 }
 
