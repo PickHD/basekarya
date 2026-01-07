@@ -14,10 +14,10 @@ import (
 )
 
 type MinioStorageProvider struct {
-	client     *minio.Client
-	bucketName string
-	endpoint   string
-	isSecure   bool
+	client       *minio.Client
+	bucketName   string
+	isSecure     bool
+	publicDomain string
 }
 
 func NewMinioStorage(cfg *config.Config) *MinioStorageProvider {
@@ -32,10 +32,10 @@ func NewMinioStorage(cfg *config.Config) *MinioStorageProvider {
 	logger.Info("Connected to MinIO Object Storage")
 
 	return &MinioStorageProvider{
-		client:     minioClient,
-		bucketName: cfg.Minio.BucketName,
-		endpoint:   cfg.Minio.Endpoint,
-		isSecure:   cfg.Minio.IsSecure,
+		client:       minioClient,
+		bucketName:   cfg.Minio.BucketName,
+		isSecure:     cfg.Minio.IsSecure,
+		publicDomain: cfg.Minio.PublicDomain,
 	}
 }
 
@@ -61,7 +61,7 @@ func (m *MinioStorageProvider) UploadFileMultipart(ctx context.Context, file *mu
 	}
 
 	// Clean endpoint to avoid double slashes
-	endpoint := strings.TrimSuffix(m.endpoint, "/")
+	endpoint := strings.TrimSuffix(m.publicDomain, "/")
 	url := fmt.Sprintf("%s://%s/%s/%s", protocol, endpoint, m.bucketName, info.Key)
 
 	return url, nil
@@ -83,7 +83,7 @@ func (m *MinioStorageProvider) UploadFileByte(ctx context.Context, objectName st
 	}
 
 	// Clean endpoint to avoid double slashes
-	endpoint := strings.TrimSuffix(m.endpoint, "/")
+	endpoint := strings.TrimSuffix(m.publicDomain, "/")
 	url := fmt.Sprintf("%s://%s/%s/%s", protocol, endpoint, m.bucketName, objectName)
 
 	return url, nil

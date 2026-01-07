@@ -1,16 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "@/pages/auth/LoginPage";
+import ProfilePage from "@/pages/profile/ProfilePage";
 import { Toaster } from "@/components/ui/sonner";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { PublicRoute } from "./components/auth/PublicRoute";
 
-// Dummy Pages
-const DashboardPage = () => (
-  <h1 className="text-2xl font-bold">Dashboard Overview</h1>
-);
+// Placeholder Page (Jika belum ada)
 const AttendancePage = () => (
-  <h1 className="text-2xl font-bold">Attendance History</h1>
+  <div className="p-4">Attendance Page Construction</div>
 );
 
 function App() {
@@ -32,15 +30,16 @@ function App() {
 
         {/* Protected Routes */}
         <Route
-          path="/dashboard"
+          path="/"
           element={
             <ProtectedRoute>
               <DashboardLayout />
             </ProtectedRoute>
           }
         >
-          <Route index element={<DashboardPage />} />
-          <Route path="attendance" element={<AttendancePage />} />
+          <Route path="dashboard" element={<div className="p-4">Dashboard Overview</div>} />
+          <Route path="dashboard/attendance" element={<AttendancePage />} />
+          <Route path="profile" element={<ProfilePage />} />
           <Route path="*" element={<div>404 Not Found</div>} />
         </Route>
       </Routes>

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { useLogin } from "@/hooks/useAuth";
+import { useLogin } from "@/features/auth/hooks/useAuth";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";

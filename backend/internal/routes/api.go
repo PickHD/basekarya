@@ -40,6 +40,13 @@ func (r *Router) setupRoutes() {
 		{
 			auth.POST("/login", r.container.AuthHandler.Login)
 		}
+
+		users := api.Group("/users", r.container.AuthMiddleware.VerifyToken)
+		{
+			users.GET("/me", r.container.UserHandler.GetProfile)
+			users.PUT("/profile", r.container.UserHandler.UpdateProfile)
+			users.PUT("/change-password", r.container.UserHandler.ChangePassword)
+		}
 	}
 }
 

@@ -2,19 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { toast } from "sonner";
-
-interface LoginPayload {
-  username: string;
-  password: string;
-}
-
-interface LoginResponse {
-  message: string;
-  data: {
-    token: string;
-    must_change_password: boolean;
-  };
-}
+import type { LoginPayload, LoginResponse } from "../types";
 
 export const useLogin = () => {
   const navigate = useNavigate();

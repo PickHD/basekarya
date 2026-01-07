@@ -116,11 +116,17 @@ services:
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME}
       MINIO_BUCKET_LOCATION: ${MINIO_BUCKET_LOCATION}
       MINIO_IS_SECURE: ${MINIO_IS_SECURE}
+      MINIO_PUBLIC_DOMAIN: ${MINIO_PUBLIC_DOMAIN}
       LOG_LEVEL: ${LOG_LEVEL}
       MAX_REQUEST_BODY_SIZE_MB: ${MAX_REQUEST_BODY_SIZE_MB}
       MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB}
     networks:
       - hris_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   frontend:
     build:
       context: ./frontend
