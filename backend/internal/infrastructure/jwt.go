@@ -1,6 +1,8 @@
 package infrastructure
 
 import (
+	"errors"
+	"fmt"
 	"hris-backend/internal/config"
 	"time"
 
@@ -40,4 +42,25 @@ func (p *JwtProvider) GenerateToken(userID uint, role string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(p.secretKey))
+}
+
+func (p *JwtProvider) ValidateToken(tokenString string) (*MyClaims, error) {
+	claims := &MyClaims{}
+
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(p.secretKey), nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse token: %w", err)
+	}
+
+	if !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+
+	return claims, nil
 }

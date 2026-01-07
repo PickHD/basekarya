@@ -43,6 +43,7 @@ type MinioConfig struct {
 	BucketName     string
 	BucketLocation string
 	IsSecure       bool
+	PublicDomain   string
 }
 
 type FileUploadConfig struct {
@@ -78,6 +79,7 @@ func Load() *Config {
 			BucketName:     getEnv("MINIO_BUCKET_NAME", ""),
 			BucketLocation: getEnv("MINIO_BUCKET_LOCATION", ""),
 			IsSecure:       getEnvBool("MINIO_IS_SECURE", false),
+			PublicDomain:   getEnv("MINIO_PUBLIC_DOMAIN", ""),
 		},
 		FileUpload: FileUploadConfig{
 			MaxRequestBodySizeMB: getEnvInt("MAX_REQUEST_BODY_SIZE_MB", 50),

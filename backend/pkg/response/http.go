@@ -5,7 +5,7 @@ import (
 )
 
 type (
-	BaseResponse struct {
+	baseResponse struct {
 		Message string `json:"message"`
 		Data    any    `json:"data"`
 		Error   error  `json:"error"`
@@ -22,7 +22,7 @@ type (
 // NewResponses return dynamic JSON responses
 func NewResponses[T any](ctx echo.Context, statusCode int, message string, data T, err error, meta *Meta) error {
 	if statusCode < 400 {
-		return ctx.JSON(statusCode, &BaseResponse{
+		return ctx.JSON(statusCode, &baseResponse{
 			Message: message,
 			Data:    data,
 			Error:   nil,
@@ -31,7 +31,7 @@ func NewResponses[T any](ctx echo.Context, statusCode int, message string, data 
 
 	}
 
-	return ctx.JSON(statusCode, &BaseResponse{
+	return ctx.JSON(statusCode, &baseResponse{
 		Message: message,
 		Data:    data,
 		Error:   err,
