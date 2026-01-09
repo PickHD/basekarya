@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import Webcam from "react-webcam";
 import {
   MapPin,
@@ -17,8 +17,55 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useClock } from "@/features/attendance/hooks/useAttendance";
+
+const DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+L.Marker.prototype.options.icon = DefaultIcon;
+
+function DraggableMarker({
+  position,
+  onDragEnd,
+}: {
+  position: { lat: number; lng: number };
+  onDragEnd: (pos: { lat: number; lng: number }) => void;
+}) {
+  const markerRef = useRef<L.Marker | null>(null);
+  const eventHandlers = useMemo(
+    () => ({
+      dragend() {
+        const marker = markerRef.current;
+        if (marker != null) {
+          const latlng = marker.getLatLng();
+          onDragEnd({ lat: latlng.lat, lng: latlng.lng });
+        }
+      },
+    }),
+    [onDragEnd]
+  );
+
+  return (
+    <Marker
+      draggable={true}
+      eventHandlers={eventHandlers}
+      position={position}
+      ref={markerRef}
+    />
+  );
+}
 
 interface AttendanceDialogProps {
   open: boolean;
@@ -34,13 +81,56 @@ export function AttendanceDialog({
   const webcamRef = useRef<Webcam>(null);
   const [step, setStep] = useState<"scan" | "preview">("scan");
   const [imgSrc, setImgSrc] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
     null
   );
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isManualLocation, setIsManualLocation] = useState(false);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
   const { mutate: clock, isPending } = useClock();
+
+  const fallbackToIpAndMap = useCallback(async () => {
+    try {
+      toast.info("GPS failed. Please mark your location on the map.");
+      const res = await fetch("https://ipapi.co/json/");
+      const data = await res.json();
+
+      if (data.latitude && data.longitude) {
+        setLocation({ lat: data.latitude, lng: data.longitude });
+        setIsManualLocation(true);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(
+        "Failed to load map. Please ensure you have a stable internet connection."
+      );
+    } finally {
+      setIsLoadingLocation(false);
+    }
+  }, []);
+
+  const getLocation = useCallback(() => {
+    setIsLoadingLocation(true);
+    setIsManualLocation(false);
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setIsLoadingLocation(false);
+          toast.success("GPS Accurate Locked!");
+        },
+        (err) => {
+          console.warn("GPS failed, fallback to IP + Manual Map", err);
+          fallbackToIpAndMap();
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    } else {
+      fallbackToIpAndMap();
+    }
+  }, [fallbackToIpAndMap]);
 
   const capture = useCallback(() => {
     const imageSrc = webcamRef.current?.getScreenshot();
@@ -49,55 +139,7 @@ export function AttendanceDialog({
       setStep("preview");
       getLocation();
     }
-  }, [webcamRef]);
-
-  const getLocation = () => {
-    setIsLoading(true);
-    setErrorMsg(null);
-
-    const options = {
-      enableHighAccuracy: true, // Paksa gunakan GPS hardware jika ada
-      timeout: 20000, // Beri waktu lebih lama (20 detik) untuk lock satelit
-      maximumAge: 0, // PENTING: Jangan gunakan cache sama sekali (0ms)
-    };
-
-    if (!navigator.geolocation) {
-      setErrorMsg("Geolocation is not supported by your browser");
-      setIsLoading(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const accuracy = position.coords.accuracy;
-        console.log("Location Accuracy:", accuracy, "meters");
-
-        if (accuracy > 200) {
-          toast.warning("Sinyal GPS lemah", {
-            description: `Akurasi sekitar ${Math.round(
-              accuracy
-            )} meter. Sebaiknya cari area terbuka.`,
-          });
-        }
-
-        setLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-        setIsLoading(false);
-        toast.success("Location acquired!");
-      },
-      (error) => {
-        setIsLoading(false);
-        let msg = "Unable to retrieve your location";
-        if (error.code === 1)
-          msg = "Location permission denied. Please enable GPS.";
-        setErrorMsg(msg);
-        toast.error("Location Error", { description: msg });
-      },
-      options
-    );
-  };
+  }, [webcamRef, getLocation]);
 
   const retake = () => {
     setImgSrc(null);
@@ -105,33 +147,26 @@ export function AttendanceDialog({
     setErrorMsg(null);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!imgSrc || !location) return;
 
-    setIsLoading(true);
-    try {
-      clock(
-        {
-          latitude: location.lat,
-          longitude: location.lng,
-          image_base64: imgSrc,
+    clock(
+      {
+        latitude: location.lat,
+        longitude: location.lng,
+        image_base64: imgSrc,
+        notes: isManualLocation
+          ? "[MANUAL] User adjusted location on map"
+          : "[GPS] Auto-detected",
+      },
+      {
+        onSuccess: () => {
+          onOpenChange(false);
+          setImgSrc(null);
+          setStep("scan");
         },
-        {
-          onSuccess: () => {
-            onOpenChange(false);
-            setImgSrc(null);
-            setStep("scan");
-          },
-        }
-      );
-    } catch (err: any) {
-      const msg = err.response?.data?.message || "Attendance Failed";
-      toast.error("Failed to submit attendance", {
-        description: msg,
-      });
-    } finally {
-      setIsLoading(false);
-    }
+      }
+    );
   };
 
   const title =
@@ -139,7 +174,7 @@ export function AttendanceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
@@ -166,7 +201,7 @@ export function AttendanceDialog({
               />
             )}
 
-            {isLoading && (
+            {isPending && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white backdrop-blur-sm">
                 <RefreshCw className="animate-spin h-8 w-8" />
               </div>
@@ -181,13 +216,36 @@ export function AttendanceDialog({
             </Alert>
           )}
 
-          {location && step === "preview" && !errorMsg && (
-            <div className="flex items-center text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-200">
-              <MapPin className="w-4 h-4 mr-1" />
-              <span>
-                Location Locked: {location.lat.toFixed(6)},{" "}
-                {location.lng.toFixed(6)}
-              </span>
+          {isLoadingLocation && (
+            <div className="text-center text-sm animate-pulse">
+              Detecting Location...
+            </div>
+          )}
+
+          {!isLoadingLocation && location && isManualLocation && (
+            <div className="h-48 w-full rounded-md overflow-hidden border border-amber-300 relative">
+              <div className="absolute top-0 left-0 z-[1000] bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-b mx-auto left-0 right-0 w-fit font-medium shadow-sm">
+                GPS weak. Drag the pin to your current location.
+              </div>
+              <MapContainer
+                center={location}
+                zoom={15}
+                scrollWheelZoom={false}
+                style={{ height: "100%", width: "100%", zIndex: 1 }}
+              >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <DraggableMarker
+                  position={location}
+                  onDragEnd={(newPos) => setLocation(newPos)}
+                />
+              </MapContainer>
+            </div>
+          )}
+
+          {!isLoadingLocation && location && !isManualLocation && (
+            <div className="flex items-center justify-center text-green-600 bg-green-50 p-2 rounded text-sm">
+              <MapPin className="w-4 h-4 mr-2" />
+              GPS Locked: {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
             </div>
           )}
 
@@ -201,7 +259,7 @@ export function AttendanceDialog({
                 <Button
                   variant="outline"
                   onClick={retake}
-                  disabled={isLoading}
+                  disabled={isPending}
                   className="flex-1"
                 >
                   Retake
@@ -209,7 +267,7 @@ export function AttendanceDialog({
                 <Button
                   onClick={handleSubmit}
                   disabled={isPending || !location}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  className="w-full"
                 >
                   {isPending ? (
                     <>
