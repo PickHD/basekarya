@@ -6,6 +6,7 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { PublicRoute } from "./components/auth/PublicRoute";
 import DashboardPage from "./pages/dashboard/DashboardPage";
+import AttendanceHistoryPage from "./pages/dashboard/AttendanceHistoryPage";
 
 function App() {
   return (
@@ -35,6 +36,10 @@ function App() {
         >
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route
+            path="attendance-history"
+            element={<AttendanceHistoryPage />}
+          />
           <Route path="*" element={<div>404 Not Found</div>} />
         </Route>
       </Routes>

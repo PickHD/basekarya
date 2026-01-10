@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   ClockPayload,
   ClockResponse,
+  HistoryResponse,
   TodayAttendanceResponse,
 } from "../types";
 import { api } from "@/lib/axios";
@@ -47,5 +48,23 @@ export const useTodayAttendance = () => {
       return data.data;
     },
     retry: false,
+  });
+};
+
+export const useAttendanceHistory = (
+  month: number,
+  year: number,
+  page: number
+) => {
+  return useQuery({
+    queryKey: ["attendance-history", month, year, page],
+    queryFn: async () => {
+      const { data } = await api.get<HistoryResponse>(
+        `/attendances/history?month=${month}&year=${year}&page=${page}&limit=10`
+      );
+
+      return data;
+    },
+    placeholderData: (previousData) => previousData,
   });
 };
