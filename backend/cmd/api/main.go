@@ -60,7 +60,7 @@ func main() {
 
 	switch mode {
 	case seedMode:
-		if err := seeder.Execute(appContainer.DB.GetDB()); err != nil {
+		if err := seeder.Execute(appContainer.DB.GetDB(), appContainer.Config, appContainer.Bcrypt); err != nil {
 			logger.Errorw("Seeding failed: ", err)
 			os.Exit(1)
 		}

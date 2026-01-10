@@ -7,7 +7,7 @@ import (
 
 type Hasher interface {
 	HashPassword(password string) (string, error)
-	CheckPasswordHash(password, hash string, isNewUser bool) bool
+	CheckPasswordHash(password, hash string) bool
 }
 
 type StorageProvider interface {

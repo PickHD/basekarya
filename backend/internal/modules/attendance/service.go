@@ -11,6 +11,7 @@ import (
 	"hris-backend/pkg/utils"
 	"time"
 
+	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
 )
 
@@ -18,6 +19,9 @@ type Service interface {
 	Clock(ctx context.Context, userID uint, req *ClockRequest) (*AttendanceResponse, error)
 	GetTodayStatus(ctx context.Context, userID uint) (*TodayStatusResponse, error)
 	GetMyHistory(ctx context.Context, userID uint, month, year, page, limit int) ([]Attendance, *response.Meta, error)
+	GetAllRecap(ctx context.Context, filter *FilterParams) ([]RecapResponse, *response.Meta, error)
+	GenerateExcel(ctx context.Context, filter *FilterParams) (*excelize.File, error)
+	GetDashboardStats(ctx context.Context, timezone string) (*DashboardStatResponse, error)
 }
 
 type service struct {
@@ -220,4 +224,140 @@ func (s *service) GetMyHistory(ctx context.Context, userID uint, month, year, pa
 	meta := response.NewMeta(page, limit, total)
 
 	return logs, meta, nil
+}
+
+func (s *service) GetAllRecap(ctx context.Context, filter *FilterParams) ([]RecapResponse, *response.Meta, error) {
+	loc, err := time.LoadLocation(filter.Timezone)
+	if err != nil {
+		loc, _ = time.LoadLocation("Asia/Jakarta")
+	}
+
+	data, total, err := s.repo.FindAll(filter)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(data) == 0 {
+		return []RecapResponse{}, nil, nil
+	}
+
+	var result []RecapResponse
+	for _, item := range data {
+		cIn := "-"
+		cOut := "-"
+		duration := "-"
+
+		if !item.CheckInTime.IsZero() {
+			cIn = item.CheckInTime.In(loc).Format("15:04")
+		}
+		if item.CheckOutTime != nil {
+			cOut = item.CheckOutTime.In(loc).Format("15:04")
+			dur := item.CheckOutTime.Sub(item.CheckInTime)
+			duration = fmt.Sprintf("%.1f Hours", dur.Hours())
+		}
+
+		result = append(result, RecapResponse{
+			ID:           item.ID,
+			Date:         item.Date.In(loc).Format("2006-01-02"),
+			EmployeeName: item.Employee.FullName,
+			NIK:          item.Employee.NIK,
+			Department:   item.Employee.Department.Name,
+			Shift:        item.Shift.Name,
+			CheckInTime:  cIn,
+			CheckOutTime: cOut,
+			Status:       item.Status,
+			WorkDuration: duration,
+		})
+	}
+
+	meta := response.NewMeta(filter.Page, filter.Limit, total)
+	return result, meta, nil
+}
+
+func (s *service) GenerateExcel(ctx context.Context, filter *FilterParams) (*excelize.File, error) {
+	loc, err := time.LoadLocation(filter.Timezone)
+	if err != nil {
+		loc, _ = time.LoadLocation("Asia/Jakarta")
+	}
+
+	filter.Limit = 0
+
+	data, _, err := s.repo.FindAll(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	f := excelize.NewFile()
+	sheet := "Attendance Recap"
+	f.SetSheetName("Sheet1", sheet)
+
+	headers := []string{"Date", "NIK", "Name", "Department", "Shift", "Check In", "Check Out", "Status", "Notes"}
+	for i, h := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, h)
+	}
+
+	for i, item := range data {
+		row := i + 2
+
+		cIn := ""
+		if !item.CheckInTime.IsZero() {
+			cIn = item.CheckInTime.In(loc).Format("15:04")
+		}
+
+		cOut := ""
+		if item.CheckOutTime != nil {
+			cOut = item.CheckOutTime.In(loc).Format("15:04")
+		}
+
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), item.Date.In(loc).Format("2006-01-02"))
+		f.SetCellValue(sheet, fmt.Sprintf("B%d", row), item.Employee.NIK)
+		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), item.Employee.FullName)
+		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), item.Employee.Department.Name)
+		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), item.Shift.Name)
+		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), cIn)
+		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), cOut)
+		f.SetCellValue(sheet, fmt.Sprintf("H%d", row), item.Status)
+		f.SetCellValue(sheet, fmt.Sprintf("I%d", row), item.Notes)
+	}
+
+	return f, nil
+}
+
+func (s *service) GetDashboardStats(ctx context.Context, timezone string) (*DashboardStatResponse, error) {
+	loc, err := time.LoadLocation(timezone)
+	if err != nil {
+		loc, _ = time.LoadLocation("Asia/Jakarta")
+	}
+
+	todayDate := time.Now().In(loc).Format("2006-01-02")
+
+	totalActiveEmployee, err := s.userRepo.CountActiveEmployee()
+	if err != nil {
+		return nil, err
+	}
+
+	totalPresentToday, err := s.repo.CountAttendanceToday(todayDate)
+	if err != nil {
+		return nil, err
+	}
+
+	totalLateToday, err := s.repo.CountByStatus(constants.AttendanceStatusLate, todayDate)
+	if err != nil {
+		return nil, err
+	}
+
+	stats := &DashboardStatResponse{
+		TotalEmployees: totalActiveEmployee,
+		PresentToday:   totalPresentToday,
+		LateToday:      totalLateToday,
+	}
+
+	if stats.TotalEmployees >= stats.PresentToday {
+		stats.AbsentToday = stats.TotalEmployees - stats.PresentToday
+	} else {
+		stats.AbsentToday = 0
+	}
+
+	return stats, nil
 }

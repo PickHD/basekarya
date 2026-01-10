@@ -7,9 +7,8 @@ import (
 	"hris-backend/internal/modules/attendance"
 	"hris-backend/internal/modules/auth"
 	"hris-backend/internal/modules/health"
+	"hris-backend/internal/modules/master"
 	"hris-backend/internal/modules/user"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type Container struct {
@@ -24,6 +23,7 @@ type Container struct {
 	AuthHandler        *auth.Handler
 	UserHandler        *user.Handler
 	AttendanceHandler  *attendance.Handler
+	MasterHandler      *master.Handler
 
 	AuthMiddleware *middleware.AuthMiddleware
 }
@@ -34,22 +34,25 @@ func NewContainer() (*Container, error) {
 	db := infrastructure.NewGormConnection(cfg)
 	storage := infrastructure.NewMinioStorage(cfg)
 	jwt := infrastructure.NewJWTProvider(cfg)
-	bcrypt := infrastructure.NewBcryptHasher(bcrypt.DefaultCost)
+	bcrypt := infrastructure.NewBcryptHasher(12)
 	nominatim := infrastructure.NewNominatimFetcher(cfg)
 
 	healthRepo := health.NewRepository(db.GetDB())
 	userRepo := user.NewRepository(db.GetDB())
 	attendanceRepo := attendance.NewRepository(db.GetDB())
+	masterRepo := master.NewRepository(db.GetDB())
 
 	healthSvc := health.NewService(healthRepo)
 	authSvc := auth.NewService(userRepo, bcrypt, jwt)
 	userSvc := user.NewService(userRepo, bcrypt, storage)
 	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage)
+	masterSvc := master.NewService(masterRepo)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)
 	userHandler := user.NewHandler(userSvc)
 	attendanceHandler := attendance.NewHandler(attendanceSvc)
+	masterHandler := master.NewHandler(masterSvc)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 
@@ -65,6 +68,7 @@ func NewContainer() (*Container, error) {
 		AuthHandler:        authHandler,
 		UserHandler:        userHandler,
 		AttendanceHandler:  attendanceHandler,
+		MasterHandler:      masterHandler,
 
 		AuthMiddleware: authMiddleware,
 	}, nil

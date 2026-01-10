@@ -24,3 +24,33 @@ type TodayStatusResponse struct {
 	CheckOutTime *time.Time `json:"check_out_time"`
 	WorkDuration string     `json:"work_duration"`
 }
+
+type FilterParams struct {
+	StartDate    string
+	EndDate      string
+	DepartmentID uint
+	Search       string
+	Page         int
+	Limit        int
+	Timezone     string
+}
+
+type RecapResponse struct {
+	ID           uint   `json:"id"`
+	Date         string `json:"date"`
+	EmployeeName string `json:"employee_name"`
+	NIK          string `json:"nik"`
+	Department   string `json:"department"`
+	Shift        string `json:"shift"`
+	CheckInTime  string `json:"check_in_time"`
+	CheckOutTime string `json:"check_out_time"`
+	Status       string `json:"status"`
+	WorkDuration string `json:"work_duration"`
+}
+
+type DashboardStatResponse struct {
+	TotalEmployees int64 `json:"total_employees"`
+	PresentToday   int64 `json:"present_today"`
+	LateToday      int64 `json:"late_today"`
+	AbsentToday    int64 `json:"absent_today"`
+}

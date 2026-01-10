@@ -29,7 +29,7 @@ func (s *service) Login(username, password string) (*LoginResponse, error) {
 		return nil, errors.New("invalid credentials")
 	}
 
-	if !s.hasher.CheckPasswordHash(password, foundUser.PasswordHash, foundUser.MustChangePassword) {
+	if !s.hasher.CheckPasswordHash(password, foundUser.PasswordHash) {
 		return nil, errors.New("invalid credentials")
 	}
 

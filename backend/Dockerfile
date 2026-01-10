@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.25.1 AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
@@ -12,12 +12,20 @@ RUN go mod download
 COPY . .
 
 # Build Go application
-RUN CGO_ENABLED=0 GOOS=linux go build -o hris-be-service ./cmd/api
+# -ldflags="-s -w" memperkecil ukuran binary (strip debug info)
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o hris-be-service ./cmd/api
 
 # Final stage
-FROM alpine:3.11.3
+FROM alpine:latest
 
 WORKDIR /app
+
+# 1. Install tzdata (untuk Timezone Excel)
+# 2. Install ca-certificates
+RUN apk add --no-cache tzdata ca-certificates
+
+# (Opsional) Set Default Timezone Server to Jakarta
+ENV TZ=Asia/Jakarta
 
 # Copy built binary from builder stage
 COPY --from=builder /app/hris-be-service .

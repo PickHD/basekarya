@@ -62,13 +62,11 @@ func (h *Handler) GetHistory(ctx echo.Context) error {
 		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
 	}
 
-	// Defaults
 	month := int(time.Now().Month())
 	year := time.Now().Year()
 	page := 1
 	limit := 10
 
-	// Parsing Params
 	if m := ctx.QueryParam("month"); m != "" {
 		fmt.Sscanf(m, "%d", &month)
 	}
@@ -90,4 +88,84 @@ func (h *Handler) GetHistory(ctx echo.Context) error {
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Get My History Success", resp, nil, meta)
+}
+
+func (h *Handler) GetAllAttendanceRecap(ctx echo.Context) error {
+	filter := h.parseFilter(ctx)
+
+	resp, meta, err := h.service.GetAllRecap(ctx.Request().Context(), filter)
+	if err != nil {
+		logger.Errorw("Get All Attendance Recap Failed: ", err)
+
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	return response.NewResponses[any](ctx, http.StatusOK, "Get All Attendance Recap Success", resp, nil, meta)
+}
+
+func (h *Handler) ExportAttendance(ctx echo.Context) error {
+	filter := h.parseFilter(ctx)
+
+	f, err := h.service.GenerateExcel(ctx.Request().Context(), filter)
+	if err != nil {
+		logger.Errorw("Generate Excel Attendance Failed: ", err)
+
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	filename := fmt.Sprintf("Attendance_Recap_%s.xlsx", time.Now().Format("20060102_150405"))
+	ctx.Response().Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	ctx.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+
+	if err := f.Write(ctx.Response().Writer); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *Handler) GetDashboardStats(ctx echo.Context) error {
+	tz := ctx.QueryParam("timezone")
+	if tz == "" {
+		tz = "Asia/Jakarta"
+	}
+
+	resp, err := h.service.GetDashboardStats(ctx.Request().Context(), tz)
+	if err != nil {
+		logger.Errorw("Get Dashboard Stats failed: ", err)
+
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	return response.NewResponses[any](ctx, http.StatusOK, "Get Dashboard Stats Success", resp, nil, nil)
+}
+
+func (h *Handler) parseFilter(ctx echo.Context) *FilterParams {
+	page := 1
+	limit := 10
+	if p := ctx.QueryParam("page"); p != "" {
+		fmt.Sscanf(p, "%d", &page)
+	}
+	if l := ctx.QueryParam("limit"); l != "" {
+		fmt.Sscanf(l, "%d", &limit)
+	}
+
+	deptID := 0
+	if d := ctx.QueryParam("department_id"); d != "" {
+		fmt.Sscanf(d, "%d", &deptID)
+	}
+
+	tz := ctx.QueryParam("timezone")
+	if tz == "" {
+		tz = "Asia/Jakarta"
+	}
+
+	return &FilterParams{
+		Page:         page,
+		Limit:        limit,
+		StartDate:    ctx.QueryParam("start_date"),
+		EndDate:      ctx.QueryParam("end_date"),
+		Search:       ctx.QueryParam("search"),
+		Timezone:     tz,
+		DepartmentID: uint(deptID),
+	}
 }

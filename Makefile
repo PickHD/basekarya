@@ -1,7 +1,7 @@
 include .env
 export
 
-.PHONY: help build run build-be run-be build-fe run-fe run-docker migrate-create migrate-up migrate-down clean-be clean-fe test
+.PHONY: help build run build-be run-be build-fe run-fe run-docker migrate-create migrate-up migrate-down clean-be clean-fe test seed
 
 # Variables
 APP_NAME := hris-app
@@ -27,6 +27,7 @@ help:
 	@echo "  clean-be    - Clean build backend artifacts"
 	@echo "  clean-fe    - Clean build frontend artifacts"
 	@echo "  test        - Run tests"
+	@echo "  seed        - Run seeds databases"
 
 # Build both services
 build: build-be build-fe
@@ -91,3 +92,8 @@ clean-fe:
 test:
 	@echo "Running tests..."
 	@cd backend && go test -v ./...
+
+# Run seeds
+seed:
+	@echo "Running seeds..."
+	@cd backend && go run ./cmd/api/main.go seed

@@ -20,16 +20,7 @@ func (h *BcryptHasher) HashPassword(password string) (string, error) {
 	return string(bytes), err
 }
 
-func (h *BcryptHasher) CheckPasswordHash(password, hash string, isNewUser bool) bool {
-	if isNewUser {
-		// For new users, compare passwords directly without bcrypt
-		if hash != password {
-			return false
-		}
-
-		return true
-	}
-
+func (h *BcryptHasher) CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }

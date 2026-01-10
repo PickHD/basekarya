@@ -10,7 +10,7 @@ type User struct {
 	Username           string    `gorm:"unique;not null" json:"username"`
 	PasswordHash       string    `json:"-"`
 	Role               string    `gorm:"type:enum('SUPERADMIN','EMPLOYEE');default:'EMPLOYEE'" json:"role"`
-	MustChangePassword bool      `gorm:"default:true" json:"must_change_password"`
+	MustChangePassword bool      `json:"must_change_password"`
 	IsActive           bool      `gorm:"default:true" json:"is_active"`
 	CreatedAt          time.Time `json:"created_at"`
 	UpdatedAt          time.Time `json:"updated_at"`
@@ -27,6 +27,8 @@ type Employee struct {
 	FullName          string `json:"full_name"`
 	PhoneNumber       string `json:"phone_number"`
 	ProfilePictureUrl string `json:"profile_picture_url"`
+
+	User User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 
 	Department *master.Department `gorm:"foreignKey:DepartmentID" json:"department,omitempty"`
 	Shift      *master.Shift      `gorm:"foreignKey:ShiftID" json:"shift,omitempty"`

@@ -12,6 +12,7 @@ type Config struct {
 	Minio                 MinioConfig
 	FileUpload            FileUploadConfig
 	ExternalServiceConfig ExternalServiceConfig
+	CredentialConfig      CredentialConfig
 }
 
 type DatabaseConfig struct {
@@ -56,6 +57,11 @@ type ExternalServiceConfig struct {
 	NominatimUrl string
 }
 
+type CredentialConfig struct {
+	SuperadminUsername string
+	SuperadminPassword string
+}
+
 func Load() *Config {
 	config := &Config{
 		Database: DatabaseConfig{
@@ -92,6 +98,10 @@ func Load() *Config {
 		},
 		ExternalServiceConfig: ExternalServiceConfig{
 			NominatimUrl: getEnv("NOMINATIM_URL", ""),
+		},
+		CredentialConfig: CredentialConfig{
+			SuperadminUsername: getEnv("SUPERADMIN_USERNAME", "superadmin"),
+			SuperadminPassword: getEnv("SUPERADMIN_PASSWORD", "12390182309812039812093801"),
 		},
 	}
 

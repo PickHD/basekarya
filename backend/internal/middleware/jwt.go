@@ -3,7 +3,9 @@ package middleware
 import (
 	"hris-backend/internal/infrastructure"
 	"hris-backend/pkg/response"
+	"hris-backend/pkg/utils"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -41,5 +43,22 @@ func (m *AuthMiddleware) VerifyToken(next echo.HandlerFunc) echo.HandlerFunc {
 		ctx.Set("user", claims)
 
 		return next(ctx)
+	}
+}
+
+func (m *AuthMiddleware) GrantRole(roles ...string) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			userContext, err := utils.GetUserContext(ctx)
+			if err != nil {
+				return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+			}
+
+			if !slices.Contains(roles, userContext.Role) {
+				return response.NewResponses[any](ctx, http.StatusForbidden, "You dont have access to this resource", nil, nil, nil)
+			}
+
+			return next(ctx)
+		}
 	}
 }

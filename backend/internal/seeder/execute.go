@@ -1,6 +1,7 @@
 package seeder
 
 import (
+	"hris-backend/internal/config"
 	"hris-backend/internal/modules/master"
 	"hris-backend/internal/modules/user"
 	"hris-backend/pkg/constants"
@@ -9,20 +10,35 @@ import (
 	"gorm.io/gorm"
 )
 
-func Execute(db *gorm.DB) error {
+func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 	err := db.Transaction(func(tx *gorm.DB) error {
-		itDept := master.Department{Name: "Engineering"}
-		hrDept := master.Department{Name: "Human Resource"}
+		generalDept := master.Department{Name: "Umum"}
 
-		if err := tx.Where(master.Department{Name: "Engineering"}).FirstOrCreate(&itDept).Error; err != nil {
-			return err
-		}
-		if err := tx.Where(master.Department{Name: "Human Resource"}).FirstOrCreate(&hrDept).Error; err != nil {
+		if err := tx.Where(master.Department{Name: "Umum"}).FirstOrCreate(&generalDept).Error; err != nil {
 			return err
 		}
 
 		regularShift := master.Shift{Name: "Regular", StartTime: "09:00:00", EndTime: "18:00:00"}
 		if err := tx.FirstOrCreate(&regularShift, master.Shift{Name: "Regular"}).Error; err != nil {
+			return err
+		}
+
+		newAdmin := user.User{
+			Username: cfg.CredentialConfig.SuperadminUsername,
+		}
+		hashPass, err := hasher.HashPassword(cfg.CredentialConfig.SuperadminPassword)
+		if err != nil {
+			return err
+		}
+
+		if err := tx.Where(user.User{Username: newAdmin.Username}).
+			Attrs(user.User{
+				PasswordHash:       hashPass,
+				Role:               string(constants.UserRoleSuperadmin),
+				MustChangePassword: false,
+				IsActive:           true,
+			}).
+			FirstOrCreate(&newAdmin).Error; err != nil {
 			return err
 		}
 
@@ -34,14 +50,15 @@ func Execute(db *gorm.DB) error {
 			Role     string
 			IsActive bool
 		}{
-			{"EMP001", "Taufik Januar", itDept.ID, regularShift.ID, string(constants.UserRoleEmployee), true},
-			{"ADM001", "Super Admin", hrDept.ID, regularShift.ID, string(constants.UserRoleSuperadmin), true},
+			{"EMP001", "Taufik Januar", generalDept.ID, regularShift.ID, string(constants.UserRoleEmployee), true},
+			//TODO: insert real employees later
 		}
 
 		for _, empData := range employeesToSeed {
+			hashPass, _ := hasher.HashPassword(empData.NIK)
 			newUser := user.User{
 				Username:           empData.NIK,
-				PasswordHash:       empData.NIK,
+				PasswordHash:       hashPass,
 				Role:               empData.Role,
 				MustChangePassword: true,
 				IsActive:           empData.IsActive,

@@ -1,7 +1,7 @@
 package auth
 
 type Hasher interface {
-	CheckPasswordHash(password, hash string, isNewUser bool) bool
+	CheckPasswordHash(password, hash string) bool
 }
 
 type TokenProvider interface {
