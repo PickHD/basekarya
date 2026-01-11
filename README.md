@@ -1,6 +1,10 @@
 # HRIS App
 
 A modern, full-stack Human Resource Information System with a React frontend and Go backend.
+<img width="2310" height="1044" alt="Screenshot 2026-01-11 115810" src="https://github.com/user-attachments/assets/30082270-5577-44d8-9aec-1d2ad17932a4" />
+<img width="2544" height="904" alt="Screenshot 2026-01-11 115822" src="https://github.com/user-attachments/assets/4e0970ab-5d48-4dbb-8730-15ab6508c36d" />
+<img width="2527" height="904" alt="Screenshot 2026-01-11 115912" src="https://github.com/user-attachments/assets/0ba8045e-794f-4364-8176-10fd6b56e895" />
+
 
 ## Quick Start
 
