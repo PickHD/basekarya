@@ -5,6 +5,10 @@ A modern, full-stack Human Resource Information System with a React frontend and
 <img width="2544" height="904" alt="Screenshot 2026-01-11 115822" src="https://github.com/user-attachments/assets/4e0970ab-5d48-4dbb-8730-15ab6508c36d" />
 <img width="2527" height="904" alt="Screenshot 2026-01-11 115912" src="https://github.com/user-attachments/assets/0ba8045e-794f-4364-8176-10fd6b56e895" />
 
+<img width="2505" height="944" alt="Screenshot 2026-01-21 201531" src="https://github.com/user-attachments/assets/7a3a9c94-ce67-4204-bedd-05facdf986c5" />
+<img width="1651" height="851" alt="Screenshot 2026-01-21 201538" src="https://github.com/user-attachments/assets/7396488b-0842-4f1a-aab6-f522d896ba79" />
+<img width="1681" height="937" alt="Screenshot 2026-01-21 201552" src="https://github.com/user-attachments/assets/aa9ba4d0-a2a3-4ffd-af5e-fe7ae48a9592" />
+
 
 ## Quick Start
 
@@ -25,7 +29,7 @@ docker compose up -d --build
 **Access the application:**
 
 - Main Application: http://hris.local (add to `/etc/hosts`: `127.0.0.1 hris.local`)
-- MinIO Console: http://minio.hris.local (add to `/etc/hosts`: `127.0.0.1 minio.hris.local`)
+- MinIO Console: http://console.hris.local (add to `/etc/hosts`: `127.0.0.1 console.hris.local`)
 - Health Check: http://hris.local/api/v1/health
 
 **Stop services:**
