@@ -1,9 +1,9 @@
-package reimburstment
+package reimbursement
 
 import "gorm.io/gorm"
 
 type Repository interface {
-	Create(reimburstment *Reimbursement) error
+	Create(reimbursement *Reimbursement) error
 	FindByID(id uint) (*Reimbursement, error)
 	FindAll(filter ReimbursementFilter) ([]Reimbursement, int64, error)
 	Update(reimbursement *Reimbursement) error
@@ -17,14 +17,14 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db}
 }
 
-func (r *repository) Create(reimburstment *Reimbursement) error {
-	return r.db.Create(reimburstment).Error
+func (r *repository) Create(reimbursement *Reimbursement) error {
+	return r.db.Create(reimbursement).Error
 }
 
 func (r *repository) FindByID(id uint) (*Reimbursement, error) {
 	var reimburstment Reimbursement
 
-	err := r.db.Preload("User").First(&reimburstment).Error
+	err := r.db.Preload("User").First(&reimburstment, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -50,17 +50,14 @@ func (r *repository) FindAll(filter ReimbursementFilter) ([]Reimbursement, int64
 		return nil, 0, err
 	}
 
-	err := query.Preload("User").
+	offset := (filter.Page - 1) * filter.Limit
+	err := query.
 		Limit(filter.Limit).
-		Offset(filter.Offset).
+		Offset(offset).
 		Order("created_at DESC").
 		Find(&reimbursements).Error
 
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return reimbursements, total, nil
+	return reimbursements, total, err
 }
 
 func (r *repository) Update(reimbursement *Reimbursement) error {

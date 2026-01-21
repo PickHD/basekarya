@@ -8,6 +8,7 @@ import (
 	"hris-backend/internal/modules/auth"
 	"hris-backend/internal/modules/health"
 	"hris-backend/internal/modules/master"
+	"hris-backend/internal/modules/reimbursement"
 	"hris-backend/internal/modules/user"
 )
 
@@ -20,11 +21,12 @@ type Container struct {
 	Location     *infrastructure.NominatimFetcher
 	GeocodeQueue <-chan attendance.GeocodeJob
 
-	HealthCheckHandler *health.Handler
-	AuthHandler        *auth.Handler
-	UserHandler        *user.Handler
-	AttendanceHandler  *attendance.Handler
-	MasterHandler      *master.Handler
+	HealthCheckHandler   *health.Handler
+	AuthHandler          *auth.Handler
+	UserHandler          *user.Handler
+	AttendanceHandler    *attendance.Handler
+	MasterHandler        *master.Handler
+	ReimbursementHandler *reimbursement.Handler
 
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
@@ -44,18 +46,21 @@ func NewContainer() (*Container, error) {
 	userRepo := user.NewRepository(db.GetDB())
 	attendanceRepo := attendance.NewRepository(db.GetDB())
 	masterRepo := master.NewRepository(db.GetDB())
+	reimburseRepo := reimbursement.NewRepository(db.GetDB())
 
 	healthSvc := health.NewService(healthRepo)
 	authSvc := auth.NewService(userRepo, bcrypt, jwt)
 	userSvc := user.NewService(userRepo, bcrypt, storage)
 	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeQueue)
 	masterSvc := master.NewService(masterRepo)
+	reimburseSvc := reimbursement.NewService(reimburseRepo, storage)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)
 	userHandler := user.NewHandler(userSvc)
 	attendanceHandler := attendance.NewHandler(attendanceSvc)
 	masterHandler := master.NewHandler(masterSvc)
+	reimburseHandler := reimbursement.NewHandler(reimburseSvc)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 	rateLimiterMiddleware := middleware.NewRateLimiterMiddleware()
@@ -69,11 +74,12 @@ func NewContainer() (*Container, error) {
 		Location:     nominatim,
 		GeocodeQueue: geocodeQueue,
 
-		HealthCheckHandler: healthHandler,
-		AuthHandler:        authHandler,
-		UserHandler:        userHandler,
-		AttendanceHandler:  attendanceHandler,
-		MasterHandler:      masterHandler,
+		HealthCheckHandler:   healthHandler,
+		AuthHandler:          authHandler,
+		UserHandler:          userHandler,
+		AttendanceHandler:    attendanceHandler,
+		MasterHandler:        masterHandler,
+		ReimbursementHandler: reimburseHandler,
 
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,

@@ -1,4 +1,4 @@
-package reimburstment
+package reimbursement
 
 import (
 	"database/sql"

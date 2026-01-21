@@ -18,12 +18,14 @@ func StartGeocodeWorker(db *gorm.DB, fetcher LocationFetcher, queue <-chan Geoco
 	go func() {
 		logger.Info("Geocode Worker Started....")
 
+		rateLimiter := time.NewTicker(1500 * time.Millisecond)
+		defer rateLimiter.Stop()
+
 		for job := range queue {
+			<-rateLimiter.C
+
 			processJob(db, fetcher, job)
-
-			time.Sleep(1200 * time.Millisecond)
 		}
-
 	}()
 }
 
