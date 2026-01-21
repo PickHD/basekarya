@@ -12,6 +12,8 @@ import DashboardPage from "@/pages/dashboard/DashboardPage";
 import ProfilePage from "@/pages/profile/ProfilePage";
 import AttendanceHistoryPage from "@/pages/dashboard/AttendanceHistoryPage";
 
+import ReimbursementListPage from "@/pages/reimbursement/ReimbursementListPage";
+
 // Pages - Admin
 import EmployeeListPage from "@/pages/admin/EmployeeListPage";
 import AttendanceRecapPage from "@/pages/admin/AttendanceRecapPage";
@@ -46,6 +48,10 @@ function App() {
           <Route path="profile" element={<ProfilePage />} />
 
           <Route path="history" element={<AttendanceHistoryPage />} />
+
+          <Route path="reimbursement">
+            <Route index element={<ReimbursementListPage />} />
+          </Route>
 
           {/* SUPERADMIN ROUTES */}
           <Route element={<ProtectedRoute allowedRoles={["SUPERADMIN"]} />}>

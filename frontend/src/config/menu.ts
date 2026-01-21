@@ -1,4 +1,10 @@
-import { LayoutDashboard, History, Users, FileSpreadsheet } from "lucide-react";
+import {
+  LayoutDashboard,
+  History,
+  Users,
+  FileSpreadsheet,
+  Receipt,
+} from "lucide-react";
 import type { MenuItem } from "./types";
 
 export const generalMenu: MenuItem[] = [
@@ -12,6 +18,11 @@ export const generalMenu: MenuItem[] = [
     href: "/history",
     icon: History,
   },
+  {
+    title: "My Reimbursement",
+    href: "/reimbursement",
+    icon: Receipt,
+  },
 ];
 
 export const adminMenu: MenuItem[] = [
@@ -24,5 +35,10 @@ export const adminMenu: MenuItem[] = [
     title: "Employees",
     href: "/admin/employees",
     icon: Users,
+  },
+  {
+    title: "Reimbursements",
+    href: "/reimbursement",
+    icon: Receipt,
   },
 ];
