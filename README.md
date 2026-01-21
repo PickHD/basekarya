@@ -167,6 +167,7 @@ sudo nano /etc/hosts
 # Add these lines:
 127.0.0.1 hris.local
 127.0.0.1 minio.hris.local
+127.0.0.1 storage.hris.local
 ```
 
 For Windows:
@@ -177,7 +178,8 @@ notepad C:\Windows\System32\drivers\etc\hosts
 
 # Add these lines:
 127.0.0.1 hris.local
-127.0.0.1 minio.hris.local
+127.0.0.1 console.hris.local
+127.0.0.1 storage.hris.local
 ```
 
 ### Customizing NGINX Configuration
