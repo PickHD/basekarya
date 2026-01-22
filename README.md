@@ -9,7 +9,6 @@ A modern, full-stack Human Resource Information System with a React frontend and
 <img width="1651" height="851" alt="Screenshot 2026-01-21 201538" src="https://github.com/user-attachments/assets/7396488b-0842-4f1a-aab6-f522d896ba79" />
 <img width="1681" height="937" alt="Screenshot 2026-01-21 201552" src="https://github.com/user-attachments/assets/aa9ba4d0-a2a3-4ffd-af5e-fe7ae48a9592" />
 
-
 ## Quick Start
 
 **Prerequisites:** Docker and Docker Compose installed
@@ -29,8 +28,7 @@ docker compose up -d --build
 **Access the application:**
 
 - Main Application: http://hris.local (add to `/etc/hosts`: `127.0.0.1 hris.local`)
-- MinIO Console: http://console.hris.local (add to `/etc/hosts`: `127.0.0.1 console.hris.local`)
-- Health Check: http://hris.local/api/v1/health
+- API Health Check: http://hris.local/api/v1/health
 
 **Stop services:**
 
@@ -129,9 +127,9 @@ This project uses **NGINX as a reverse proxy** to route traffic between the fron
 Internet (Port 80/443)
     ↓
 [NGINX Gateway]
-    ├─→ /api/v1/*      → Backend (Go API)
-    ├─→ /*             → Frontend (React App)
-    └─→ minio.hris.local → MinIO (Object Storage)
+    ├─→ hris.local/api/v1/*      → Backend (Go API)
+    ├─→ hris.local/*             → Frontend (React App)
+    └─→ storage.hris.local/ → MinIO (Object Storage)
 ```
 
 ### Routing Configuration
@@ -139,15 +137,12 @@ Internet (Port 80/443)
 The gateway is configured in `gateway/nginx.conf`:
 
 1. **Main Application** (`hris.local`):
-
    - `/api/v1/*` → Proxies to Backend API (port 8081)
    - `/` → Proxies to Frontend (port 8080)
    - Supports WebSocket for React hot reload
 
-2. **MinIO Console** (`minio.hris.local`):
-   - `/` → MinIO API (port 9000)
-   - `/console` → MinIO Console UI (port 9001)
-   - WebSocket support for MinIO console
+2. **MinIO API S3** (`storage.hris.local`):
+   - `/` → MinIO API S3 (port 9000)
 
 ### Features
 
@@ -170,7 +165,6 @@ sudo nano /etc/hosts
 
 # Add these lines:
 127.0.0.1 hris.local
-127.0.0.1 minio.hris.local
 127.0.0.1 storage.hris.local
 ```
 
@@ -182,7 +176,6 @@ notepad C:\Windows\System32\drivers\etc\hosts
 
 # Add these lines:
 127.0.0.1 hris.local
-127.0.0.1 console.hris.local
 127.0.0.1 storage.hris.local
 ```
 
