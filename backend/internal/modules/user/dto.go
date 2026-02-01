@@ -55,8 +55,9 @@ type CreateEmployeeRequest struct {
 }
 
 type UpdateEmployeeRequest struct {
-	FullName     string `json:"full_name"`
-	NIK          string `json:"nik"`
-	DepartmentID uint   `json:"department_id"`
-	ShiftID      uint   `json:"shift_id"`
+	FullName     string  `json:"full_name"`
+	NIK          string  `json:"nik"`
+	DepartmentID uint    `json:"department_id"`
+	ShiftID      uint    `json:"shift_id"`
+	BaseSalary   float64 `json:"base_salary"`
 }

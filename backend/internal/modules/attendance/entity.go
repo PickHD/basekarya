@@ -32,6 +32,8 @@ type Attendance struct {
 	IsSuspicious bool   `gorm:"default:false;index" json:"is_suspicious"`
 	Notes        string `gorm:"type:varchar(500)" json:"notes"`
 
+	LateDurationMinute int `gorm:"default:0" json:"late_duration_minute"`
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 

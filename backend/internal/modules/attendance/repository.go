@@ -139,9 +139,9 @@ func (r *repository) GetBulkLateDuration(month, year int) (map[uint]int, error) 
 	var results []Result
 
 	err := r.db.Model(&Attendance{}).
-		Select("user_id, COALESCE(SUM(late_duration_minute), 0) as total_minute").
+		Select("employee_id, COALESCE(SUM(late_duration_minute), 0) as total_minute").
 		Where("MONTH(check_in_time) = ? AND YEAR(check_in_time) = ?", month, year).
-		Group("user_id").
+		Group("employee_id").
 		Scan(&results).Error
 	if err != nil {
 		return nil, err

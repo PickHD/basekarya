@@ -214,6 +214,9 @@ func (s *service) UpdateEmployee(ctx context.Context, id uint, req *UpdateEmploy
 	if req.ShiftID > 0 {
 		emp.ShiftID = req.ShiftID
 	}
+	if req.BaseSalary > 0 {
+		emp.BaseSalary = req.BaseSalary
+	}
 
 	return s.repo.UpdateEmployee(emp)
 }

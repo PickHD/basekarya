@@ -1,6 +1,7 @@
 package payroll
 
 import (
+	"hris-backend/pkg/constants"
 	"time"
 
 	"gorm.io/gorm"
@@ -11,6 +12,7 @@ type Repository interface {
 	FindAll(filter *PayrollFilter) ([]Payroll, int64, error)
 	FindByID(id uint) (*Payroll, error)
 	GetExistingEmployeeID(month, year int) (map[uint]bool, error)
+	UpdateStatus(id uint, status constants.PayrollStatus) error
 }
 
 type repository struct {
@@ -35,7 +37,9 @@ func (r *repository) FindAll(filter *PayrollFilter) ([]Payroll, int64, error) {
 	var payrolls []Payroll
 	var total int64
 
-	query := r.db.Model(&Payroll{}).Preload("Employee")
+	query := r.db.Model(&Payroll{}).
+		Joins("JOIN employees ON employees.id = payrolls.employee_id").
+		Preload("Employee")
 
 	if filter.Month > 0 && filter.Year > 0 {
 		startDate := time.Date(filter.Year, time.Month(filter.Month), 1, 0, 0, 0, 0, time.Local)
@@ -44,7 +48,8 @@ func (r *repository) FindAll(filter *PayrollFilter) ([]Payroll, int64, error) {
 	}
 
 	if filter.Keyword != "" {
-		query = query.Where("employees.name LIKE ?", "%"+filter.Keyword+"%")
+		keywordParam := "%" + filter.Keyword + "%"
+		query = query.Where("LOWER(employees.full_name) LIKE LOWER(?) OR LOWER(employees.nik) LIKE LOWER(?)", keywordParam, keywordParam)
 	}
 
 	if err := query.Count(&total).Error; err != nil {
@@ -93,4 +98,10 @@ func (r *repository) GetExistingEmployeeID(month, year int) (map[uint]bool, erro
 	}
 
 	return existingMap, nil
+}
+
+func (r *repository) UpdateStatus(id uint, status constants.PayrollStatus) error {
+	return r.db.Model(&Payroll{}).
+		Where("id = ?", id).
+		Update("status", status).Error
 }

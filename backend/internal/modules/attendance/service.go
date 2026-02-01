@@ -65,6 +65,18 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 		return nil, errors.New("invalid shift time configuration")
 	}
 
+	expectedTime := time.Date(
+		now.Year(), now.Month(), now.Day(),
+		shiftStartToday.Hour(), shiftStartToday.Minute(), shiftStartToday.Second(), 0,
+		now.Location(),
+	)
+
+	lateMinute := 0
+	if now.After(expectedTime) {
+		diff := now.Sub(expectedTime)
+		lateMinute = int(diff.Minutes())
+	}
+
 	earliersAllowed := shiftStartToday.Add(-2 * time.Hour)
 	if now.Before(earliersAllowed) {
 		return nil, errors.New("cannot check-in, too early")
@@ -88,17 +100,18 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 		}
 
 		newAtt := &Attendance{
-			EmployeeID:      employee.ID,
-			ShiftID:         employee.ShiftID,
-			Date:            time.Now(),
-			CheckInTime:     now,
-			CheckInLat:      req.Latitude,
-			CheckInLong:     req.Longitude,
-			CheckInImageURL: imgUrl,
-			CheckInAddress:  tempAddress,
-			Status:          status,
-			Notes:           req.Notes,
-			IsSuspicious:    false,
+			EmployeeID:         employee.ID,
+			ShiftID:            employee.ShiftID,
+			Date:               time.Now(),
+			CheckInTime:        now,
+			CheckInLat:         req.Latitude,
+			CheckInLong:        req.Longitude,
+			CheckInImageURL:    imgUrl,
+			CheckInAddress:     tempAddress,
+			Status:             status,
+			Notes:              req.Notes,
+			LateDurationMinute: lateMinute,
+			IsSuspicious:       false,
 		}
 
 		if err := s.repo.Create(newAtt); err != nil {
