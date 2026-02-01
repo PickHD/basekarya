@@ -48,6 +48,11 @@ func (s *service) GetProfile(userID uint) (*UserProfileResponse, error) {
 		resp.NIK = user.Employee.NIK
 		resp.PhoneNumber = user.Employee.PhoneNumber
 		resp.ProfilePictureUrl = user.Employee.ProfilePictureUrl
+		resp.BankName = user.Employee.BankName
+		resp.BaseSalary = user.Employee.BaseSalary
+		resp.BankAccountNumber = user.Employee.BankAccountNumber
+		resp.BankAccountHolder = user.Employee.BankAccountHolder
+		resp.NPWP = user.Employee.NPWP
 
 		if user.Employee.Department != nil {
 			resp.DepartmentName = user.Employee.Department.Name
@@ -74,22 +79,9 @@ func (s *service) UpdateProfile(ctx context.Context, userID uint, req *UpdatePro
 		return errors.New("employee data not found")
 	}
 
-	if req.FullName != "" {
-		user.Employee.FullName = req.FullName
-	}
-
-	if req.PhoneNumber != "" {
-		user.Employee.PhoneNumber = req.PhoneNumber
-	}
-
-	if file != nil {
-		fileName := fmt.Sprintf("users/%d/profile-%d.jpg", userID, time.Now().Unix())
-		fileURL, err := s.storage.UploadFileMultipart(ctx, file, fileName)
-		if err != nil {
-			return err
-		}
-
-		user.Employee.ProfilePictureUrl = fileURL
+	user, err = s.buildEmployeeData(ctx, user, req, file)
+	if err != nil {
+		return err
 	}
 
 	return s.repo.UpdateEmployee(user.Employee)
@@ -130,12 +122,17 @@ func (s *service) GetAllEmployees(ctx context.Context, page, limit int, search s
 	for _, u := range users {
 		deptName := "-"
 		shiftName := "-"
+		baseSalary := 0.0
+
 		if u.Employee != nil {
 			if u.Employee.Department != nil {
 				deptName = u.Employee.Department.Name
 			}
 			if u.Employee.Shift != nil {
 				shiftName = u.Employee.Shift.Name
+			}
+			if u.Employee.BaseSalary != 0 {
+				baseSalary = u.Employee.BaseSalary
 			}
 
 			list = append(list, EmployeeListResponse{
@@ -145,6 +142,7 @@ func (s *service) GetAllEmployees(ctx context.Context, page, limit int, search s
 				Username:       u.Username,
 				DepartmentName: deptName,
 				ShiftName:      shiftName,
+				BaseSalary:     baseSalary,
 			})
 		}
 	}
@@ -184,6 +182,7 @@ func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest
 		NIK:          req.NIK,
 		DepartmentID: req.DepartmentID,
 		ShiftID:      req.ShiftID,
+		BaseSalary:   req.BaseSalary,
 	}
 
 	if err := s.repo.CreateEmployee(tx, &newEmp); err != nil {
@@ -226,4 +225,42 @@ func (s *service) DeleteEmployee(ctx context.Context, id uint) error {
 	}
 
 	return s.repo.DeleteUser(emp.UserID)
+}
+
+func (s *service) buildEmployeeData(ctx context.Context, user *User, req *UpdateProfileRequest, file *multipart.FileHeader) (*User, error) {
+	if req.FullName != "" {
+		user.Employee.FullName = req.FullName
+	}
+
+	if req.PhoneNumber != "" {
+		user.Employee.PhoneNumber = req.PhoneNumber
+	}
+
+	if req.BankName != "" {
+		user.Employee.BankName = req.BankName
+	}
+
+	if req.BankAccountNumber != "" {
+		user.Employee.BankAccountNumber = req.BankAccountNumber
+	}
+
+	if req.BankAccountHolder != "" {
+		user.Employee.BankAccountHolder = req.BankAccountHolder
+	}
+
+	if req.NPWP != "" {
+		user.Employee.NPWP = req.NPWP
+	}
+
+	if file != nil {
+		fileName := fmt.Sprintf("users/%d/profile-%d.jpg", user.ID, time.Now().Unix())
+		fileURL, err := s.storage.UploadFileMultipart(ctx, file, fileName)
+		if err != nil {
+			return nil, err
+		}
+
+		user.Employee.ProfilePictureUrl = fileURL
+	}
+
+	return user, nil
 }

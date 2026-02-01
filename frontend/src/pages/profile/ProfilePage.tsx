@@ -54,7 +54,6 @@ export default function ProfilePage() {
         </p>
       </div>
 
-      {/* --- ALERT BLOCK FOR NEW USER --- */}
       {isLocked && (
         <Alert
           variant="destructive"
@@ -70,7 +69,6 @@ export default function ProfilePage() {
       )}
 
       <div className="grid gap-6 md:grid-cols-12">
-        {/* SIDEBAR: PROFILE CARD */}
         <div className="md:col-span-4 space-y-6">
           <Card className="border-t-4 border-t-blue-600 shadow-sm">
             <CardHeader className="text-center">
@@ -112,7 +110,6 @@ export default function ProfilePage() {
           </Card>
         </div>
 
-        {/* MAIN CONTENT: TABS */}
         <div className="md:col-span-8">
           <Tabs
             value={activeTab}
@@ -123,7 +120,7 @@ export default function ProfilePage() {
               <TabsTrigger
                 value="general"
                 className="gap-2"
-                disabled={isLocked} // Disable tombol General
+                disabled={isLocked}
               >
                 <User className="w-4 h-4" /> General Info
               </TabsTrigger>

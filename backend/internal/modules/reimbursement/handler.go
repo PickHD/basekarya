@@ -118,7 +118,7 @@ func (h *Handler) ProcessAction(ctx echo.Context) error {
 
 	err = h.service.ProcessAction(ctx.Request().Context(), &req)
 	if err != nil {
-		logger.Errorw("Process approval action reimbursement failed: ", err)
+		logger.Errorw("Process approval action reimbursement failed: %w", err)
 
 		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
 	}

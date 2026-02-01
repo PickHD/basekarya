@@ -1,12 +1,15 @@
 package reimbursement
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type Repository interface {
 	Create(reimbursement *Reimbursement) error
 	FindByID(id uint) (*Reimbursement, error)
 	FindAll(filter ReimbursementFilter) ([]Reimbursement, int64, error)
 	Update(reimbursement *Reimbursement) error
+	GetBulkApprovedAmount(month, year int) (map[uint]float64, error)
 }
 
 type repository struct {
@@ -62,4 +65,30 @@ func (r *repository) FindAll(filter ReimbursementFilter) ([]Reimbursement, int64
 
 func (r *repository) Update(reimbursement *Reimbursement) error {
 	return r.db.Save(reimbursement).Error
+}
+
+func (r *repository) GetBulkApprovedAmount(month, year int) (map[uint]float64, error) {
+	type Result struct {
+		UserID      uint
+		TotalAmount float64
+	}
+	var results []Result
+
+	err := r.db.Model(&Reimbursement{}).
+		Select("user_id, COALESCE(SUM(amount), 0) as total_amount").
+		Where("status = ?", "APPROVED").
+		Where("MONTH(date_of_expense) = ? AND YEAR(date_of_expense) = ?", month, year).
+		Group("user_id").
+		Scan(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	dataMap := make(map[uint]float64)
+	for _, res := range results {
+		dataMap[res.UserID] = res.TotalAmount
+	}
+
+	return dataMap, err
 }

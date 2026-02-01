@@ -34,11 +34,32 @@ import {
 } from "@/features/admin/hooks/useMasterData";
 
 const formSchema = z.object({
-  username: z.string().min(3, "Min 3 characters"),
-  full_name: z.string().min(1, "Name is required"),
-  nik: z.string().min(1, "NIK is required"),
-  department_id: z.string().min(1, "Select department"),
-  shift_id: z.string().min(1, "Select shift"),
+  username: z.string().min(3, "Username minimal atleast 3 characters"),
+
+  full_name: z.string().min(1, "full_name required").trim(),
+
+  nik: z
+    .string()
+    .length(16, "NIK must be 16 digit")
+    .regex(/^\d+$/, "NIK must be a numbers"),
+
+  department_id: z.string().min(1, "Select Dept."),
+
+  shift_id: z.string().min(1, "Select shift."),
+
+  base_salary: z.preprocess(
+    (val) => {
+      if (!val) return 0;
+      if (typeof val === "string") {
+        return parseInt(val.replace(/\D/g, ""), 10);
+      }
+      return val;
+    },
+    z
+      .number()
+      .min(0, "Base salary cannot be a negative number")
+      .max(1000000000, "Base salary exceed the limit"),
+  ),
 });
 
 interface EmployeeFormDialogProps {
@@ -69,6 +90,7 @@ export function EmployeeFormDialog({
       nik: "",
       department_id: "",
       shift_id: "",
+      base_salary: 0,
     },
   });
 
@@ -81,6 +103,7 @@ export function EmployeeFormDialog({
           nik: employeeToEdit.nik,
           department_id: employeeToEdit.department_name === "Umum" ? "1" : "2",
           shift_id: "1",
+          base_salary: employeeToEdit.base_salary,
         });
       } else {
         form.reset({
@@ -89,10 +112,17 @@ export function EmployeeFormDialog({
           nik: "",
           department_id: "",
           shift_id: "",
+          base_salary: 0,
         });
       }
     }
   }, [open, employeeToEdit, form]);
+
+  const formatCurrency = (value: string) => {
+    if (!value) return "";
+    const number = value.replace(/\D/g, "");
+    return new Intl.NumberFormat("id-ID").format(Number(number));
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -112,6 +142,7 @@ export function EmployeeFormDialog({
                 nik: values.nik,
                 department_id: Number(values.department_id),
                 shift_id: Number(values.shift_id),
+                base_salary: Number(values.base_salary),
               };
               onSubmit(payload);
             })}
@@ -232,6 +263,33 @@ export function EmployeeFormDialog({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="base_salary"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Base Salary (Rp)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="0"
+                      {...field}
+                      type="text"
+                      value={
+                        field.value
+                          ? `Rp ${formatCurrency(String(field.value))}`
+                          : ""
+                      }
+                      onChange={(e) => {
+                        const rawValue = e.target.value.replace(/\D/g, "");
+                        field.onChange(rawValue);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
               <Button type="submit" disabled={isLoading}>

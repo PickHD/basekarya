@@ -15,6 +15,7 @@ type Repository interface {
 	FindAll(filter *FilterParams) ([]Attendance, int64, error)
 	CountByStatus(status constants.AttendanceStatus, todayDate string) (int64, error)
 	CountAttendanceToday(todayDate string) (int64, error)
+	GetBulkLateDuration(month, year int) (map[uint]int, error)
 }
 
 type repository struct {
@@ -128,4 +129,28 @@ func (r *repository) CountAttendanceToday(todayDate string) (int64, error) {
 	}
 
 	return totalStatus, nil
+}
+
+func (r *repository) GetBulkLateDuration(month, year int) (map[uint]int, error) {
+	type Result struct {
+		UserID      uint
+		TotalMinute int
+	}
+	var results []Result
+
+	err := r.db.Model(&Attendance{}).
+		Select("user_id, COALESCE(SUM(late_duration_minute), 0) as total_minute").
+		Where("MONTH(check_in_time) = ? AND YEAR(check_in_time) = ?", month, year).
+		Group("user_id").
+		Scan(&results).Error
+	if err != nil {
+		return nil, err
+	}
+
+	dataMap := make(map[uint]int)
+	for _, res := range results {
+		dataMap[res.UserID] = res.TotalMinute
+	}
+
+	return dataMap, err
 }

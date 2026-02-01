@@ -11,6 +11,10 @@ export interface UserProfile {
   phone_number: string;
   profile_picture_url: string;
   must_change_password: boolean;
+  bank_name: string;
+  bank_account_number: string;
+  bank_account_holder: string;
+  npwp: string;
 }
 
 export interface PasswordPayload {

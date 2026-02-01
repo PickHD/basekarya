@@ -28,6 +28,14 @@ type Employee struct {
 	PhoneNumber       string `json:"phone_number"`
 	ProfilePictureUrl string `json:"profile_picture_url"`
 
+	BaseSalary float64 `gorm:"type:decimal(15,2);default:0" json:"base_salary"`
+
+	BankName          string `gorm:"type:varchar(50)" json:"bank_name"`
+	BankAccountNumber string `gorm:"type:varchar(50)" json:"bank_account_number"`
+	BankAccountHolder string `gorm:"type:varchar(100)" json:"bank_account_holder"`
+
+	NPWP string `gorm:"type:varchar(30)" json:"npwp"`
+
 	User User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 
 	Department *master.Department `gorm:"foreignKey:DepartmentID" json:"department,omitempty"`

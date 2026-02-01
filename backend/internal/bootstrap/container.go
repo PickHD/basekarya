@@ -8,6 +8,7 @@ import (
 	"hris-backend/internal/modules/auth"
 	"hris-backend/internal/modules/health"
 	"hris-backend/internal/modules/master"
+	"hris-backend/internal/modules/payroll"
 	"hris-backend/internal/modules/reimbursement"
 	"hris-backend/internal/modules/user"
 )
@@ -27,6 +28,7 @@ type Container struct {
 	AttendanceHandler    *attendance.Handler
 	MasterHandler        *master.Handler
 	ReimbursementHandler *reimbursement.Handler
+	PayrollHandler       *payroll.Handler
 
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
@@ -47,6 +49,7 @@ func NewContainer() (*Container, error) {
 	attendanceRepo := attendance.NewRepository(db.GetDB())
 	masterRepo := master.NewRepository(db.GetDB())
 	reimburseRepo := reimbursement.NewRepository(db.GetDB())
+	payrollRepo := payroll.NewRepository(db.GetDB())
 
 	healthSvc := health.NewService(healthRepo)
 	authSvc := auth.NewService(userRepo, bcrypt, jwt)
@@ -54,6 +57,7 @@ func NewContainer() (*Container, error) {
 	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeQueue)
 	masterSvc := master.NewService(masterRepo)
 	reimburseSvc := reimbursement.NewService(reimburseRepo, storage)
+	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)
@@ -61,6 +65,7 @@ func NewContainer() (*Container, error) {
 	attendanceHandler := attendance.NewHandler(attendanceSvc)
 	masterHandler := master.NewHandler(masterSvc)
 	reimburseHandler := reimbursement.NewHandler(reimburseSvc)
+	payrollHandler := payroll.NewHandler(payrollSvc)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 	rateLimiterMiddleware := middleware.NewRateLimiterMiddleware()
@@ -80,6 +85,7 @@ func NewContainer() (*Container, error) {
 		AttendanceHandler:    attendanceHandler,
 		MasterHandler:        masterHandler,
 		ReimbursementHandler: reimburseHandler,
+		PayrollHandler:       payrollHandler,
 
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,

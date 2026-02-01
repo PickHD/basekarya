@@ -19,7 +19,37 @@ import { Label } from "@/components/ui/label";
 import { useUpdateProfile } from "../hooks/useProfile";
 
 const generalSchema = z.object({
-  phone_number: z.string(),
+  full_name: z
+    .string()
+    .min(3, "Fullname minimum at least 3 characters")
+    .max(100, "Fullname too long")
+    .transform((val) => val.trim()),
+
+  phone_number: z
+    .string()
+    .min(10, "Phone number invalid")
+    .max(15, "Phone number too long")
+    .regex(/^[0-9]+$/, "Phone number only numbers can be included"),
+
+  bank_name: z.string().min(3, "Bank name minimum at least 3 characters"),
+
+  bank_account_number: z
+    .string()
+    .min(5, "Bank account number minimum at least 5 characters")
+    .max(20, "Bank account number too long")
+    .regex(/^\d+$/, "Bank account number only numbers"),
+
+  bank_account_holder: z
+    .string()
+    .min(3, "Invalid bank account holder")
+    .transform((val) => val.toUpperCase().trim()),
+
+  npwp: z
+    .string()
+    .refine((val) => /^\d{15,16}$/.test(val.replace(/[.-]/g, "")), {
+      message: "NPWP at least 15-16 number digit",
+    })
+    .transform((val) => val.replace(/[.-]/g, "")),
 });
 
 interface GeneralFormProps {
@@ -33,7 +63,14 @@ export function GeneralForm({ user }: GeneralFormProps) {
 
   const form = useForm({
     resolver: zodResolver(generalSchema),
-    defaultValues: { phone_number: user.phone_number || "" },
+    defaultValues: {
+      full_name: user.full_name || "",
+      phone_number: user.phone_number || "",
+      bank_name: user.bank_name || "",
+      bank_account_number: user.bank_account_number || "",
+      bank_account_holder: user.bank_account_holder || "",
+      npwp: user.npwp || "",
+    },
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,7 +84,13 @@ export function GeneralForm({ user }: GeneralFormProps) {
 
   const onSubmit = (values: any) => {
     const formData = new FormData();
+    formData.append("full_name", values.full_name);
     formData.append("phone_number", values.phone_number);
+    formData.append("bank_name", values.bank_name);
+    formData.append("bank_account_number", values.bank_account_number);
+    formData.append("bank_account_holder", values.bank_account_holder);
+    formData.append("npwp", values.npwp);
+
     if (selectedFile) {
       formData.append("photo", selectedFile);
     }
@@ -89,12 +132,82 @@ export function GeneralForm({ user }: GeneralFormProps) {
 
         <FormField
           control={form.control}
+          name="full_name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fullname</FormLabel>
+              <FormControl>
+                <Input placeholder="Your name..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="phone_number"
           render={({ field }) => (
             <FormItem>
               <FormLabel>WhatsApp Number</FormLabel>
               <FormControl>
                 <Input placeholder="0812..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="bank_name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Bank Name</FormLabel>
+              <FormControl>
+                <Input placeholder="BCA.." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="bank_account_number"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Bank Account Number</FormLabel>
+              <FormControl>
+                <Input placeholder="79123..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="bank_account_holder"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Bank Account Holder</FormLabel>
+              <FormControl>
+                <Input placeholder="SENDY.." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="npwp"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>NPWP Number</FormLabel>
+              <FormControl>
+                <Input placeholder="319287391.." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

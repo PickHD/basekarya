@@ -14,14 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Loader2,
-  Search,
-  Users,
-  Plus,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { Loader2, Search, Users, Plus, Pencil, Trash2 } from "lucide-react";
 import type { Employee } from "@/features/admin/types";
 import { EmployeeFormDialog } from "@/features/admin/components/EmployeeFormDialog";
 import {
@@ -43,7 +36,7 @@ export default function EmployeeListPage() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
-    null
+    null,
   );
 
   const [employeeToDelete, setEmployeeToDelete] = useState<number | null>(null);
@@ -144,7 +137,9 @@ export default function EmployeeListPage() {
                   <TableBody>
                     {data?.data.map((emp) => (
                       <TableRow key={emp.id}>
-                        <TableCell className="font-mono">{emp.nik}</TableCell>
+                        <TableCell className="font-mono">
+                          {emp.username}
+                        </TableCell>
                         <TableCell className="font-medium">
                           {emp.full_name}
                         </TableCell>

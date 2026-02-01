@@ -80,6 +80,8 @@ func (r *Router) setupRoutes() {
 		adminOnly.GET("/shifts", r.container.MasterHandler.GetShifts)
 
 		adminOnly.GET("/dashboard/stats", r.container.AttendanceHandler.GetDashboardStats)
+
+		adminOnly.GET("/payrolls/generate", r.container.PayrollHandler.Generate)
 	}
 }
 

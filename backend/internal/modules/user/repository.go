@@ -19,6 +19,7 @@ type Repository interface {
 	FindEmployeeByID(id uint) (*Employee, error)
 	StartTX() *gorm.DB
 	CountActiveEmployee() (int64, error)
+	FindAllEmployeeActive() ([]Employee, error)
 }
 
 type repository struct {
@@ -120,4 +121,15 @@ func (r *repository) CountActiveEmployee() (int64, error) {
 	}
 
 	return totalActive, nil
+}
+
+func (r *repository) FindAllEmployeeActive() ([]Employee, error) {
+	var employees []Employee
+
+	if err := r.db.Model(&User{}).
+		Where("is_active = ? AND role = ?", true, string(constants.UserRoleEmployee)).Find(&employees).Error; err != nil {
+		return nil, err
+	}
+
+	return employees, nil
 }
