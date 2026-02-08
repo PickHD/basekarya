@@ -2,7 +2,6 @@ package seeder
 
 import (
 	"hris-backend/internal/config"
-	"hris-backend/internal/modules/leave"
 	"hris-backend/internal/modules/master"
 	"hris-backend/internal/modules/user"
 	"hris-backend/pkg/constants"
@@ -84,19 +83,19 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 			logger.Infof("Seeded: %s - %s", empData.NIK, empData.Name)
 		}
 
-		leaveTypeAnnual := leave.LeaveType{Name: "Annual", DefaultQuota: 12, IsDeducted: true}
-		leaveTypeSick := leave.LeaveType{Name: "Sick", DefaultQuota: 15, IsDeducted: false}
-		leaveTypeUnpaid := leave.LeaveType{Name: "Unpaid", DefaultQuota: 0, IsDeducted: false}
+		leaveTypeAnnual := master.LeaveType{Name: "Annual", DefaultQuota: 12, IsDeducted: true}
+		leaveTypeSick := master.LeaveType{Name: "Sick", DefaultQuota: 15, IsDeducted: false}
+		leaveTypeUnpaid := master.LeaveType{Name: "Unpaid", DefaultQuota: 0, IsDeducted: false}
 
-		if err := tx.Where(leave.LeaveType{Name: leaveTypeAnnual.Name}).FirstOrCreate(&leaveTypeAnnual).Error; err != nil {
+		if err := tx.Where(master.LeaveType{Name: leaveTypeAnnual.Name}).FirstOrCreate(&leaveTypeAnnual).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Where(leave.LeaveType{Name: leaveTypeSick.Name}).FirstOrCreate(&leaveTypeSick).Error; err != nil {
+		if err := tx.Where(master.LeaveType{Name: leaveTypeSick.Name}).FirstOrCreate(&leaveTypeSick).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Where(leave.LeaveType{Name: leaveTypeUnpaid.Name}).FirstOrCreate(&leaveTypeUnpaid).Error; err != nil {
+		if err := tx.Where(master.LeaveType{Name: leaveTypeUnpaid.Name}).FirstOrCreate(&leaveTypeUnpaid).Error; err != nil {
 			return err
 		}
 

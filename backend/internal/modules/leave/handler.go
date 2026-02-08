@@ -89,7 +89,8 @@ func (h *Handler) GetAll(ctx echo.Context) error {
 	status := ctx.QueryParam("status")
 	page, _ := strconv.Atoi(ctx.QueryParam("page"))
 	limit, _ := strconv.Atoi(ctx.QueryParam("limit"))
-	//TODO: add query param search
+	search := ctx.QueryParam("search")
+
 	if page < 1 {
 		page = 1
 	}
@@ -101,6 +102,7 @@ func (h *Handler) GetAll(ctx echo.Context) error {
 		Status: status,
 		Page:   page,
 		Limit:  limit,
+		Search: search,
 	}
 
 	if userContext.Role != string(constants.UserRoleSuperadmin) {

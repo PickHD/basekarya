@@ -1,21 +1,13 @@
 package leave
 
 import (
+	"hris-backend/internal/modules/master"
 	"hris-backend/internal/modules/user"
 	"hris-backend/pkg/constants"
 	"time"
 
 	"gorm.io/gorm"
 )
-
-type LeaveType struct {
-	ID           uint      `gorm:"primaryKey" json:"id"`
-	Name         string    `gorm:"unique;not null" json:"name"`
-	DefaultQuota int       `json:"default_quota"`
-	IsDeducted   bool      `gorm:"default:true" json:"is_deducted"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-}
 
 type LeaveBalance struct {
 	ID          uint `gorm:"primaryKey" json:"id"`
@@ -26,8 +18,8 @@ type LeaveBalance struct {
 	QuotaUsed   int  `json:"quota_used"`
 	QuotaLeft   int  `json:"quota_left"`
 
-	Employee  *user.Employee `gorm:"foreignKey:EmployeeID" json:"employee,omitempty"`
-	LeaveType *LeaveType     `gorm:"foreignKey:LeaveTypeID" json:"leave_type,omitempty"`
+	Employee  *user.Employee    `gorm:"foreignKey:EmployeeID" json:"employee,omitempty"`
+	LeaveType *master.LeaveType `gorm:"foreignKey:LeaveTypeID" json:"leave_type,omitempty"`
 }
 
 type LeaveRequest struct {
@@ -52,11 +44,7 @@ type LeaveRequest struct {
 	ApprovedBy      *uint  `json:"approved_by"`
 	RejectionReason string `json:"rejection_reason"`
 
-	User      user.User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	Employee  *user.Employee `gorm:"foreignKey:EmployeeID" json:"employee,omitempty"`
-	LeaveType *LeaveType     `gorm:"foreignKey:LeaveTypeID" json:"leave_type,omitempty"`
-}
-
-func (LeaveType) TableName() string {
-	return "ref_leave_types"
+	User      user.User         `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Employee  *user.Employee    `gorm:"foreignKey:EmployeeID" json:"employee,omitempty"`
+	LeaveType *master.LeaveType `gorm:"foreignKey:LeaveTypeID" json:"leave_type,omitempty"`
 }

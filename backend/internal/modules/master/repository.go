@@ -5,8 +5,8 @@ import "gorm.io/gorm"
 type Repository interface {
 	FindAllDepartments() ([]Department, error)
 	FindAllShifts() ([]Shift, error)
+	FindAllLeaveTypes() ([]LeaveType, error)
 }
-
 type repository struct {
 	db *gorm.DB
 }
@@ -31,4 +31,13 @@ func (r *repository) FindAllShifts() ([]Shift, error) {
 	}
 
 	return shifts, nil
+}
+
+func (r *repository) FindAllLeaveTypes() ([]LeaveType, error) {
+	var leaveTypes []LeaveType
+	if err := r.db.Model(&LeaveType{}).Find(&leaveTypes).Error; err != nil {
+		return nil, err
+	}
+
+	return leaveTypes, nil
 }

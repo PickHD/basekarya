@@ -60,7 +60,7 @@ func NewContainer() (*Container, error) {
 	masterSvc := master.NewService(masterRepo)
 	reimburseSvc := reimbursement.NewService(reimburseRepo, storage)
 	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo)
-	leaveSvc := leave.NewService(leaveRepo)
+	leaveSvc := leave.NewService(leaveRepo, storage)
 	userSvc := user.NewService(userRepo, bcrypt, storage, leaveSvc)
 
 	healthHandler := health.NewHandler(healthSvc)

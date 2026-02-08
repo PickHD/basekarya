@@ -1,11 +1,15 @@
 package leave
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"hris-backend/internal/modules/attendance"
+	"hris-backend/internal/modules/master"
 	"hris-backend/pkg/constants"
 	"hris-backend/pkg/response"
+	"hris-backend/pkg/utils"
 	"time"
 
 	"gorm.io/gorm"
@@ -20,11 +24,12 @@ type Service interface {
 }
 
 type service struct {
-	repo Repository
+	repo    Repository
+	storage StorageProvider
 }
 
-func NewService(repo Repository) Service {
-	return &service{repo}
+func NewService(repo Repository, storage StorageProvider) Service {
+	return &service{repo, storage}
 }
 
 func (s *service) Apply(ctx context.Context, req *ApplyRequest) error {
@@ -55,16 +60,36 @@ func (s *service) Apply(ctx context.Context, req *ApplyRequest) error {
 		return errors.New("insufficient leave balance")
 	}
 
+	attachmentUrl := ""
+	if req.AttachmentBase64 != "" {
+		// construct attachment_base64 if not empty
+		imgBytes, err := utils.DecodeBase64Image(req.AttachmentBase64)
+		if err != nil {
+			return errors.New("invalid image")
+		}
+
+		imageReader := bytes.NewReader(imgBytes)
+		now := time.Now()
+		todayString := now.Format(constants.DefaultTimeFormat)
+		fileName := fmt.Sprintf("leaves/%d/%s-%d.jpg", req.EmployeeID, todayString, now.Unix())
+
+		attachmentUrl, err = s.storage.UploadFileByte(ctx, fmt.Sprintf("in-%s", fileName), imageReader, int64(len(imgBytes)), "image/jpg")
+		if err != nil {
+			return err
+		}
+	}
+
 	// construct leave request and save it to db
 	leaveReq := &LeaveRequest{
-		UserID:      req.UserID,
-		EmployeeID:  req.EmployeeID,
-		LeaveTypeID: req.LeaveTypeID,
-		StartDate:   start,
-		EndDate:     end,
-		TotalDays:   totalDays,
-		Reason:      req.Reason,
-		Status:      constants.LeaveStatusPending,
+		UserID:        req.UserID,
+		EmployeeID:    req.EmployeeID,
+		LeaveTypeID:   req.LeaveTypeID,
+		StartDate:     start,
+		EndDate:       end,
+		TotalDays:     totalDays,
+		Reason:        req.Reason,
+		AttachmentURL: attachmentUrl,
+		Status:        constants.LeaveStatusPending,
 	}
 
 	return s.repo.CreateRequest(leaveReq)
@@ -104,13 +129,14 @@ func (s *service) RequestAction(ctx context.Context, req *LeaveActionRequest) er
 			}
 
 			status := constants.AttendanceStatusExcused
-			if leaveRequest.LeaveType.Name == "Sick Leave" {
+			if leaveRequest.LeaveType.Name == "Sick" {
 				status = constants.AttendanceStatusSick
 			}
 
 			attendance := attendance.Attendance{
 				EmployeeID:         leaveRequest.EmployeeID,
 				ShiftID:            leaveRequest.Employee.ShiftID,
+				Date:               currentDate,
 				CheckInTime:        currentDate,
 				CheckInLat:         0,
 				CheckInLong:        0,
@@ -158,14 +184,36 @@ func (s *service) GetList(ctx context.Context, filter *LeaveFilter) ([]LeaveRequ
 
 	var list []LeaveRequestListResponse
 	for _, req := range requests {
+		empName := "-"
+		empNik := "-"
+		leaveTypeResp := &master.LookupLeaveTypeResponse{}
+
+		if req.Employee != nil {
+			empName = req.Employee.FullName
+			empNik = req.Employee.NIK
+		}
+
+		if req.LeaveType != nil {
+			leaveTypeResp.ID = req.LeaveTypeID
+			leaveTypeResp.Name = req.LeaveType.Name
+			leaveTypeResp.DefaultQuota = req.LeaveType.DefaultQuota
+			leaveTypeResp.IsDeducted = req.LeaveType.IsDeducted
+		}
+
 		list = append(list, LeaveRequestListResponse{
-			ID:        req.ID,
-			StartDate: req.StartDate,
-			EndDate:   req.EndDate,
-			TotalDays: req.TotalDays,
-			Reason:    req.Reason,
-			Status:    req.Status,
+			ID:           req.ID,
+			StartDate:    req.StartDate,
+			EndDate:      req.EndDate,
+			Status:       req.Status,
+			EmployeeID:   req.EmployeeID,
+			EmployeeName: empName,
+			EmployeeNIK:  empNik,
+			TotalDays:    req.TotalDays,
+			LeaveTypeID:  req.LeaveTypeID,
+			LeaveType:    leaveTypeResp,
+			CreatedAt:    req.CreatedAt,
 		})
+
 	}
 
 	meta := response.NewMeta(filter.Page, filter.Limit, total)
@@ -173,25 +221,42 @@ func (s *service) GetList(ctx context.Context, filter *LeaveFilter) ([]LeaveRequ
 }
 
 func (s *service) GetDetail(ctx context.Context, id uint) (*LeaveRequestDetailResponse, error) {
+	empName := "-"
+	empNik := "-"
+	leaveTypeResp := &master.LookupLeaveTypeResponse{}
+
 	detail, err := s.repo.FindRequestByID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if detail.Employee == nil {
-		return nil, errors.New("employee not found")
+	if detail.Employee != nil {
+		empName = detail.Employee.FullName
+		empNik = detail.Employee.NIK
+	}
+
+	if detail.LeaveType != nil {
+		leaveTypeResp.ID = detail.LeaveTypeID
+		leaveTypeResp.Name = detail.LeaveType.Name
+		leaveTypeResp.DefaultQuota = detail.LeaveType.DefaultQuota
+		leaveTypeResp.IsDeducted = detail.LeaveType.IsDeducted
 	}
 
 	return &LeaveRequestDetailResponse{
 		ID:              id,
 		StartDate:       detail.StartDate,
 		EndDate:         detail.EndDate,
+		Status:          detail.Status,
+		EmployeeID:      detail.EmployeeID,
+		EmployeeName:    empName,
+		EmployeeNIK:     empNik,
+		LeaveTypeID:     detail.LeaveTypeID,
+		LeaveType:       leaveTypeResp,
 		TotalDays:       detail.TotalDays,
 		Reason:          detail.Reason,
 		AttachmentURL:   detail.AttachmentURL,
-		Status:          detail.Status,
 		RejectionReason: detail.RejectionReason,
-		RequesterName:   detail.Employee.FullName,
+		CreatedAt:       detail.CreatedAt,
 	}, nil
 }
 
@@ -201,7 +266,7 @@ func (s *service) GenerateInitialBalance(ctx context.Context, txObj interface{},
 		return nil, errors.New("invalid transaction type")
 	}
 
-	var leaveTypes []LeaveType
+	var leaveTypes []master.LeaveType
 	if err := tx.Find(&leaveTypes).Error; err != nil {
 		tx.Rollback()
 		return nil, err

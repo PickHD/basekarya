@@ -50,24 +50,29 @@ func (r *repository) FindAllRequests(filter *LeaveFilter) ([]LeaveRequest, int64
 
 	offset := (filter.Page - 1) * filter.Limit
 
-	query := r.db.Model(&LeaveRequest{})
+	query := r.db.Model(&LeaveRequest{}).
+		Joins("JOIN employees ON employees.id = leave_requests.employee_id").
+		Joins("JOIN ref_leave_types ON ref_leave_types.id = leave_requests.leave_type_id").
+		Preload("Employee").
+		Preload("LeaveType")
 
 	if filter.Status != "" {
-		query = query.Where("status = ?", filter.Status)
+		query = query.Where("leave_requests.status = ?", filter.Status)
 	}
 	if filter.UserID > 0 {
-		query = query.Where("user_id = ?", filter.UserID)
+		query = query.Where("leave_requests.user_id = ?", filter.UserID)
 	}
-	// TODO: add search feature by employee name
+	if filter.Search != "" {
+		searchParam := "%" + filter.Search + "%"
+		query = query.Where("LOWER(employees.full_name) LIKE LOWER(?) OR LOWER(employees.nik) LIKE LOWER(?)", searchParam, searchParam)
+	}
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	err := query.
-		Preload("Employee").
-		Preload("LeaveType").
-		Order("created_at DESC").
+		Order("leave_requests.created_at DESC").
 		Limit(filter.Limit).
 		Offset(offset).
 		Find(&requests).Error
