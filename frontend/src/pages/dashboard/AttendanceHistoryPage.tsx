@@ -62,6 +62,8 @@ export default function AttendanceHistoryPage() {
         return "bg-red-100 text-red-700 hover:bg-red-200 border-red-200";
       case "EXCUSED":
         return "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200";
+      case "SICK":
+        return "bg-amber-50 text-amber-600 hover:bg-amber-200 border-white-200";
       default:
         return "bg-slate-100 text-slate-700 border-slate-200";
     }
@@ -70,7 +72,7 @@ export default function AttendanceHistoryPage() {
   const { data: response, isLoading } = useAttendanceHistory(
     parseInt(month),
     parseInt(year),
-    page
+    page,
   );
 
   const logs = response?.data || [];

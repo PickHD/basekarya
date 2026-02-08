@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Loader2,
   CalendarDays,
@@ -24,8 +23,9 @@ import { format, isValid, parseISO } from "date-fns";
 import { useProfile } from "@/features/user/hooks/useProfile";
 import { useLeaves } from "@/features/leave/hooks/useLeave";
 import { LeaveStatusBadge } from "@/features/leave/components/LeaveStatusBadge";
-import { LeaveApplyDialog } from "./LeaveApplyDialog";
-import { LeaveDetailDialog } from "./LeaveDetailDialog";
+import { LeaveApplyDialog } from "@/features/leave/components/LeaveApplyDialog";
+import { LeaveDetailDialog } from "@/features/leave/components/LeaveDetailDialog";
+import { LeaveTypeBadge } from "@/features/leave/components/LeaveTypeBadge";
 
 export const LeaveList = () => {
   const { data: user } = useProfile();
@@ -186,9 +186,7 @@ export const LeaveList = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary">
-                            {item.leave_type?.name}
-                          </Badge>
+                          <LeaveTypeBadge status={item.leave_type?.name} />
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
