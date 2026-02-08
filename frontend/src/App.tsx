@@ -18,6 +18,7 @@ import ReimbursementListPage from "@/pages/reimbursement/ReimbursementListPage";
 import EmployeeListPage from "@/pages/admin/EmployeeListPage";
 import AttendanceRecapPage from "@/pages/admin/AttendanceRecapPage";
 import PayrollListPage from "./pages/payroll/PayrollListPage";
+import LeaveListPage from "./pages/leave/LeaveListPage";
 
 function App() {
   return (
@@ -52,6 +53,10 @@ function App() {
 
           <Route path="reimbursement">
             <Route index element={<ReimbursementListPage />} />
+          </Route>
+
+          <Route path="leave">
+            <Route index element={<LeaveListPage />} />
           </Route>
 
           {/* SUPERADMIN ROUTES */}

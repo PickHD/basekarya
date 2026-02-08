@@ -204,7 +204,7 @@ func (s *service) GetTodayStatus(ctx context.Context, userID uint) (*TodayStatus
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return &TodayStatusResponse{
-			Status: string(constants.AttendanceAStatusAbsent),
+			Status: string(constants.AttendanceStatusAbsent),
 			Type:   string(constants.AttendanceTypeNone),
 		}, nil
 	}
@@ -292,20 +292,33 @@ func (s *service) GetAllRecap(ctx context.Context, filter *FilterParams) ([]Reca
 
 func (s *service) GenerateExcel(ctx context.Context, filter *FilterParams) (*excelize.File, error) {
 	filter.Limit = 0
-
 	data, _, err := s.repo.FindAll(filter)
 	if err != nil {
 		return nil, err
 	}
 
 	f := excelize.NewFile()
-	sheet := "Attendance Recap"
-	f.SetSheetName("Sheet1", sheet)
+	sheet := "Sheet1"
+	f.SetSheetName("Sheet1", "Attendance Recap")
+	sheet = "Attendance Recap"
+
+	styleLeave, _ := f.NewStyle(&excelize.Style{
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"#DDEBF7"}, Pattern: 1},
+		Font: &excelize.Font{Color: "#1F4E78", Bold: true},
+	})
+	styleSick, _ := f.NewStyle(&excelize.Style{
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"#FCE4D6"}, Pattern: 1},
+		Font: &excelize.Font{Color: "#833C0C", Bold: true},
+	})
+	styleLate, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Color: "#FF0000", Bold: true},
+	})
 
 	headers := []string{"Date", "NIK", "Name", "Department", "Shift", "Check In", "Check Out", "Status", "Notes"}
 	for i, h := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheet, cell, h)
+		f.SetCellStyle(sheet, cell, cell, styleLeave)
 	}
 
 	for i, item := range data {
@@ -315,22 +328,55 @@ func (s *service) GenerateExcel(ctx context.Context, filter *FilterParams) (*exc
 		if !item.CheckInTime.IsZero() {
 			cIn = item.CheckInTime.Format(constants.ShiftHourFormat)
 		}
-
 		cOut := ""
-		if item.CheckOutTime != nil {
+		if item.CheckOutTime != nil && !item.CheckOutTime.IsZero() {
 			cOut = item.CheckOutTime.Format(constants.ShiftHourFormat)
 		}
 
-		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), item.Date.Format(constants.DefaultTimeFormat))
+		displayStatus := item.Status
+		var styleID int
+
+		switch item.Status {
+		case "LEAVE":
+			displayStatus = "CUTI"
+			styleID = styleLeave
+		case "SICK":
+			displayStatus = "SAKIT"
+			styleID = styleSick
+		case "LATE":
+			displayStatus = "TERLAMBAT"
+			styleID = styleLate
+		case "ABSENT":
+			displayStatus = "ALPHA"
+			styleID = styleLate
+		case "PRESENT":
+			displayStatus = "HADIR"
+		}
+
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), item.Date.Format("2006-01-02"))
 		f.SetCellValue(sheet, fmt.Sprintf("B%d", row), item.Employee.NIK)
 		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), item.Employee.FullName)
 		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), item.Employee.Department.Name)
 		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), item.Shift.Name)
 		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), cIn)
 		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), cOut)
-		f.SetCellValue(sheet, fmt.Sprintf("H%d", row), item.Status)
+
+		cellStatus := fmt.Sprintf("H%d", row)
+		f.SetCellValue(sheet, cellStatus, displayStatus)
+
+		if styleID != 0 {
+			f.SetCellStyle(sheet, cellStatus, cellStatus, styleID)
+		}
+
 		f.SetCellValue(sheet, fmt.Sprintf("I%d", row), item.Notes)
 	}
+
+	f.SetColWidth(sheet, "A", "A", 12)
+	f.SetColWidth(sheet, "B", "B", 15)
+	f.SetColWidth(sheet, "C", "C", 25)
+	f.SetColWidth(sheet, "D", "E", 15)
+	f.SetColWidth(sheet, "H", "H", 12)
+	f.SetColWidth(sheet, "I", "I", 30)
 
 	return f, nil
 }

@@ -7,6 +7,7 @@ import (
 	"hris-backend/internal/modules/attendance"
 	"hris-backend/internal/modules/auth"
 	"hris-backend/internal/modules/health"
+	"hris-backend/internal/modules/leave"
 	"hris-backend/internal/modules/master"
 	"hris-backend/internal/modules/payroll"
 	"hris-backend/internal/modules/reimbursement"
@@ -29,9 +30,12 @@ type Container struct {
 	MasterHandler        *master.Handler
 	ReimbursementHandler *reimbursement.Handler
 	PayrollHandler       *payroll.Handler
+	LeaveHandler         *leave.Handler
 
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
+
+	LeaveScheduler leave.LeaveScheduler
 }
 
 func NewContainer() (*Container, error) {
@@ -43,6 +47,7 @@ func NewContainer() (*Container, error) {
 	bcrypt := infrastructure.NewBcryptHasher(12)
 	nominatim := infrastructure.NewNominatimFetcher(cfg)
 	geocodeQueue := make(chan attendance.GeocodeJob, 100)
+	cronScheduler := infrastructure.NewCronProvider()
 
 	healthRepo := health.NewRepository(db.GetDB())
 	userRepo := user.NewRepository(db.GetDB())
@@ -50,14 +55,16 @@ func NewContainer() (*Container, error) {
 	masterRepo := master.NewRepository(db.GetDB())
 	reimburseRepo := reimbursement.NewRepository(db.GetDB())
 	payrollRepo := payroll.NewRepository(db.GetDB())
+	leaveRepo := leave.NewRepository(db.GetDB())
 
 	healthSvc := health.NewService(healthRepo)
 	authSvc := auth.NewService(userRepo, bcrypt, jwt)
-	userSvc := user.NewService(userRepo, bcrypt, storage)
 	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeQueue)
 	masterSvc := master.NewService(masterRepo)
 	reimburseSvc := reimbursement.NewService(reimburseRepo, storage)
 	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo)
+	leaveSvc := leave.NewService(leaveRepo, storage)
+	userSvc := user.NewService(userRepo, bcrypt, storage, leaveSvc)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)
@@ -66,9 +73,12 @@ func NewContainer() (*Container, error) {
 	masterHandler := master.NewHandler(masterSvc)
 	reimburseHandler := reimbursement.NewHandler(reimburseSvc)
 	payrollHandler := payroll.NewHandler(payrollSvc)
+	leaveHandler := leave.NewHandler(leaveSvc)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 	rateLimiterMiddleware := middleware.NewRateLimiterMiddleware()
+
+	leaveScheduler := leave.NewLeaveScheduler(cronScheduler, leaveSvc)
 
 	return &Container{
 		Config:       cfg,
@@ -86,9 +96,12 @@ func NewContainer() (*Container, error) {
 		MasterHandler:        masterHandler,
 		ReimbursementHandler: reimburseHandler,
 		PayrollHandler:       payrollHandler,
+		LeaveHandler:         leaveHandler,
 
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,
+
+		LeaveScheduler: leaveScheduler,
 	}, nil
 }
 

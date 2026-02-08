@@ -21,9 +21,6 @@ import {
   FileSpreadsheet,
   Calendar as CalIcon,
   Search,
-  Clock,
-  User,
-  Briefcase,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { StatsCards } from "@/features/admin/components/StatsCards";
@@ -138,67 +135,6 @@ export default function AttendanceRecapPage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-4 md:hidden">
-                {data?.data.map((row) => (
-                  <div
-                    key={row.id}
-                    className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-3"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center text-sm font-medium text-slate-600">
-                        <CalIcon className="mr-2 h-4 w-4" />
-                        {row.date}
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className={
-                          row.status === "LATE"
-                            ? "text-red-600 bg-red-50 border-red-200"
-                            : row.status === "PRESENT"
-                              ? "text-green-600 bg-green-50 border-green-200"
-                              : ""
-                        }
-                      >
-                        {row.status}
-                      </Badge>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <div className="bg-slate-100 p-2 rounded-full">
-                        <User className="h-4 w-4 text-slate-500" />
-                      </div>
-                      <div>
-                        <div className="font-semibold">{row.employee_name}</div>
-                        <div className="text-xs text-slate-500">{row.nik}</div>
-                        <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                          <Briefcase className="h-3 w-3" /> {row.department} -{" "}
-                          {row.shift}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 pt-2 border-t">
-                      <div className="bg-slate-50 p-2 rounded text-center">
-                        <div className="text-xs text-slate-500 mb-1 flex items-center justify-center gap-1">
-                          <Clock className="h-3 w-3" /> Check In
-                        </div>
-                        <div className="font-mono text-sm font-medium">
-                          {row.check_in_time || "-"}
-                        </div>
-                      </div>
-                      <div className="bg-slate-50 p-2 rounded text-center">
-                        <div className="text-xs text-slate-500 mb-1 flex items-center justify-center gap-1">
-                          <Clock className="h-3 w-3" /> Check Out
-                        </div>
-                        <div className="font-mono text-sm font-medium">
-                          {row.check_out_time || "-"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
               <div className="hidden md:block rounded-md border">
                 <Table>
                   <TableHeader>
@@ -239,7 +175,11 @@ export default function AttendanceRecapPage() {
                                 ? "text-red-600 bg-red-50 border-red-200"
                                 : row.status === "PRESENT"
                                   ? "text-green-600 bg-green-50 border-green-200"
-                                  : ""
+                                  : row.status === "LEAVE"
+                                    ? "text-blue-600 bg-blue-50 border-blue-200"
+                                    : row.status === "SICK"
+                                      ? "text-amber-600 bg-amber-50 border-amber-200"
+                                      : "text-slate-500 bg-slate-100"
                             }
                           >
                             {row.status}

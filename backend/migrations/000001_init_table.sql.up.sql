@@ -61,7 +61,7 @@ CREATE TABLE attendances (
     check_out_image_url VARCHAR(255) NULL,
     check_out_address VARCHAR(500) NULL,
     
-    status ENUM('PRESENT', 'LATE', 'EXCUSED', 'ABSENT') DEFAULT 'ABSENT',
+    status ENUM('PRESENT', 'LATE', 'EXCUSED', 'ABSENT', 'SICK') DEFAULT 'ABSENT',
     is_suspicious BOOLEAN DEFAULT FALSE,
     notes TEXT,
     

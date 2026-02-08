@@ -5,6 +5,7 @@ import {
   FileSpreadsheet,
   Receipt,
   Calculator,
+  CalendarDays,
 } from "lucide-react";
 import type { MenuItem } from "./types";
 
@@ -23,6 +24,11 @@ export const generalMenu: MenuItem[] = [
     title: "My Reimbursement",
     href: "/reimbursement",
     icon: Receipt,
+  },
+  {
+    title: "My Leave Request",
+    href: "/leave",
+    icon: CalendarDays,
   },
 ];
 
@@ -46,5 +52,10 @@ export const adminMenu: MenuItem[] = [
     title: "Payrolls",
     href: "/admin/payrolls",
     icon: Calculator,
+  },
+  {
+    title: "Leave Requests",
+    href: "/leave",
+    icon: CalendarDays,
   },
 ];

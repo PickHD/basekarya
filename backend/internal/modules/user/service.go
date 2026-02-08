@@ -21,13 +21,14 @@ type Service interface {
 }
 
 type service struct {
-	repo    Repository
-	bcrypt  Hasher
-	storage StorageProvider
+	repo           Repository
+	bcrypt         Hasher
+	storage        StorageProvider
+	leaveGenerator LeaveBalanceGenerator
 }
 
-func NewService(repo Repository, bcrypt Hasher, storage StorageProvider) Service {
-	return &service{repo, bcrypt, storage}
+func NewService(repo Repository, bcrypt Hasher, storage StorageProvider, leaveGenerator LeaveBalanceGenerator) Service {
+	return &service{repo, bcrypt, storage, leaveGenerator}
 }
 
 func (s *service) GetProfile(userID uint) (*UserProfileResponse, error) {
@@ -156,7 +157,11 @@ func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest
 	if tx.Error != nil {
 		return tx.Error
 	}
-	defer tx.Rollback()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
 
 	checkUser, err := s.repo.FindByUsername(req.Username)
 	if err == nil && checkUser.ID != 0 {
@@ -186,6 +191,12 @@ func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest
 	}
 
 	if err := s.repo.CreateEmployee(tx, &newEmp); err != nil {
+		return err
+	}
+
+	tx, err = s.leaveGenerator.GenerateInitialBalance(ctx, tx, newEmp.ID)
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 

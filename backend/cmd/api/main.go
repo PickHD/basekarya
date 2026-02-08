@@ -70,6 +70,9 @@ func main() {
 			os.Exit(1)
 		}
 	case httpServerMode:
+		// start scheduler
+		appContainer.LeaveScheduler.Start()
+
 		attendance.StartGeocodeWorker(appContainer.DB.GetDB(), appContainer.Location, appContainer.GeocodeQueue)
 
 		logger.Info("Starting HRIS API Server...")

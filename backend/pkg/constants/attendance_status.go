@@ -6,5 +6,6 @@ const (
 	AttendanceStatusPresent AttendanceStatus = "PRESENT"
 	AttendanceStatusLate    AttendanceStatus = "LATE"
 	AttendanceStatusExcused AttendanceStatus = "EXCUSED"
-	AttendanceAStatusAbsent AttendanceStatus = "ABSENT"
+	AttendanceStatusAbsent  AttendanceStatus = "ABSENT"
+	AttendanceStatusSick    AttendanceStatus = "SICK"
 )

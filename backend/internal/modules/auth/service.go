@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"hris-backend/internal/modules/user"
+	"hris-backend/pkg/constants"
 )
 
 type Service interface {
@@ -33,7 +34,12 @@ func (s *service) Login(username, password string) (*LoginResponse, error) {
 		return nil, errors.New("invalid credentials")
 	}
 
-	tokenString, err := s.tokenProvider.GenerateToken(foundUser.ID, foundUser.Role)
+	var employeeID *uint
+	if foundUser.Employee != nil && foundUser.Role != string(constants.UserRoleSuperadmin) {
+		employeeID = &foundUser.Employee.ID
+	}
+
+	tokenString, err := s.tokenProvider.GenerateToken(foundUser.ID, foundUser.Role, employeeID)
 	if err != nil {
 		return nil, err
 	}

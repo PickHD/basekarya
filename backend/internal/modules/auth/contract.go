@@ -5,5 +5,5 @@ type Hasher interface {
 }
 
 type TokenProvider interface {
-	GenerateToken(userID uint, role string) (string, error)
+	GenerateToken(userID uint, role string, employeeID *uint) (string, error)
 }

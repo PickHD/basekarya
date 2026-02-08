@@ -24,7 +24,7 @@ import {
   Search,
   Download,
   FileText,
-  DollarSign,
+  Calculator,
   Eye,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -105,7 +105,7 @@ export default function PayrollList() {
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between gap-4">
             <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-blue-600" /> Payslip History
+              <Calculator className="h-5 w-5 text-black-600" /> Payslip History
             </CardTitle>
 
             <div className="flex flex-wrap gap-2">

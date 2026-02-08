@@ -3,6 +3,8 @@ package user
 import (
 	"context"
 	"mime/multipart"
+
+	"gorm.io/gorm"
 )
 
 type Hasher interface {
@@ -12,4 +14,8 @@ type Hasher interface {
 
 type StorageProvider interface {
 	UploadFileMultipart(ctx context.Context, file *multipart.FileHeader, objectName string) (string, error)
+}
+
+type LeaveBalanceGenerator interface {
+	GenerateInitialBalance(ctx context.Context, tx interface{}, employeeID uint) (*gorm.DB, error)
 }

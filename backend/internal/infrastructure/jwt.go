@@ -24,15 +24,17 @@ func NewJWTProvider(cfg *config.Config) *JwtProvider {
 }
 
 type MyClaims struct {
-	UserID uint   `json:"user_id"`
-	Role   string `json:"role"`
+	UserID     uint   `json:"user_id"`
+	Role       string `json:"role"`
+	EmployeeID *uint  `json:"employee_id"`
 	jwt.RegisteredClaims
 }
 
-func (p *JwtProvider) GenerateToken(userID uint, role string) (string, error) {
+func (p *JwtProvider) GenerateToken(userID uint, role string, employeeID *uint) (string, error) {
 	claims := &MyClaims{
-		UserID: userID,
-		Role:   role,
+		UserID:     userID,
+		Role:       role,
+		EmployeeID: employeeID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(p.expireDuration)),
 			Issuer:    p.issuer,
