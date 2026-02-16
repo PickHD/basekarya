@@ -148,7 +148,7 @@ func (s *service) GetAllEmployees(ctx context.Context, page, limit int, search s
 		}
 	}
 
-	meta := response.NewMeta(page, limit, total)
+	meta := response.NewMetaOffset(page, limit, total)
 	return list, meta, nil
 }
 

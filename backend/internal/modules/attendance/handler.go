@@ -68,7 +68,7 @@ func (h *Handler) GetHistory(ctx echo.Context) error {
 
 	month := int(time.Now().Month())
 	year := time.Now().Year()
-	page := 1
+	cursor := ""
 	limit := 10
 
 	if m := ctx.QueryParam("month"); m != "" {
@@ -77,14 +77,14 @@ func (h *Handler) GetHistory(ctx echo.Context) error {
 	if y := ctx.QueryParam("year"); y != "" {
 		fmt.Sscanf(y, "%d", &year)
 	}
-	if p := ctx.QueryParam("page"); p != "" {
-		fmt.Sscanf(p, "%d", &page)
+	if c := ctx.QueryParam("cursor"); c != "" {
+		fmt.Sscanf(c, "%s", &cursor)
 	}
 	if l := ctx.QueryParam("limit"); l != "" {
 		fmt.Sscanf(l, "%d", &limit)
 	}
 
-	resp, meta, err := h.service.GetMyHistory(ctx.Request().Context(), userContext.UserID, month, year, page, limit)
+	resp, meta, err := h.service.GetMyHistory(ctx.Request().Context(), userContext.UserID, month, year, limit, cursor)
 	if err != nil {
 		logger.Errorw("Get My History failed: ", err)
 
@@ -139,10 +139,11 @@ func (h *Handler) GetDashboardStats(ctx echo.Context) error {
 }
 
 func (h *Handler) parseFilter(ctx echo.Context) *FilterParams {
-	page := 1
 	limit := 10
-	if p := ctx.QueryParam("page"); p != "" {
-		fmt.Sscanf(p, "%d", &page)
+	cursor := ""
+
+	if c := ctx.QueryParam("cursor"); c != "" {
+		fmt.Sscanf(c, "%s", &cursor)
 	}
 	if l := ctx.QueryParam("limit"); l != "" {
 		fmt.Sscanf(l, "%d", &limit)
@@ -154,7 +155,7 @@ func (h *Handler) parseFilter(ctx echo.Context) *FilterParams {
 	}
 
 	return &FilterParams{
-		Page:         page,
+		Cursor:       cursor,
 		Limit:        limit,
 		StartDate:    ctx.QueryParam("start_date"),
 		EndDate:      ctx.QueryParam("end_date"),

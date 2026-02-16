@@ -111,7 +111,7 @@ func (s *service) GetReimbursements(ctx context.Context, filter ReimbursementFil
 		})
 	}
 
-	meta := response.NewMeta(filter.Page, filter.Limit, total)
+	meta := response.NewMetaOffset(filter.Page, filter.Limit, total)
 	return list, meta, nil
 }
 

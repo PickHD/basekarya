@@ -2,6 +2,7 @@ package attendance
 
 import (
 	"hris-backend/pkg/constants"
+	"hris-backend/pkg/response"
 	"time"
 
 	"gorm.io/gorm"
@@ -11,8 +12,8 @@ type Repository interface {
 	GetTodayAttendance(employeeID uint) (*Attendance, error)
 	Create(attendance *Attendance) error
 	Update(attendance *Attendance) error
-	GetHistory(employeeID uint, month, year, page, limit int) ([]Attendance, int64, error)
-	FindAll(filter *FilterParams) ([]Attendance, int64, error)
+	GetHistory(employeeID uint, month, year, limit int, cursor string) ([]Attendance, *response.Cursor, error)
+	FindAll(filter *FilterParams) ([]Attendance, *response.Cursor, error)
 	CountByStatus(status constants.AttendanceStatus, todayDate string) (int64, error)
 	CountAttendanceToday(todayDate string) (int64, error)
 	GetBulkLateDuration(month, year int) (map[uint]int, error)
@@ -46,37 +47,63 @@ func (r *repository) Update(attendance *Attendance) error {
 	return r.db.Save(attendance).Error
 }
 
-func (r *repository) GetHistory(employeeID uint, month, year, page, limit int) ([]Attendance, int64, error) {
+func (r *repository) GetHistory(employeeID uint, month, year, limit int, cursor string) ([]Attendance, *response.Cursor, error) {
 	var logs []Attendance
-	var total int64
 
 	query := r.db.Model(&Attendance{}).
-		Where("employee_id = ? AND MONTH(date) = ? AND YEAR(date) = ?", employeeID, month, year)
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
+		Where("employee_id = ? ", employeeID).
+		Order("created_at DESC, id DESC").
+		Limit(limit + 1)
+
+	if month > 0 {
+		query = query.Where("MONTH(date) = ?", month)
 	}
 
-	offset := (page - 1) * limit
-	err := query.
-		Preload("Shift").
-		Order("date DESC").
-		Limit(limit).
-		Offset(offset).
-		Find(&logs).Error
+	if year > 0 {
+		query = query.Where("YEAR(date) = ?", year)
+	}
 
-	return logs, total, err
+	if cursor != "" {
+		var decoded *response.Cursor
+		err := response.DecodeCursor(cursor, &decoded)
+
+		if err == nil && decoded != nil {
+			query = query.Where(
+				"(created_at < ? ) OR (created_at = ? AND id < ?)",
+				decoded.SortValue, decoded.SortValue, decoded.ID,
+			)
+		}
+	}
+
+	if err := query.Find(&logs).Error; err != nil {
+		return nil, nil, err
+	}
+
+	var nextCursor *response.Cursor
+	if len(logs) > limit {
+		logs = logs[:limit]
+		lastItem := logs[len(logs)-1]
+
+		nextCursor = &response.Cursor{
+			ID:        lastItem.ID,
+			SortValue: lastItem.CreatedAt,
+		}
+	}
+
+	return logs, nextCursor, nil
 }
 
-func (r *repository) FindAll(filter *FilterParams) ([]Attendance, int64, error) {
+func (r *repository) FindAll(filter *FilterParams) ([]Attendance, *response.Cursor, error) {
 	var logs []Attendance
-	var total int64
 
 	query := r.db.Model(&Attendance{}).
 		Joins("JOIN employees ON employees.id = attendances.employee_id").
 		Joins("JOIN ref_departments ON ref_departments.id = employees.department_id").
 		Preload("Employee").
 		Preload("Employee.Department").
-		Preload("Shift")
+		Preload("Shift").
+		Order("attendances.created_at DESC, attendances.id DESC").
+		Limit(filter.Limit + 1)
 
 	// filter range date
 	if filter.StartDate != "" && filter.EndDate != "" {
@@ -94,19 +121,35 @@ func (r *repository) FindAll(filter *FilterParams) ([]Attendance, int64, error) 
 		query = query.Where("LOWER(employees.full_name) LIKE LOWER(?) OR LOWER(employees.nik) LIKE LOWER(?)", searchParam, searchParam)
 	}
 
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
+	// cursor logic implementation
+	if filter.Cursor != "" {
+		var decoded *response.Cursor
+		err := response.DecodeCursor(filter.Cursor, &decoded)
+
+		if err == nil && decoded != nil {
+			query = query.Where(
+				"(attendances.created_at < ?) OR (attendances.created_at = ? AND attendances.id < ?)",
+				decoded.SortValue, decoded.SortValue, decoded.ID,
+			)
+		}
 	}
 
-	// check if there filter limit or not (pagination)
-	if filter.Limit > 0 {
-		offset := (filter.Page - 1) * filter.Limit
-		query = query.Limit(filter.Limit).Offset(offset)
+	if err := query.Find(&logs).Error; err != nil {
+		return nil, nil, err
 	}
 
-	err := query.Order("attendances.date DESC").Find(&logs).Error
+	var nextCursor *response.Cursor
+	if len(logs) > filter.Limit {
+		logs = logs[:filter.Limit]
+		lastItem := logs[len(logs)-1]
 
-	return logs, total, err
+		nextCursor = &response.Cursor{
+			ID:        lastItem.ID,
+			SortValue: lastItem.CreatedAt,
+		}
+	}
+
+	return logs, nextCursor, nil
 }
 
 func (r *repository) CountByStatus(status constants.AttendanceStatus, todayDate string) (int64, error) {

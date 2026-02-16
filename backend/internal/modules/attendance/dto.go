@@ -30,7 +30,7 @@ type FilterParams struct {
 	EndDate      string
 	DepartmentID uint
 	Search       string
-	Page         int
+	Cursor       string
 	Limit        int
 }
 

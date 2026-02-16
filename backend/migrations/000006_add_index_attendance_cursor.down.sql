@@ -1,0 +1,1 @@
+DROP INDEX idx_attendance_cursor ON attendances;

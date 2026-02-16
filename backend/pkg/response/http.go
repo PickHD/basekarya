@@ -1,7 +1,10 @@
 package response
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"math"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -14,11 +17,20 @@ type (
 		Meta    *Meta  `json:"meta,omitempty"`
 	}
 
+	Cursor struct {
+		ID        uint      `json:"id"`
+		SortValue time.Time `json:"sort_value"`
+	}
+
 	Meta struct {
-		Page      int   `json:"page"`
-		Limit     int   `json:"limit"`
-		TotalPage int64 `json:"total_page"`
-		TotalData int64 `json:"total_data"`
+		Limit int `json:"limit"`
+
+		Page      int   `json:"page,omitempty"`
+		TotalPage int64 `json:"total_page,omitempty"`
+		TotalData int64 `json:"total_data,omitempty"`
+
+		HasNext    bool   `json:"has_next,omitempty"`
+		NextCursor string `json:"next_cursor,omitempty"`
 	}
 )
 
@@ -52,7 +64,8 @@ func NewResponses[T any](ctx echo.Context, statusCode int, message string, data 
 	})
 }
 
-func NewMeta(page, limit int, totalData int64) *Meta {
+// NewMetaOffset return meta of offset pagination
+func NewMetaOffset(page, limit int, totalData int64) *Meta {
 	totalPage := int64(math.Ceil(float64(totalData) / float64(limit)))
 	return &Meta{
 		Page:      page,
@@ -60,4 +73,37 @@ func NewMeta(page, limit int, totalData int64) *Meta {
 		TotalPage: totalPage,
 		TotalData: totalData,
 	}
+}
+
+// NewMetaCursor return meta of cursor pagination
+func NewMetaCursor(limit int, hasNext bool, nextCursorData interface{}) *Meta {
+	encoded := ""
+	if hasNext && nextCursorData != nil {
+		encoded = encodeCursor(nextCursorData)
+	}
+
+	return &Meta{
+		Limit:      limit,
+		HasNext:    hasNext,
+		NextCursor: encoded,
+	}
+}
+
+func encodeCursor(data interface{}) string {
+	b, _ := json.Marshal(data)
+	return base64.StdEncoding.EncodeToString(b)
+}
+
+// DecodeCursor helper to decode cursor string become targeted struct
+func DecodeCursor(cursor string, targetStruct interface{}) error {
+	if cursor == "" {
+		return nil
+	}
+
+	b, err := base64.StdEncoding.DecodeString(cursor)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(b, targetStruct)
 }

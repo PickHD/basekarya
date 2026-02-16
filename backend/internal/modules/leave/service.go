@@ -111,7 +111,7 @@ func (s *service) RequestAction(ctx context.Context, req *LeaveActionRequest) er
 	case constants.LeaveActionApprove:
 		shouldDeduct := leaveRequest.LeaveType.IsDeducted
 		if shouldDeduct {
-			balance, err := s.repo.GetBalance(leaveRequest.EmployeeID, leaveRequest.EmployeeID, leaveRequest.StartDate.Year())
+			balance, err := s.repo.GetBalance(leaveRequest.EmployeeID, leaveRequest.LeaveTypeID, leaveRequest.StartDate.Year())
 			if err != nil {
 				return errors.New("balance record not found for this employee/year")
 			}
@@ -218,7 +218,7 @@ func (s *service) GetList(ctx context.Context, filter *LeaveFilter) ([]LeaveRequ
 
 	}
 
-	meta := response.NewMeta(filter.Page, filter.Limit, total)
+	meta := response.NewMetaOffset(filter.Page, filter.Limit, total)
 	return list, meta, nil
 }
 
