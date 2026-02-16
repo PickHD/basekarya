@@ -97,13 +97,13 @@ func (r *repository) FindAll(filter *FilterParams) ([]Attendance, *response.Curs
 	var logs []Attendance
 
 	query := r.db.Model(&Attendance{}).
+		Select("attendances.*").
 		Joins("JOIN employees ON employees.id = attendances.employee_id").
 		Joins("JOIN ref_departments ON ref_departments.id = employees.department_id").
 		Preload("Employee").
 		Preload("Employee.Department").
 		Preload("Shift").
-		Order("attendances.created_at DESC, attendances.id DESC").
-		Limit(filter.Limit + 1)
+		Order("attendances.created_at DESC, attendances.id DESC")
 
 	// filter range date
 	if filter.StartDate != "" && filter.EndDate != "" {
@@ -121,16 +121,20 @@ func (r *repository) FindAll(filter *FilterParams) ([]Attendance, *response.Curs
 		query = query.Where("LOWER(employees.full_name) LIKE LOWER(?) OR LOWER(employees.nik) LIKE LOWER(?)", searchParam, searchParam)
 	}
 
-	// cursor logic implementation
-	if filter.Cursor != "" {
-		var decoded *response.Cursor
-		err := response.DecodeCursor(filter.Cursor, &decoded)
+	// check if limit more than 0 (not an export but fetching data)
+	if filter.Limit > 0 {
+		query = query.Limit(filter.Limit + 1)
 
-		if err == nil && decoded != nil {
-			query = query.Where(
-				"(attendances.created_at < ?) OR (attendances.created_at = ? AND attendances.id < ?)",
-				decoded.SortValue, decoded.SortValue, decoded.ID,
-			)
+		if filter.Cursor != "" {
+			var decoded *response.Cursor
+			err := response.DecodeCursor(filter.Cursor, &decoded)
+
+			if err == nil && decoded != nil {
+				query = query.Where(
+					"(attendances.created_at < ?) OR (attendances.created_at = ? AND attendances.id < ?)",
+					decoded.SortValue, decoded.SortValue, decoded.ID,
+				)
+			}
 		}
 	}
 
@@ -139,7 +143,7 @@ func (r *repository) FindAll(filter *FilterParams) ([]Attendance, *response.Curs
 	}
 
 	var nextCursor *response.Cursor
-	if len(logs) > filter.Limit {
+	if filter.Limit > 0 && len(logs) > filter.Limit {
 		logs = logs[:filter.Limit]
 		lastItem := logs[len(logs)-1]
 

@@ -15,13 +15,12 @@ import (
 )
 
 type Container struct {
-	Config       *config.Config
-	DB           *infrastructure.GormConnectionProvider
-	Storage      *infrastructure.MinioStorageProvider
-	JWT          *infrastructure.JwtProvider
-	Bcrypt       *infrastructure.BcryptHasher
-	Location     *infrastructure.NominatimFetcher
-	GeocodeQueue <-chan attendance.GeocodeJob
+	Config   *config.Config
+	DB       *infrastructure.GormConnectionProvider
+	Storage  *infrastructure.MinioStorageProvider
+	JWT      *infrastructure.JwtProvider
+	Bcrypt   *infrastructure.BcryptHasher
+	Location *infrastructure.NominatimFetcher
 
 	HealthCheckHandler   *health.Handler
 	AuthHandler          *auth.Handler
@@ -35,6 +34,7 @@ type Container struct {
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
 
+	GeocodeWorker  attendance.GeocodeWorker
 	LeaveScheduler leave.LeaveScheduler
 }
 
@@ -46,8 +46,8 @@ func NewContainer() (*Container, error) {
 	jwt := infrastructure.NewJWTProvider(cfg)
 	bcrypt := infrastructure.NewBcryptHasher(12)
 	nominatim := infrastructure.NewNominatimFetcher(cfg)
-	geocodeQueue := make(chan attendance.GeocodeJob, 100)
 	cronScheduler := infrastructure.NewCronProvider()
+	geocodeWorker := attendance.NewGeocodeWorker(db.GetDB(), nominatim, 100)
 
 	healthRepo := health.NewRepository(db.GetDB())
 	userRepo := user.NewRepository(db.GetDB())
@@ -59,7 +59,7 @@ func NewContainer() (*Container, error) {
 
 	healthSvc := health.NewService(healthRepo)
 	authSvc := auth.NewService(userRepo, bcrypt, jwt)
-	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeQueue)
+	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeWorker)
 	masterSvc := master.NewService(masterRepo)
 	reimburseSvc := reimbursement.NewService(reimburseRepo, storage)
 	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo)
@@ -87,7 +87,6 @@ func NewContainer() (*Container, error) {
 		JWT:          jwt,
 		Bcrypt:       bcrypt,
 		Location:     nominatim,
-		GeocodeQueue: geocodeQueue,
 
 		HealthCheckHandler:   healthHandler,
 		AuthHandler:          authHandler,
@@ -101,6 +100,7 @@ func NewContainer() (*Container, error) {
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,
 
+		GeocodeWorker:  geocodeWorker,
 		LeaveScheduler: leaveScheduler,
 	}, nil
 }
@@ -109,6 +109,10 @@ func NewContainer() (*Container, error) {
 func (c *Container) Close() error {
 	if c.DB != nil {
 		return c.DB.Close()
+	}
+
+	if c.GeocodeWorker != nil {
+		c.GeocodeWorker.Stop()
 	}
 
 	return nil
