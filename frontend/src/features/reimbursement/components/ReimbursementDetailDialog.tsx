@@ -205,17 +205,17 @@ export function ReimbursementDetailDialog({
             <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 variant="destructive"
-                onClick={() => handleInitiateAction("REJECT")} // Panggil Initiate
+                onClick={() => handleInitiateAction("REJECT")}
                 disabled={isPending}
               >
-                Reject
+                Tolak Permintaan
               </Button>
               <Button
                 className="bg-green-600 hover:bg-green-700"
-                onClick={() => handleInitiateAction("APPROVE")} // Panggil Initiate
+                onClick={() => handleInitiateAction("APPROVE")}
                 disabled={isPending}
               >
-                Approve
+                Setujui Permintaan
               </Button>
             </DialogFooter>
           )}

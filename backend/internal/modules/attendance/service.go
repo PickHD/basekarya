@@ -25,14 +25,14 @@ type Service interface {
 }
 
 type service struct {
-	repo         Repository
-	userRepo     user.Repository
-	storage      StorageProvider
-	geocodeQueue chan<- GeocodeJob
+	repo          Repository
+	userRepo      user.Repository
+	storage       StorageProvider
+	geocodeWorker GeocodeWorker
 }
 
-func NewService(repo Repository, userRepo user.Repository, storage StorageProvider, geocodeQueue chan<- GeocodeJob) Service {
-	return &service{repo, userRepo, storage, geocodeQueue}
+func NewService(repo Repository, userRepo user.Repository, storage StorageProvider, geocodeWorker GeocodeWorker) Service {
+	return &service{repo, userRepo, storage, geocodeWorker}
 }
 
 func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*AttendanceResponse, error) {
@@ -119,12 +119,12 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 		}
 
 		// process this attendance (check-in) to geocode worker queue
-		s.geocodeQueue <- GeocodeJob{
+		s.geocodeWorker.Enqueue(GeocodeJob{
 			AttendanceID: newAtt.ID,
 			Latitude:     req.Latitude,
 			Longitude:    req.Longitude,
 			IsCheckout:   false,
-		}
+		})
 
 		return &AttendanceResponse{
 			Type:    string(constants.AttendanceTypeCheckIn),
@@ -176,12 +176,12 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 		}
 
 		// process this attendance (check-out) to geocode worker queue
-		s.geocodeQueue <- GeocodeJob{
+		s.geocodeWorker.Enqueue(GeocodeJob{
 			AttendanceID: todayAtt.ID,
 			Latitude:     req.Latitude,
 			Longitude:    req.Longitude,
 			IsCheckout:   true,
-		}
+		})
 
 		return &AttendanceResponse{
 			Type:    string(constants.AttendanceTypeCheckOut),

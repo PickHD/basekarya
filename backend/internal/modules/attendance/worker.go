@@ -2,10 +2,17 @@ package attendance
 
 import (
 	"hris-backend/pkg/logger"
+	"sync"
 	"time"
 
 	"gorm.io/gorm"
 )
+
+type GeocodeWorker interface {
+	Start(workerCount int)
+	Enqueue(job GeocodeJob)
+	Stop()
+}
 
 type GeocodeJob struct {
 	AttendanceID uint
@@ -14,36 +21,78 @@ type GeocodeJob struct {
 	IsCheckout   bool
 }
 
-func StartGeocodeWorker(db *gorm.DB, fetcher LocationFetcher, queue <-chan GeocodeJob) {
-	go func() {
-		logger.Info("Geocode Worker Started....")
-
-		rateLimiter := time.NewTicker(1500 * time.Millisecond)
-		defer rateLimiter.Stop()
-
-		for job := range queue {
-			<-rateLimiter.C
-
-			processJob(db, fetcher, job)
-		}
-	}()
+type geocodeWorker struct {
+	db      *gorm.DB
+	fetcher LocationFetcher
+	queue   chan GeocodeJob
+	wg      *sync.WaitGroup
+	quit    chan bool
 }
 
-func processJob(db *gorm.DB, fetcher LocationFetcher, job GeocodeJob) {
-	address := fetcher.GetAddressFromCoords(job.Latitude, job.Longitude)
+func NewGeocodeWorker(db *gorm.DB, fetcher LocationFetcher, bufferSize int) GeocodeWorker {
+	return &geocodeWorker{
+		db:      db,
+		fetcher: fetcher,
+		queue:   make(chan GeocodeJob, bufferSize),
+		wg:      &sync.WaitGroup{},
+		quit:    make(chan bool),
+	}
+}
 
-	logger.Infof("Address found for ID %d: %s", job.AttendanceID, address)
+func (w *geocodeWorker) Start(workerCount int) {
+	for i := 0; i < workerCount; i++ {
+		w.wg.Add(1)
+		go w.runWorker(i)
+	}
+}
+
+func (w *geocodeWorker) Enqueue(job GeocodeJob) {
+	select {
+	case w.queue <- job:
+	default:
+		logger.Warn("Geocode queue is full, skipping job for ID:", job.AttendanceID)
+	}
+}
+
+func (w *geocodeWorker) Stop() {
+	logger.Info("Stopping Geocode Workers...")
+	close(w.queue)
+	w.wg.Wait()
+	logger.Info("All Geocode Workers stopped.")
+}
+
+func (w *geocodeWorker) runWorker(id int) {
+	defer w.wg.Done()
+	logger.Infof("Geocode Worker #%d Started", id)
+
+	limiter := time.NewTicker(1500 * time.Millisecond)
+	defer limiter.Stop()
+
+	for job := range w.queue {
+		<-limiter.C
+
+		w.processJob(job)
+	}
+}
+
+func (w *geocodeWorker) processJob(job GeocodeJob) {
+	address := w.fetcher.GetAddressFromCoords(job.Latitude, job.Longitude)
+
+	if address == "" {
+		logger.Warnf("Empty address for ID %d, skipping update", job.AttendanceID)
+		return
+	}
 
 	columnName := "check_in_address"
 	if job.IsCheckout {
 		columnName = "check_out_address"
 	}
 
-	result := db.Model(&Attendance{}).Where("id = ?", job.AttendanceID).Update(columnName, address)
-
+	result := w.db.Table("attendances").Where("id = ?", job.AttendanceID).Update(columnName, address)
 	if result.Error != nil {
-		logger.Errorw("Failed to update address", result.Error)
+		logger.Errorw("Failed to update address", "error", result.Error, "id", job.AttendanceID)
+	} else {
+		logger.Infof("Success update address for ID %d", job.AttendanceID)
 	}
 
-	logger.Infof("Success update address from job ID %d", job.AttendanceID)
 }
