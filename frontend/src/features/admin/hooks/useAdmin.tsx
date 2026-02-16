@@ -1,13 +1,18 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { toast } from "sonner";
 import type {
-  Meta,
   Employee,
   AttendanceRecap,
   CreateEmployeePayload,
   DashboardStats,
 } from "../types";
+import type { Meta } from "@/types/api";
 
 export const useAllEmployees = (page: number, search: string) => {
   return useQuery({
@@ -21,7 +26,7 @@ export const useAllEmployees = (page: number, search: string) => {
             limit: 10,
             search,
           },
-        }
+        },
       );
       return data;
     },
@@ -30,40 +35,43 @@ export const useAllEmployees = (page: number, search: string) => {
 };
 
 export const useAttendanceRecap = (
-  page: number,
   startDate: string,
   endDate: string,
-  search: string
+  search: string,
 ) => {
-  return useQuery({
-    queryKey: ["admin-recap", page, startDate, endDate, search],
-    queryFn: async () => {
+  return useInfiniteQuery({
+    queryKey: ["admin-recap", startDate, endDate, search],
+
+    queryFn: async ({ pageParam = "" }) => {
       const { data } = await api.get<{ data: AttendanceRecap[]; meta: Meta }>(
         "/admin/attendances/recap",
         {
           params: {
-            page,
+            cursor: pageParam,
             limit: 10,
             start_date: startDate,
             end_date: endDate,
             search: search,
           },
-        }
+        },
       );
-
       return data;
     },
-    placeholderData: (prev) => prev,
+
+    initialPageParam: "",
+
+    getNextPageParam: (lastPage) => {
+      return lastPage.meta?.next_cursor || undefined;
+    },
   });
 };
 
 export const exportAttendanceExcel = async (
   startDate: string,
   endDate: string,
-  search: string
+  search: string,
 ) => {
   try {
-
     const response = await api.get("/admin/attendances/export", {
       params: { start_date: startDate, end_date: endDate, search },
       responseType: "blob",
@@ -194,7 +202,7 @@ export const useDashboardStats = () => {
     queryKey: ["admin-stats"],
     queryFn: async () => {
       const { data } = await api.get<{ data: DashboardStats }>(
-        "/admin/dashboard/stats"
+        "/admin/dashboard/stats",
       );
       return data.data;
     },

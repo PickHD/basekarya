@@ -1,3 +1,5 @@
+import type { Meta } from "@/types/api";
+
 export interface ClockPayload {
   latitude: number;
   longitude: number;
@@ -23,12 +25,6 @@ export interface TodayAttendanceResponse {
   work_duration?: string;
 }
 
-export interface PaginationMeta {
-  page: number;
-  limit: number;
-  total_page: number;
-  total_data: number;
-}
 export interface Shift {
   id: number;
   name: string;
@@ -70,10 +66,5 @@ export interface AttendanceLog {
 
 export interface HistoryResponse {
   data: AttendanceLog[];
-  meta: {
-    page: number;
-    limit: number;
-    total_page: number;
-    total_data: number;
-  };
+  meta: Meta;
 }

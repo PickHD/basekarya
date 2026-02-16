@@ -178,9 +178,12 @@ export default function EmployeeListPage() {
 
               {data?.meta && (
                 <PaginationControls
-                  currentPage={data.meta.page}
-                  totalPages={data.meta.total_page}
-                  totalData={data.meta.total_data}
+                  meta={{
+                    limit: 10,
+                    page: data.meta.page,
+                    total_page: data.meta.total_page,
+                    total_data: data.meta.total_data,
+                  }}
                   onPageChange={setPage}
                   isLoading={isLoading}
                 />

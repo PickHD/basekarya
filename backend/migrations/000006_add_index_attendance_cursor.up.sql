@@ -1,0 +1,1 @@
+CREATE INDEX idx_attendance_cursor ON attendances (created_at DESC, id DESC);

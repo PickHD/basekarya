@@ -29,9 +29,8 @@ import { useDebounce } from "@/hooks/useDebounce";
 
 export default function AttendanceRecapPage() {
   const now = new Date();
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
 
+  const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState(
     format(startOfMonth(now), "yyyy-MM-dd"),
   );
@@ -47,14 +46,12 @@ export default function AttendanceRecapPage() {
 
   const debouncedSearch = useDebounce(search, 500);
 
-  const { data, isLoading } = useAttendanceRecap(
-    page,
-    startDate,
-    endDate,
-    debouncedSearch,
-  );
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useAttendanceRecap(startDate, endDate, debouncedSearch);
 
   const { data: statsData, isLoading: statsLoading } = useDashboardStats();
+
+  const allRecaps = data?.pages.flatMap((page) => page.data) || [];
 
   return (
     <div className="space-y-6">
@@ -76,9 +73,10 @@ export default function AttendanceRecapPage() {
           {isExporting ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            <>
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel
+            </>
           )}
-          Export Excel
         </Button>
       </div>
 
@@ -121,7 +119,6 @@ export default function AttendanceRecapPage() {
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
-                  setPage(1);
                 }}
               />
             </div>
@@ -148,7 +145,7 @@ export default function AttendanceRecapPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {data?.data.map((row) => (
+                    {allRecaps.map((row) => (
                       <TableRow key={row.id}>
                         <TableCell className="whitespace-nowrap">
                           {row.date}
@@ -187,7 +184,8 @@ export default function AttendanceRecapPage() {
                         </TableCell>
                       </TableRow>
                     ))}
-                    {data?.data.length === 0 && (
+
+                    {allRecaps.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={6} className="text-center py-8">
                           No records found.
@@ -198,20 +196,22 @@ export default function AttendanceRecapPage() {
                 </Table>
               </div>
 
-              {data?.data.length === 0 && (
+              {allRecaps.length === 0 && (
                 <div className="md:hidden text-center py-10 text-slate-500 border rounded-md">
                   No records found.
                 </div>
               )}
 
-              {data?.meta && (
+              {allRecaps.length > 0 && (
                 <div className="mt-4">
                   <PaginationControls
-                    currentPage={data.meta.page}
-                    totalPages={data.meta.total_page}
-                    totalData={data.meta.total_data}
-                    onPageChange={setPage}
-                    isLoading={isLoading}
+                    meta={{
+                      limit: 10,
+                      has_next: hasNextPage,
+                      next_cursor: "managed-by-query",
+                    }}
+                    onLoadMore={() => fetchNextPage()}
+                    isLoading={isFetchingNextPage}
                   />
                 </div>
               )}

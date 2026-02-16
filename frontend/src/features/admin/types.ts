@@ -21,13 +21,6 @@ export interface AttendanceRecap {
   work_duration: string;
 }
 
-export interface Meta {
-  page: number;
-  limit: number;
-  total_page: number;
-  total_data: number;
-}
-
 export interface CreateEmployeePayload {
   username: string;
   full_name: string;

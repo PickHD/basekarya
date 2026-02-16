@@ -27,20 +27,25 @@ export default function AttendanceHistoryPage() {
   const [month, setMonth] = useState<string>(String(now.getMonth() + 1));
   const [year, setYear] = useState<string>(String(now.getFullYear()));
 
-  const [page, setPage] = useState(1);
+  const {
+    data: response,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useAttendanceHistory(parseInt(month), parseInt(year));
+
+  const allLogs = response?.pages.flatMap((page) => page.data) || [];
 
   const handleFilterChange = (type: "month" | "year", val: string) => {
     if (type === "month") setMonth(val);
     else setYear(val);
-    setPage(1);
   };
 
   const formatTime = (timeStr?: string) => {
     if (!timeStr) return "-";
-
     const date = new Date(timeStr);
     if (isNaN(date.getTime())) return "-";
-
     return date.toLocaleTimeString("id-ID", {
       hour: "2-digit",
       minute: "2-digit",
@@ -68,15 +73,6 @@ export default function AttendanceHistoryPage() {
         return "bg-slate-100 text-slate-700 border-slate-200";
     }
   };
-
-  const { data: response, isLoading } = useAttendanceHistory(
-    parseInt(month),
-    parseInt(year),
-    page,
-  );
-
-  const logs = response?.data || [];
-  const meta = response?.meta;
 
   return (
     <div className="space-y-6">
@@ -136,137 +132,140 @@ export default function AttendanceHistoryPage() {
             <div className="flex justify-center py-10">
               <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
             </div>
-          ) : logs && logs.length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Check In</TableHead>
-                    <TableHead>Check Out</TableHead>
-                    <TableHead>Location</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {logs.map((log: AttendanceLog) => (
-                    <TableRow key={log.id}>
-                      {/* DATE */}
-                      <TableCell className="font-medium">
-                        {formatDateSafe(log.date, "dd MMM yyyy")}
-                        <div className="text-xs text-slate-400 font-normal">
-                          {formatDateSafe(log.date, "EEEE")}
-                        </div>
-                      </TableCell>
-
-                      {/* STATUS */}
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={getStatusColor(log.status)}
-                        >
-                          {log.status}
-                        </Badge>
-                        {log.is_suspicious && (
-                          <Badge
-                            variant="destructive"
-                            className="ml-2 text-[10px] px-1 h-5"
-                          >
-                            FLAGGED
-                          </Badge>
-                        )}
-                      </TableCell>
-
-                      {/* CHECK IN TIME */}
-                      <TableCell>
-                        {log.check_in_time ? (
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-slate-400" />
-                            {formatTime(log.check_in_time)}
+          ) : allLogs.length > 0 ? (
+            <>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Check In</TableHead>
+                      <TableHead>Check Out</TableHead>
+                      <TableHead>Location</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allLogs.map((log: AttendanceLog) => (
+                      <TableRow key={log.id}>
+                        {/* DATE */}
+                        <TableCell className="font-medium">
+                          {formatDateSafe(log.date, "dd MMM yyyy")}
+                          <div className="text-xs text-slate-400 font-normal">
+                            {formatDateSafe(log.date, "EEEE")}
                           </div>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
-                      </TableCell>
+                        </TableCell>
 
-                      {/* CHECK OUT TIME */}
-                      <TableCell>
-                        {log.check_out_time ? (
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-slate-400" />
-                            {formatTime(log.check_out_time)}
-                          </div>
-                        ) : (
+                        {/* STATUS */}
+                        <TableCell>
                           <Badge
                             variant="outline"
-                            className="text-slate-400 border-dashed font-normal"
+                            className={getStatusColor(log.status)}
                           >
-                            On Duty
+                            {log.status}
                           </Badge>
-                        )}
-                      </TableCell>
-
-                      {/* LOCATION */}
-                      <TableCell className="max-w-[250px]">
-                        <div className="flex flex-col gap-1">
-                          {/* Check In Location */}
-                          <div className="flex items-start gap-1.5 text-xs text-slate-600">
-                            <MapPin className="w-3.5 h-3.5 mt-0.5 text-green-600 shrink-0" />
-                            <span
-                              className="truncate"
-                              title={log.check_in_address || "No location data"}
+                          {log.is_suspicious && (
+                            <Badge
+                              variant="destructive"
+                              className="ml-2 text-[10px] px-1 h-5"
                             >
-                              {log.check_in_address || "No data"}
-                            </span>
-                          </div>
+                              FLAGGED
+                            </Badge>
+                          )}
+                        </TableCell>
 
-                          {/* Check Out Location */}
-                          {log.check_out_address && (
-                            <div className="flex items-start gap-1.5 text-xs text-slate-400">
-                              <MapPin className="w-3.5 h-3.5 mt-0.5 text-orange-400 shrink-0" />
+                        {/* CHECK IN TIME */}
+                        <TableCell>
+                          {log.check_in_time ? (
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-slate-400" />
+                              {formatTime(log.check_in_time)}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </TableCell>
+
+                        {/* CHECK OUT TIME */}
+                        <TableCell>
+                          {log.check_out_time ? (
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-slate-400" />
+                              {formatTime(log.check_out_time)}
+                            </div>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="text-slate-400 border-dashed font-normal"
+                            >
+                              On Duty
+                            </Badge>
+                          )}
+                        </TableCell>
+
+                        {/* LOCATION */}
+                        <TableCell className="max-w-[250px]">
+                          <div className="flex flex-col gap-1">
+                            {/* Check In Location */}
+                            <div className="flex items-start gap-1.5 text-xs text-slate-600">
+                              <MapPin className="w-3.5 h-3.5 mt-0.5 text-green-600 shrink-0" />
                               <span
                                 className="truncate"
-                                title={log.check_out_address}
+                                title={
+                                  log.check_in_address || "No location data"
+                                }
                               >
-                                {log.check_out_address}
+                                {log.check_in_address || "No data"}
                               </span>
                             </div>
-                          )}
 
-                          {/* Notes Indicator */}
-                          {log.notes && (
-                            <div className="flex items-center gap-1 text-[10px] text-blue-600 mt-1">
-                              <FileText className="w-3 h-3" />
-                              <span
-                                className="truncate max-w-[200px]"
-                                title={log.notes}
-                              >
-                                Note: {log.notes}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                            {/* Check Out Location */}
+                            {log.check_out_address && (
+                              <div className="flex items-start gap-1.5 text-xs text-slate-400">
+                                <MapPin className="w-3.5 h-3.5 mt-0.5 text-orange-400 shrink-0" />
+                                <span
+                                  className="truncate"
+                                  title={log.check_out_address}
+                                >
+                                  {log.check_out_address}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Notes Indicator */}
+                            {log.notes && (
+                              <div className="flex items-center gap-1 text-[10px] text-blue-600 mt-1">
+                                <FileText className="w-3 h-3" />
+                                <span
+                                  className="truncate max-w-[200px]"
+                                  title={log.notes}
+                                >
+                                  Note: {log.notes}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <PaginationControls
+                meta={{
+                  limit: 10,
+                  has_next: hasNextPage,
+                  next_cursor: "managed-by-query",
+                }}
+                onLoadMore={() => fetchNextPage()}
+                isLoading={isFetchingNextPage}
+              />
+            </>
           ) : (
             <div className="text-center py-10 text-slate-500">
               No attendance records found for this period.
             </div>
-          )}
-
-          {/* PAGINATION */}
-          {meta && (
-            <PaginationControls
-              currentPage={meta.page}
-              totalPages={meta.total_page}
-              totalData={meta.total_data}
-              onPageChange={setPage}
-              isLoading={isLoading}
-            />
           )}
         </CardContent>
       </Card>

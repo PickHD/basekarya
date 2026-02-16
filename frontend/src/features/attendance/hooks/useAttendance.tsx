@@ -1,8 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import type {
   ClockPayload,
   ClockResponse,
-  HistoryResponse,
   TodayAttendanceResponse,
 } from "../types";
 import { api } from "@/lib/axios";
@@ -15,7 +19,7 @@ export const useClock = () => {
     mutationFn: async (payload: ClockPayload) => {
       const { data } = await api.post<ClockResponse>(
         "/attendances/clock",
-        payload
+        payload,
       );
 
       return data;
@@ -42,11 +46,9 @@ export const useClock = () => {
           description = responseData.error.errors
             .map((err: any) => err.message)
             .join(", ");
-        }
-        else if (responseData.error.message) {
+        } else if (responseData.error.message) {
           description = responseData.error.message;
-        }
-        else if (typeof responseData.error === "string") {
+        } else if (typeof responseData.error === "string") {
           description = responseData.error;
         }
       }
@@ -63,7 +65,7 @@ export const useTodayAttendance = () => {
     queryKey: ["attendance-today"],
     queryFn: async () => {
       const { data } = await api.get<{ data: TodayAttendanceResponse }>(
-        "/attendances/today"
+        "/attendances/today",
       );
       return data.data;
     },
@@ -71,20 +73,19 @@ export const useTodayAttendance = () => {
   });
 };
 
-export const useAttendanceHistory = (
-  month: number,
-  year: number,
-  page: number
-) => {
-  return useQuery({
-    queryKey: ["attendance-history", month, year, page],
-    queryFn: async () => {
-      const { data } = await api.get<HistoryResponse>(
-        `/attendances/history?month=${month}&year=${year}&page=${page}&limit=10`
+export const useAttendanceHistory = (month: number, year: number) => {
+  return useInfiniteQuery({
+    queryKey: ["attendance-history", month, year],
+    queryFn: async ({ pageParam = "" }) => {
+      const { data } = await api.get(
+        `/attendances/history?month=${month}&year=${year}&cursor=${pageParam}&limit=10`,
       );
 
       return data;
     },
-    placeholderData: (previousData) => previousData,
+    initialPageParam: "",
+    getNextPageParam: (lastPage) => {
+      return lastPage.meta?.next_cursor || undefined;
+    },
   });
 };

@@ -172,7 +172,7 @@ func (s *service) GetList(ctx context.Context, filter *PayrollFilter) ([]Payroll
 		})
 	}
 
-	meta := response.NewMeta(filter.Page, filter.Limit, total)
+	meta := response.NewMetaOffset(filter.Page, filter.Limit, total)
 	return responses, meta, nil
 }
 

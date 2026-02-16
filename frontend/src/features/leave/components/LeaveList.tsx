@@ -152,7 +152,12 @@ export const LeaveList = () => {
                       </div>
                     </div>
 
-                    <Button variant="outline" size="sm" className="w-full">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => handleViewDetail(item.id)}
+                    >
                       <Eye className="mr-2 h-4 w-4" /> View Details
                     </Button>
                   </div>
@@ -230,9 +235,12 @@ export const LeaveList = () => {
               {data?.meta && (
                 <div className="mt-4">
                   <PaginationControls
-                    currentPage={data.meta.page}
-                    totalPages={data.meta.total_page}
-                    totalData={data.meta.total_data}
+                    meta={{
+                      limit: 10,
+                      page: data.meta.page,
+                      total_page: data.meta.total_page,
+                      total_data: data.meta.total_data,
+                    }}
                     onPageChange={setPage}
                     isLoading={isLoading}
                   />

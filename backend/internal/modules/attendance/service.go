@@ -18,7 +18,7 @@ import (
 type Service interface {
 	Clock(ctx context.Context, userID uint, req *ClockRequest) (*AttendanceResponse, error)
 	GetTodayStatus(ctx context.Context, userID uint) (*TodayStatusResponse, error)
-	GetMyHistory(ctx context.Context, userID uint, month, year, page, limit int) ([]Attendance, *response.Meta, error)
+	GetMyHistory(ctx context.Context, userID uint, month, year, limit int, cursor string) ([]Attendance, *response.Meta, error)
 	GetAllRecap(ctx context.Context, filter *FilterParams) ([]RecapResponse, *response.Meta, error)
 	GenerateExcel(ctx context.Context, filter *FilterParams) (*excelize.File, error)
 	GetDashboardStats(ctx context.Context) (*DashboardStatResponse, error)
@@ -231,24 +231,25 @@ func (s *service) GetTodayStatus(ctx context.Context, userID uint) (*TodayStatus
 	}, nil
 }
 
-func (s *service) GetMyHistory(ctx context.Context, userID uint, month, year, page, limit int) ([]Attendance, *response.Meta, error) {
+func (s *service) GetMyHistory(ctx context.Context, userID uint, month, year, limit int, cursor string) ([]Attendance, *response.Meta, error) {
 	u, err := s.userRepo.FindByID(userID)
 	if err != nil || u.Employee == nil {
 		return nil, nil, errors.New("employee not found")
 	}
 
-	logs, total, err := s.repo.GetHistory(u.Employee.ID, month, year, page, limit)
+	logs, nextCursor, err := s.repo.GetHistory(u.Employee.ID, month, year, limit, cursor)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	meta := response.NewMeta(page, limit, total)
+	hasNext := nextCursor != nil
 
+	meta := response.NewMetaCursor(limit, hasNext, nextCursor)
 	return logs, meta, nil
 }
 
 func (s *service) GetAllRecap(ctx context.Context, filter *FilterParams) ([]RecapResponse, *response.Meta, error) {
-	data, total, err := s.repo.FindAll(filter)
+	data, nextCursor, err := s.repo.FindAll(filter)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -286,7 +287,9 @@ func (s *service) GetAllRecap(ctx context.Context, filter *FilterParams) ([]Reca
 		})
 	}
 
-	meta := response.NewMeta(filter.Page, filter.Limit, total)
+	hasNext := nextCursor != nil
+
+	meta := response.NewMetaCursor(filter.Limit, hasNext, nextCursor)
 	return result, meta, nil
 }
 
