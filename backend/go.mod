@@ -12,7 +12,12 @@ require (
 
 require github.com/go-pdf/fpdf v0.9.0
 
-require github.com/robfig/cron/v3 v3.0.1
+require (
+	github.com/disintegration/imaging v1.6.2
+	github.com/robfig/cron/v3 v3.0.1
+)
+
+require golang.org/x/image v0.36.0 // indirect
 
 require (
 	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
@@ -63,5 +68,5 @@ require (
 	golang.org/x/crypto v0.46.0
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
-	golang.org/x/text v0.32.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
 )

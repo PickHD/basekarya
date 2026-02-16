@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"hris-backend/internal/config"
@@ -9,6 +10,7 @@ import (
 	"mime/multipart"
 	"strings"
 
+	"github.com/disintegration/imaging"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
@@ -46,45 +48,68 @@ func (m *MinioStorageProvider) UploadFileMultipart(ctx context.Context, file *mu
 	}
 	defer src.Close()
 
+	// Before upload, resize image & turn down the quality image till 75%
+	img, err := imaging.Decode(src)
+	if err != nil {
+		return "", err
+	}
+
+	dstImage := imaging.Resize(img, 800, 0, imaging.Lanczos)
+
+	var buf bytes.Buffer
+	err = imaging.Encode(&buf, dstImage, imaging.JPEG, imaging.JPEGQuality(75))
+	if err != nil {
+		return "", err
+	}
+
 	// Upload the file
-	info, err := m.client.PutObject(ctx, m.bucketName, objectName, src, file.Size, minio.PutObjectOptions{
+	info, err := m.client.PutObject(ctx, m.bucketName, objectName, &buf, int64(buf.Len()), minio.PutObjectOptions{
 		ContentType: file.Header.Get("Content-Type"),
 	})
 	if err != nil {
 		return "", err
 	}
 
-	// Generate permanent URL
-	protocol := "http"
-	if m.isSecure {
-		protocol = "https"
-	}
-
-	// Clean endpoint to avoid double slashes
-	endpoint := strings.TrimSuffix(m.publicDomain, "/")
-	url := fmt.Sprintf("%s://%s/%s/%s", protocol, endpoint, m.bucketName, info.Key)
-
-	return url, nil
+	return m.generateURL(objectName, info.Key), nil
 }
 
 func (m *MinioStorageProvider) UploadFileByte(ctx context.Context, objectName string, reader io.Reader, size int64, contentType string) (string, error) {
+	// Before upload, resize image & turn down the quality image till 75%
+	img, err := imaging.Decode(reader)
+	if err != nil {
+		return "", err
+	}
+
+	dstImage := imaging.Resize(img, 800, 0, imaging.Lanczos)
+
+	var buf bytes.Buffer
+	err = imaging.Encode(&buf, dstImage, imaging.JPEG, imaging.JPEGQuality(75))
+	if err != nil {
+		return "", err
+	}
+
 	// Upload the file
-	_, err := m.client.PutObject(ctx, m.bucketName, objectName, reader, size, minio.PutObjectOptions{
+	info, err := m.client.PutObject(ctx, m.bucketName, objectName, &buf, int64(buf.Len()), minio.PutObjectOptions{
 		ContentType: contentType,
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to upload file: %w", err)
 	}
 
-	// Generate permanent URL
+	return m.generateURL(objectName, info.Key), nil
+}
+
+func (m *MinioStorageProvider) generateURL(objectName, key string) string {
 	protocol := "http"
 	if m.isSecure {
 		protocol = "https"
 	}
 
-	// Clean endpoint to avoid double slashes
-	endpoint := strings.TrimSuffix(m.publicDomain, "/")
-	url := fmt.Sprintf("%s://%s/%s/%s", protocol, endpoint, m.bucketName, objectName)
+	finalKey := key
+	if finalKey == "" {
+		finalKey = objectName
+	}
 
-	return url, nil
+	endpoint := strings.TrimSuffix(m.publicDomain, "/")
+	return fmt.Sprintf("%s://%s/%s/%s", protocol, endpoint, m.bucketName, finalKey)
 }
