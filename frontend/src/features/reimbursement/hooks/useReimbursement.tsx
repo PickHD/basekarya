@@ -7,8 +7,8 @@ import type {
 } from "../types";
 import { api } from "@/lib/axios";
 import { useNavigate } from "react-router-dom";
-import type { Meta } from "@/features/admin/types";
 import { toast } from "sonner";
+import type { Meta } from "@/types/api";
 
 export const useReimbursements = (filter: ReimbursementFilter) => {
   return useQuery({

@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"hris-backend/internal/modules/user"
 	"hris-backend/pkg/constants"
 	"hris-backend/pkg/response"
 	"hris-backend/pkg/utils"
@@ -26,17 +25,17 @@ type Service interface {
 
 type service struct {
 	repo          Repository
-	userRepo      user.Repository
+	user          UserProvider
 	storage       StorageProvider
 	geocodeWorker GeocodeWorker
 }
 
-func NewService(repo Repository, userRepo user.Repository, storage StorageProvider, geocodeWorker GeocodeWorker) Service {
-	return &service{repo, userRepo, storage, geocodeWorker}
+func NewService(repo Repository, user UserProvider, storage StorageProvider, geocodeWorker GeocodeWorker) Service {
+	return &service{repo, user, storage, geocodeWorker}
 }
 
 func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*AttendanceResponse, error) {
-	u, err := s.userRepo.FindByID(userID)
+	u, err := s.user.FindByID(userID)
 	if err != nil || u.Employee == nil {
 		return nil, errors.New("employee data not found")
 	}
@@ -195,7 +194,7 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 }
 
 func (s *service) GetTodayStatus(ctx context.Context, userID uint) (*TodayStatusResponse, error) {
-	user, err := s.userRepo.FindByID(userID)
+	user, err := s.user.FindByID(userID)
 	if err != nil || user.Employee == nil {
 		return nil, errors.New("employee not found")
 	}
@@ -232,7 +231,7 @@ func (s *service) GetTodayStatus(ctx context.Context, userID uint) (*TodayStatus
 }
 
 func (s *service) GetMyHistory(ctx context.Context, userID uint, month, year, limit int, cursor string) ([]Attendance, *response.Meta, error) {
-	u, err := s.userRepo.FindByID(userID)
+	u, err := s.user.FindByID(userID)
 	if err != nil || u.Employee == nil {
 		return nil, nil, errors.New("employee not found")
 	}
@@ -387,7 +386,7 @@ func (s *service) GenerateExcel(ctx context.Context, filter *FilterParams) (*exc
 func (s *service) GetDashboardStats(ctx context.Context) (*DashboardStatResponse, error) {
 	todayDate := time.Now().Format(constants.DefaultTimeFormat)
 
-	totalActiveEmployee, err := s.userRepo.CountActiveEmployee()
+	totalActiveEmployee, err := s.user.CountActiveEmployee()
 	if err != nil {
 		return nil, err
 	}

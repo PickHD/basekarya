@@ -150,7 +150,7 @@ func (h *Handler) DeleteEmployee(ctx echo.Context) error {
 	id, _ := strconv.Atoi(ctx.Param("id"))
 	err := h.service.DeleteEmployee(ctx.Request().Context(), uint(id))
 	if err != nil {
-		logger.Errorw("failed to upddeleteate employee: ", err)
+		logger.Errorw("failed to delete employee: ", err)
 
 		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to delete", err.Error(), err, nil)
 	}

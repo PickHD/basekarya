@@ -1,7 +1,6 @@
-package leave
+package notification
 
 import (
-	"context"
 	"hris-backend/internal/infrastructure"
 	"hris-backend/pkg/logger"
 )
@@ -21,15 +20,15 @@ func NewScheduler(cronProvider *infrastructure.CronProvider, service Service) Sc
 }
 
 func (sch *scheduler) Start() {
-	logger.Info("Leave Scheduler Started...")
+	logger.Info("Notification Scheduler Started...")
 
-	_, err := sch.cronProvider.Cron.AddFunc("0 0 1 1 *", func() {
-		logger.Info("[SCHEDULER] Starting Annual Leave Balance Generation...")
+	_, err := sch.cronProvider.Cron.AddFunc("0 0 3 * *", func() {
+		logger.Info("[SCHEDULER] Starting Remove Old Notification...")
 
-		if err := sch.service.GenerateAnnualBalance(context.Background()); err != nil {
+		if err := sch.service.DeleteReadOlderThan(3); err != nil {
 			logger.Errorf("[SCHEDULER] Failed: %v\n", err)
 		} else {
-			logger.Info("[SCHEDULER] Success! Annual balances generated.")
+			logger.Info("[SCHEDULER] Success! notification old removed.")
 		}
 	})
 
@@ -43,6 +42,6 @@ func (sch *scheduler) Start() {
 func (sch *scheduler) Stop() {
 	if sch.cronProvider != nil && sch.cronProvider.Cron != nil {
 		sch.cronProvider.Cron.Stop()
-		logger.Info("Leave Scheduler Stopped.")
+		logger.Info("Notification Scheduler Stopped.")
 	}
 }

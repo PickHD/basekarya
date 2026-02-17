@@ -37,8 +37,9 @@ type Container struct {
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
 
-	GeocodeWorker  attendance.GeocodeWorker
-	LeaveScheduler leave.LeaveScheduler
+	GeocodeWorker         attendance.GeocodeWorker
+	LeaveScheduler        leave.Scheduler
+	NotificationScheduler notification.Scheduler
 }
 
 func NewContainer() (*Container, error) {
@@ -60,16 +61,17 @@ func NewContainer() (*Container, error) {
 	reimburseRepo := reimbursement.NewRepository(db.GetDB())
 	payrollRepo := payroll.NewRepository(db.GetDB())
 	leaveRepo := leave.NewRepository(db.GetDB())
+	notificationRepo := notification.NewRepository(db.GetDB())
 
 	healthSvc := health.NewService(healthRepo)
-	notificationSvc := notification.NewService(wsHub)
+	notificationSvc := notification.NewService(wsHub, notificationRepo)
 	authSvc := auth.NewService(userRepo, bcrypt, jwt)
 	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeWorker)
 	masterSvc := master.NewService(masterRepo)
-	reimburseSvc := reimbursement.NewService(reimburseRepo, storage, notificationSvc)
 	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo)
-	leaveSvc := leave.NewService(leaveRepo, storage, notificationSvc)
+	leaveSvc := leave.NewService(leaveRepo, storage, notificationSvc, userRepo)
 	userSvc := user.NewService(userRepo, bcrypt, storage, leaveSvc)
+	reimburseSvc := reimbursement.NewService(reimburseRepo, storage, notificationSvc, userRepo)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)
@@ -79,12 +81,13 @@ func NewContainer() (*Container, error) {
 	reimburseHandler := reimbursement.NewHandler(reimburseSvc)
 	payrollHandler := payroll.NewHandler(payrollSvc)
 	leaveHandler := leave.NewHandler(leaveSvc)
-	notificationHandler := notification.NewHandler(wsHub)
+	notificationHandler := notification.NewHandler(wsHub, notificationSvc)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 	rateLimiterMiddleware := middleware.NewRateLimiterMiddleware()
 
-	leaveScheduler := leave.NewLeaveScheduler(cronScheduler, leaveSvc)
+	leaveScheduler := leave.NewScheduler(cronScheduler, leaveSvc)
+	notificationScheduler := notification.NewScheduler(cronScheduler, notificationSvc)
 
 	return &Container{
 		Config:       cfg,
@@ -108,8 +111,9 @@ func NewContainer() (*Container, error) {
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,
 
-		GeocodeWorker:  geocodeWorker,
-		LeaveScheduler: leaveScheduler,
+		GeocodeWorker:         geocodeWorker,
+		LeaveScheduler:        leaveScheduler,
+		NotificationScheduler: notificationScheduler,
 	}, nil
 }
 
@@ -121,6 +125,14 @@ func (c *Container) Close() error {
 
 	if c.GeocodeWorker != nil {
 		c.GeocodeWorker.Stop()
+	}
+
+	if c.LeaveScheduler != nil {
+		c.LeaveScheduler.Stop()
+	}
+
+	if c.NotificationScheduler != nil {
+		c.NotificationScheduler.Stop()
 	}
 
 	return nil

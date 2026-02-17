@@ -4,9 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"hris-backend/internal/modules/attendance"
-	"hris-backend/internal/modules/reimbursement"
-	"hris-backend/internal/modules/user"
 	"hris-backend/pkg/constants"
 	"hris-backend/pkg/logger"
 	"hris-backend/pkg/response"
@@ -25,21 +22,21 @@ type Service interface {
 }
 
 type service struct {
-	repo              Repository
-	userRepo          user.Repository
-	reimbursementRepo reimbursement.Repository
-	attendanceRepo    attendance.Repository
+	repo          Repository
+	user          UserProvider
+	reimbursement ReimbursementProvider
+	attendance    AttendanceProvider
 }
 
 func NewService(repo Repository,
-	userRepo user.Repository,
-	reimbursementRepo reimbursement.Repository,
-	attendanceRepo attendance.Repository) Service {
-	return &service{repo, userRepo, reimbursementRepo, attendanceRepo}
+	user UserProvider,
+	reimbursement ReimbursementProvider,
+	attendance AttendanceProvider) Service {
+	return &service{repo, user, reimbursement, attendance}
 }
 
 func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*GenerateResponse, error) {
-	employees, err := s.userRepo.FindAllEmployeeActive()
+	employees, err := s.user.FindAllEmployeeActive()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch all employee active: %w", err)
 	}
@@ -49,12 +46,12 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 		return nil, fmt.Errorf("failed to fetch existing employee id: %w", err)
 	}
 
-	attendanceMap, err := s.attendanceRepo.GetBulkLateDuration(req.Month, req.Year)
+	attendanceMap, err := s.attendance.GetBulkLateDuration(req.Month, req.Year)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch bulk late duration: %w", err)
 	}
 
-	reimburseMap, err := s.reimbursementRepo.GetBulkApprovedAmount(req.Month, req.Year)
+	reimburseMap, err := s.reimbursement.GetBulkApprovedAmount(req.Month, req.Year)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch bulk approved amount: %w", err)
 	}

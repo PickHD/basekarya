@@ -22,10 +22,11 @@ type service struct {
 	repo         Repository
 	storage      StorageProvider
 	notification NotificationProvider
+	user         UserProvider
 }
 
-func NewService(repo Repository, storage StorageProvider, notification NotificationProvider) Service {
-	return &service{repo, storage, notification}
+func NewService(repo Repository, storage StorageProvider, notification NotificationProvider, user UserProvider) Service {
+	return &service{repo, storage, notification, user}
 }
 
 func (s *service) Create(ctx context.Context, req *ReimbursementRequest) error {
@@ -59,7 +60,28 @@ func (s *service) Create(ctx context.Context, req *ReimbursementRequest) error {
 		Status:        constants.ReimbursementStatusPending,
 	}
 
-	return s.repo.Create(reimburstment)
+	err = s.repo.Create(reimburstment)
+	if err != nil {
+		return err
+	}
+
+	adminID, err := s.user.FindAdminID()
+	if err != nil {
+		return err
+	}
+
+	// send notification to admin
+	go func() {
+		_ = s.notification.SendNotification(
+			adminID,
+			string(constants.NotificationTypeReimburseApprovalReq),
+			"Pengajuan Reimbursement Baru",
+			fmt.Sprintf("Karyawan mengajukan reimburse pada tanggal %s", req.Date),
+			reimburstment.ID,
+		)
+	}()
+
+	return nil
 }
 
 func (s *service) GetReimburseDetail(ctx context.Context, id uint) (*ReimbursementDetailResponse, error) {
@@ -163,10 +185,16 @@ func (s *service) ProcessAction(ctx context.Context, req *ActionRequest) error {
 		return err
 	}
 
-	return s.notification.SendNotification(
-		data.User.ID,
-		string(notificationType),
-		notificationTitle,
-		notificationMessage,
-	)
+	// send notification to requester
+	go func() {
+		_ = s.notification.SendNotification(
+			data.User.ID,
+			string(notificationType),
+			notificationTitle,
+			notificationMessage,
+			data.ID,
+		)
+	}()
+
+	return nil
 }

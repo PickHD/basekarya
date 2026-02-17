@@ -1,4 +1,3 @@
-import type { Meta } from "@/features/admin/types";
 import type {
   ApplyLeavePayload,
   LeaveActionPayload,
@@ -7,6 +6,7 @@ import type {
   UseLeavesParams,
 } from "@/features/leave/types";
 import { api } from "@/lib/axios";
+import type { Meta } from "@/types/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 

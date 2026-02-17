@@ -2,14 +2,22 @@ import { useEffect, useRef, useState } from "react";
 import type { NotificationPayload } from "../types";
 import { toast } from "sonner";
 import { useProfile } from "@/features/user/hooks/useProfile";
+import {
+  useNotifications,
+  useMarkAsRead,
+} from "@/features/notification/hooks/useNotification";
+import { useQueryClient } from "@tanstack/react-query";
 
 const RECONNECT_INTERVAL = 3000;
 
 export const useWebSocket = () => {
   const { data: user } = useProfile();
   const [isConnected, setIsConnected] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationPayload[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const { data: notifications = [] } = useNotifications();
+  const { mutate: markRead } = useMarkAsRead();
+
+  const queryClient = useQueryClient();
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>(null);
@@ -62,16 +70,41 @@ export const useWebSocket = () => {
 
           if (!payload.type) return;
 
-          setNotifications((prev) => [payload, ...prev]);
-          setUnreadCount((prev) => prev + 1);
+          queryClient.setQueryData(
+            ["notifications"],
+            (oldData: NotificationPayload[] | undefined) => {
+              const newNotif: NotificationPayload = {
+                ...payload,
+                type: payload.type,
+                title: payload.title || payload.title,
+                message: payload.message || payload.message,
+                is_read: false,
+                created_at: new Date().toISOString(),
+                id: payload.id || payload.id || Math.random(),
+              };
+
+              return [newNotif, ...(oldData || [])];
+            },
+          );
 
           const title = payload.title || payload.title || "Notification";
           const message = payload.message || payload.message || "";
 
-          toast.success(title, {
-            description: message,
-            duration: 4000,
-          });
+          switch (payload.type) {
+            case "APPROVED":
+              toast.success(title, { description: message, duration: 3000 });
+              break;
+            case "REJECTED":
+              toast.error(title, { description: message, duration: 3000 });
+              break;
+            case "LEAVE_APPROVAL_REQ":
+            case "REIMBURSE_APPROVAL_REQ":
+              toast.info(title, { description: message, duration: 3000 });
+              break;
+            default:
+              toast(title, { description: message });
+              break;
+          }
         } catch (err) {
           console.error("[WS] Parse Error:", err);
         }
@@ -105,14 +138,16 @@ export const useWebSocket = () => {
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [user?.id]);
+  }, [user?.id, queryClient]);
 
-  const markAllRead = () => setUnreadCount(0);
+  const markAsRead = (id: number) => {
+    markRead(id);
+  };
 
   return {
     isConnected,
     notifications,
     unreadCount,
-    markAllRead,
+    markAsRead,
   };
 };

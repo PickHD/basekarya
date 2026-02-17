@@ -20,6 +20,7 @@ type Repository interface {
 	StartTX() *gorm.DB
 	CountActiveEmployee() (int64, error)
 	FindAllEmployeeActive() ([]Employee, error)
+	FindAdminID() (uint, error)
 }
 
 type repository struct {
@@ -137,4 +138,20 @@ func (r *repository) FindAllEmployeeActive() ([]Employee, error) {
 	}
 
 	return employees, nil
+}
+
+func (r *repository) FindAdminID() (uint, error) {
+	var id uint
+	err := r.db.Model(&User{}).
+		Select("id").
+		Where("role = ?", string(constants.UserRoleSuperadmin)).
+		Scan(&id).Error
+
+	if err != nil {
+		logger.Errorw("UserRepository.FindAdminID ERROR: ", err)
+
+		return 0, err
+	}
+
+	return id, nil
 }

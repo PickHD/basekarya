@@ -29,10 +29,11 @@ type service struct {
 	repo         Repository
 	storage      StorageProvider
 	notification NotificationProvider
+	user         UserProvider
 }
 
-func NewService(repo Repository, storage StorageProvider, notification NotificationProvider) Service {
-	return &service{repo, storage, notification}
+func NewService(repo Repository, storage StorageProvider, notification NotificationProvider, user UserProvider) Service {
+	return &service{repo, storage, notification, user}
 }
 
 func (s *service) Apply(ctx context.Context, req *ApplyRequest) error {
@@ -95,7 +96,28 @@ func (s *service) Apply(ctx context.Context, req *ApplyRequest) error {
 		Status:        constants.LeaveStatusPending,
 	}
 
-	return s.repo.CreateRequest(leaveReq)
+	err = s.repo.CreateRequest(leaveReq)
+	if err != nil {
+		return err
+	}
+
+	adminID, err := s.user.FindAdminID()
+	if err != nil {
+		return err
+	}
+
+	// send notification to admin
+	go func() {
+		_ = s.notification.SendNotification(
+			adminID,
+			string(constants.NotificationTypeLeaveApprovalReq),
+			"Pengajuan Cuti Baru",
+			fmt.Sprintf("Karyawan mengajukan cuti pada tanggal %s s.d %s", req.StartDate, req.EndDate),
+			leaveReq.ID,
+		)
+	}()
+
+	return nil
 }
 
 func (s *service) RequestAction(ctx context.Context, req *LeaveActionRequest) error {
@@ -185,12 +207,18 @@ func (s *service) RequestAction(ctx context.Context, req *LeaveActionRequest) er
 		return errors.New("invalid action")
 	}
 
-	return s.notification.SendNotification(
-		leaveRequest.User.ID,
-		string(notificationType),
-		notificationTitle,
-		notificationMessage,
-	)
+	// send notification to requester
+	go func() {
+		_ = s.notification.SendNotification(
+			leaveRequest.User.ID,
+			string(notificationType),
+			notificationTitle,
+			notificationMessage,
+			leaveRequest.ID,
+		)
+	}()
+
+	return nil
 }
 
 func (s *service) GetList(ctx context.Context, filter *LeaveFilter) ([]LeaveRequestListResponse, *response.Meta, error) {

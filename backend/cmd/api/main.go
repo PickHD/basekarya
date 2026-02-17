@@ -72,7 +72,7 @@ func main() {
 		// start server, scheduler, worker, websocket
 		appContainer.GeocodeWorker.Start(1)
 		appContainer.LeaveScheduler.Start()
-
+		appContainer.NotificationScheduler.Start()
 		go appContainer.WebsocketHub.Run()
 
 		logger.Info("Starting HRIS API Server...")
