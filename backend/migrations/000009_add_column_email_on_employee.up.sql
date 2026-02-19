@@ -1,0 +1,2 @@
+ALTER TABLE employees 
+ADD COLUMN email VARCHAR(255) NULL;

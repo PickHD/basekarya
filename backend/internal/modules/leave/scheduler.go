@@ -23,7 +23,7 @@ func NewScheduler(cronProvider *infrastructure.CronProvider, service Service) Sc
 func (sch *scheduler) Start() {
 	logger.Info("Leave Scheduler Started...")
 
-	_, err := sch.cronProvider.Cron.AddFunc("0 0 1 1 *", func() {
+	_, err := sch.cronProvider.GetCron().AddFunc("0 0 1 1 *", func() {
 		logger.Info("[SCHEDULER] Starting Annual Leave Balance Generation...")
 
 		if err := sch.service.GenerateAnnualBalance(context.Background()); err != nil {
@@ -37,12 +37,12 @@ func (sch *scheduler) Start() {
 		logger.Errorf("Failed to start scheduler ", err)
 	}
 
-	sch.cronProvider.Cron.Start()
+	sch.cronProvider.GetCron().Start()
 }
 
 func (sch *scheduler) Stop() {
-	if sch.cronProvider != nil && sch.cronProvider.Cron != nil {
-		sch.cronProvider.Cron.Stop()
+	if sch.cronProvider != nil && sch.cronProvider.GetCron() != nil {
+		sch.cronProvider.GetCron().Stop()
 		logger.Info("Leave Scheduler Stopped.")
 	}
 }

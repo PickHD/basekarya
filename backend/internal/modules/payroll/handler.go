@@ -1,6 +1,7 @@
 package payroll
 
 import (
+	"context"
 	"fmt"
 	"hris-backend/pkg/logger"
 	"hris-backend/pkg/response"
@@ -81,7 +82,7 @@ func (h *Handler) DownloadPayslipPDF(ctx echo.Context) error {
 	ctx.Response().Header().Set("Content-Type", "application/pdf")
 	ctx.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 
-	err = pdf.Output(ctx.Response().Writer)
+	_, err = pdf.WriteTo(ctx.Response().Writer)
 	if err != nil {
 		return err
 	}
@@ -102,6 +103,25 @@ func (h *Handler) MarkAsPaid(ctx echo.Context) error {
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Mark As Paid Payroll Success", nil, nil, nil)
+}
+
+func (h *Handler) BlastPayslipEmail(ctx echo.Context) error {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		return response.NewResponses[any](ctx, http.StatusBadRequest, "invalid id", nil, err, nil)
+	}
+
+	go func(id uint) {
+		ctx := context.Background()
+		err := h.service.BlastPayslipEmail(ctx, id)
+		if err != nil {
+			logger.Errorf("Failed to send email for payroll %d: %v", id, err)
+		} else {
+			logger.Infof("Successfully sent payslip email for payroll %d", id)
+		}
+	}(uint(id))
+
+	return response.NewResponses[any](ctx, http.StatusOK, "Blast Payslip Email Success", nil, nil, nil)
 }
 
 func (h *Handler) parseFilter(ctx echo.Context) *PayrollFilter {

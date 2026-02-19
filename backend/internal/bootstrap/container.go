@@ -25,6 +25,7 @@ type Container struct {
 	Location     *infrastructure.NominatimFetcher
 	WebsocketHub *infrastructure.Hub
 	Redis        *infrastructure.RedisClientProvider
+	Email        *infrastructure.EmailProvider
 
 	HealthCheckHandler   *health.Handler
 	AuthHandler          *auth.Handler
@@ -52,10 +53,12 @@ func NewContainer() (*Container, error) {
 	storage := infrastructure.NewMinioStorage(&cfg.Minio)
 	jwt := infrastructure.NewJWTProvider(&cfg.JWT)
 	bcrypt := infrastructure.NewBcryptHasher(12)
-	nominatim := infrastructure.NewNominatimFetcher(&cfg.ExternalServiceConfig)
 	cronScheduler := infrastructure.NewCronProvider()
 	redis := infrastructure.NewRedisClient(&cfg.Redis)
 	transactionManager := infrastructure.NewGormTransactionManager(db.GetDB())
+	httpClient := infrastructure.NewHttpClientProvider()
+	nominatim := infrastructure.NewNominatimFetcher(&cfg.ExternalServiceConfig, httpClient.GetClient())
+	email := infrastructure.NewEmailProvider(&cfg.Email)
 
 	wsHub := infrastructure.NewHub(redis.GetClient())
 	geocodeWorker := attendance.NewGeocodeWorker(db.GetDB(), nominatim, 100)
@@ -75,7 +78,7 @@ func NewContainer() (*Container, error) {
 	authSvc := auth.NewService(userRepo, bcrypt, jwt)
 	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeWorker, transactionManager)
 	masterSvc := master.NewService(masterRepo)
-	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo, notificationSvc, transactionManager)
+	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo, notificationSvc, transactionManager, httpClient.GetClient(), email)
 	leaveSvc := leave.NewService(leaveRepo, storage, notificationSvc, userRepo, transactionManager)
 	userSvc := user.NewService(userRepo, bcrypt, storage, leaveSvc, transactionManager)
 	reimburseSvc := reimbursement.NewService(reimburseRepo, storage, notificationSvc, userRepo, transactionManager)
@@ -107,6 +110,7 @@ func NewContainer() (*Container, error) {
 		Location:     nominatim,
 		WebsocketHub: wsHub,
 		Redis:        redis,
+		Email:        email,
 
 		HealthCheckHandler:   healthHandler,
 		AuthHandler:          authHandler,

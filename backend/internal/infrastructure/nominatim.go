@@ -18,18 +18,7 @@ type NominatimFetcher struct {
 	url    string
 }
 
-func NewNominatimFetcher(cfg *config.ExternalServiceConfig) *NominatimFetcher {
-	t := &http.Transport{
-		MaxIdleConns:      10,
-		IdleConnTimeout:   30 * time.Second,
-		DisableKeepAlives: false,
-	}
-
-	client := &http.Client{
-		Transport: t,
-		Timeout:   15 * time.Second,
-	}
-
+func NewNominatimFetcher(cfg *config.ExternalServiceConfig, client *http.Client) *NominatimFetcher {
 	return &NominatimFetcher{
 		client: client,
 		url:    cfg.NominatimUrl,
@@ -53,7 +42,7 @@ func (n *NominatimFetcher) GetAddressFromCoords(lat, long float64) string {
 			return fmt.Sprintf("%f, %f", lat, long)
 		}
 
-		req.Header.Set("User-Agent", "HRIS-App-Backend/1.0 (taufik@januar35@gmail.com)")
+		req.Header.Set("User-Agent", "HRIS-App-Backend/2.5.1 (taufik@januar35@gmail.com)")
 
 		resp, err := n.client.Do(req)
 		if err != nil {

@@ -9,17 +9,20 @@ import (
 	"hris-backend/pkg/logger"
 	"hris-backend/pkg/response"
 	"hris-backend/pkg/utils"
+	"net/http"
+	"strings"
 	"time"
 
-	"github.com/go-pdf/fpdf"
+	"github.com/signintech/gopdf"
 )
 
 type Service interface {
 	GenerateAll(ctx context.Context, req *GenerateRequest) (*GenerateResponse, error)
 	GetList(ctx context.Context, filter *PayrollFilter) ([]PayrollListResponse, *response.Meta, error)
 	GetDetail(ctx context.Context, id uint) (*PayrollDetailResponse, error)
-	GeneratePayslipPDF(ctx context.Context, id uint) (*fpdf.Fpdf, *Payroll, error)
+	GeneratePayslipPDF(ctx context.Context, id uint) (*gopdf.GoPdf, *Payroll, error)
 	MarkAsPaid(ctx context.Context, id uint) error
+	BlastPayslipEmail(ctx context.Context, id uint) error
 }
 
 type service struct {
@@ -30,6 +33,8 @@ type service struct {
 	company            CompanyProvider
 	notification       NotificationProvider
 	transactionManager infrastructure.TransactionManager
+	client             *http.Client
+	email              EmailProvider
 }
 
 func NewService(repo Repository,
@@ -38,8 +43,10 @@ func NewService(repo Repository,
 	attendance AttendanceProvider,
 	company CompanyProvider,
 	notification NotificationProvider,
-	transactionManager infrastructure.TransactionManager) Service {
-	return &service{repo, user, reimbursement, attendance, company, notification, transactionManager}
+	transactionManager infrastructure.TransactionManager,
+	client *http.Client,
+	email EmailProvider) Service {
+	return &service{repo, user, reimbursement, attendance, company, notification, transactionManager, client, email}
 }
 
 func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*GenerateResponse, error) {
@@ -221,7 +228,7 @@ func (s *service) GetDetail(ctx context.Context, id uint) (*PayrollDetailRespons
 	return &payrollDetail, nil
 }
 
-func (s *service) GeneratePayslipPDF(ctx context.Context, id uint) (*fpdf.Fpdf, *Payroll, error) {
+func (s *service) GeneratePayslipPDF(ctx context.Context, id uint) (*gopdf.GoPdf, *Payroll, error) {
 	payroll, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, nil, err
@@ -232,49 +239,122 @@ func (s *service) GeneratePayslipPDF(ctx context.Context, id uint) (*fpdf.Fpdf, 
 		return nil, nil, err
 	}
 
-	pdf := fpdf.New("P", "mm", "A4", "")
+	pdf := &gopdf.GoPdf{}
+	pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4})
 	pdf.AddPage()
-	pdf.SetFont("Arial", "", 12)
 
-	pdf.SetFont("Arial", "B", 16)
-	pdf.CellFormat(0, 10, company.Name, "", 1, "C", false, 0, "")
+	// Pastikan warna teks default hitam
+	pdf.SetTextColor(0, 0, 0)
 
-	pdf.SetFont("Arial", "", 10)
-	pdf.CellFormat(0, 5, company.Address, "", 1, "C", false, 0, "")
-	pdf.CellFormat(0, 5, fmt.Sprintf("Telp: %s | Email: %s", company.PhoneNumber, company.Email), "", 1, "C", false, 0, "")
+	// --- SETUP FONT ---
+	err = pdf.AddTTFFont("Roboto", "assets/fonts/Roboto-Regular.ttf")
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed load font regular: %w", err)
+	}
+	err = pdf.AddTTFFont("Roboto-Bold", "assets/fonts/Roboto-Bold.ttf")
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed load font bold: %w", err)
+	}
 
-	pdf.SetLineWidth(0.5)
-	pdf.Line(10, 30, 200, 30)
+	marginLeft := 30.0
+	marginRight := 565.0
+	contentWidth := marginRight - marginLeft // 535.0 pt
 
-	pdf.Ln(10)
+	startY := 30.0
+	currentY := startY
+	logoRendered := false
 
-	printInfo := func(label, value string, label2, value2 string) {
-		pdf.SetFont("Arial", "B", 10)
-		pdf.CellFormat(30, 6, label, "", 0, "", false, 0, "")
-		pdf.SetFont("Arial", "", 10)
-		pdf.CellFormat(60, 6, ": "+value, "", 0, "", false, 0, "")
+	// --- SECTION: HEADER ---
+	if company.LogoURL != "" {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, company.LogoURL, nil)
 
-		if label2 != "" {
-			pdf.SetFont("Arial", "B", 10)
-			pdf.CellFormat(30, 6, label2, "", 0, "", false, 0, "")
-			pdf.SetFont("Arial", "", 10)
-			pdf.CellFormat(60, 6, ": "+value2, "", 1, "", false, 0, "")
-		} else {
-			pdf.Ln(-1)
+		if err == nil {
+			resp, err := s.client.Do(req)
+			if err == nil && resp.StatusCode == http.StatusOK {
+				defer resp.Body.Close()
+
+				imgHolder, err := gopdf.ImageHolderByReader(resp.Body)
+				if err == nil {
+					_ = pdf.ImageByHolder(imgHolder, marginLeft, startY, &gopdf.Rect{W: 70, H: 70})
+
+					textStartX := marginLeft + 90.0
+
+					pdf.SetXY(textStartX, startY+15)
+					_ = pdf.SetFont("Roboto-Bold", "", 20)
+					_ = pdf.Cell(nil, company.Name)
+
+					pdf.SetXY(textStartX, startY+35)
+					_ = pdf.SetFont("Roboto", "", 11)
+					_ = pdf.Cell(nil, company.Address)
+
+					pdf.SetXY(textStartX, startY+50)
+					_ = pdf.Cell(nil, fmt.Sprintf("Telp: %s | Email: %s", company.PhoneNumber, company.Email))
+
+					currentY = startY + 90
+					logoRendered = true
+				}
+			}
 		}
+	}
+
+	if !logoRendered {
+		pdf.SetXY(marginLeft, startY)
+		_ = pdf.SetFont("Roboto-Bold", "", 20)
+		_ = pdf.CellWithOption(&gopdf.Rect{W: contentWidth, H: 25}, company.Name, gopdf.CellOption{Align: gopdf.Center})
+
+		pdf.SetXY(marginLeft, startY+25)
+		_ = pdf.SetFont("Roboto", "", 11)
+		_ = pdf.CellWithOption(&gopdf.Rect{W: contentWidth, H: 15}, company.Address, gopdf.CellOption{Align: gopdf.Center})
+
+		pdf.SetXY(marginLeft, startY+40)
+		_ = pdf.CellWithOption(&gopdf.Rect{W: contentWidth, H: 15}, fmt.Sprintf("Telp: %s | Email: %s", company.PhoneNumber, company.Email), gopdf.CellOption{Align: gopdf.Center})
+
+		currentY = startY + 70
+	}
+
+	pdf.SetLineWidth(1)
+	pdf.Line(marginLeft, currentY, marginRight, currentY)
+	currentY += 20
+
+	// --- SECTION: EMPLOYEE INFO ---
+	printInfo := func(x float64, y float64, label, value string) {
+		pdf.SetXY(x, y)
+		_ = pdf.SetFont("Roboto-Bold", "", 11)
+		_ = pdf.Cell(nil, label)
+
+		pdf.SetXY(x+70, y)
+		_ = pdf.SetFont("Roboto", "", 11)
+		_ = pdf.Cell(nil, ": "+value)
 	}
 
 	periodStr := payroll.PeriodDate.Format("January 2006")
 
-	printInfo("Name", payroll.Employee.FullName, "Period", periodStr)
-	printInfo("NIK", payroll.Employee.NIK, "Status", string(payroll.Status))
+	printInfo(marginLeft, currentY, "Name", payroll.Employee.FullName)
+	printInfo(320, currentY, "Period", periodStr)
+	currentY += 20
 
-	pdf.Ln(10)
+	printInfo(marginLeft, currentY, "NIK", payroll.Employee.NIK)
+	printInfo(320, currentY, "Status", string(payroll.Status))
+	currentY += 30
 
+	// --- SECTION: PAYROLL TABLE ---
+	halfWidth := contentWidth / 2
+	col2X := marginLeft + halfWidth
+
+	// Header Tabel
 	pdf.SetFillColor(240, 240, 240)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(95, 8, " EARNINGS (PENDAPATAN)", "1", 0, "L", true, 0, "")
-	pdf.CellFormat(95, 8, " DEDUCTIONS (POTONGAN)", "1", 1, "L", true, 0, "")
+	pdf.RectFromUpperLeftWithStyle(marginLeft, currentY, halfWidth, 25, "F")
+	pdf.RectFromUpperLeftWithStyle(col2X, currentY, halfWidth, 25, "F")
+
+	pdf.SetTextColor(0, 0, 0)
+
+	pdf.SetXY(marginLeft, currentY)
+	_ = pdf.SetFont("Roboto-Bold", "", 11)
+	_ = pdf.CellWithOption(&gopdf.Rect{W: halfWidth, H: 25}, "  EARNINGS (PENDAPATAN)", gopdf.CellOption{Border: gopdf.AllBorders, Align: gopdf.Middle | gopdf.Left})
+
+	pdf.SetXY(col2X, currentY)
+	_ = pdf.CellWithOption(&gopdf.Rect{W: halfWidth, H: 25}, "  DEDUCTIONS (POTONGAN)", gopdf.CellOption{Border: gopdf.AllBorders, Align: gopdf.Middle | gopdf.Left})
+	currentY += 25
 
 	var earnings, deductions []PayrollDetail
 	for _, d := range payroll.Details {
@@ -290,56 +370,88 @@ func (s *service) GeneratePayslipPDF(ctx context.Context, id uint) (*fpdf.Fpdf, 
 		maxRows = len(deductions)
 	}
 
-	pdf.SetFont("Arial", "", 9)
+	_ = pdf.SetFont("Roboto", "", 10)
 	formatCurrency := func(amount float64) string {
 		return fmt.Sprintf("Rp %s", utils.FormatNumber(amount))
 	}
 
+	rowH := 20.0
+	labelW := 150.0
+	valueW := halfWidth - labelW
+
+	// Data Rows
 	for i := 0; i < maxRows; i++ {
+		// (Earnings)
+		pdf.SetXY(marginLeft, currentY)
 		if i < len(earnings) {
-			pdf.CellFormat(60, 7, " "+earnings[i].Title, "L", 0, "L", false, 0, "")
-			pdf.CellFormat(35, 7, formatCurrency(earnings[i].Amount)+" ", "R", 0, "R", false, 0, "")
+			_ = pdf.CellWithOption(&gopdf.Rect{W: labelW, H: rowH}, "   "+earnings[i].Title, gopdf.CellOption{Border: gopdf.Left, Align: gopdf.Middle | gopdf.Left})
+			pdf.SetXY(marginLeft+labelW, currentY)
+			_ = pdf.CellWithOption(&gopdf.Rect{W: valueW, H: rowH}, formatCurrency(earnings[i].Amount)+"   ", gopdf.CellOption{Border: gopdf.Right, Align: gopdf.Middle | gopdf.Right})
 		} else {
-			pdf.CellFormat(60, 7, "", "L", 0, "L", false, 0, "")
-			pdf.CellFormat(35, 7, "", "R", 0, "R", false, 0, "")
+			_ = pdf.CellWithOption(&gopdf.Rect{W: labelW, H: rowH}, "", gopdf.CellOption{Border: gopdf.Left})
+			pdf.SetXY(marginLeft+labelW, currentY)
+			_ = pdf.CellWithOption(&gopdf.Rect{W: valueW, H: rowH}, "", gopdf.CellOption{Border: gopdf.Right})
 		}
 
+		// (Deductions)
+		pdf.SetXY(col2X, currentY)
 		if i < len(deductions) {
-			pdf.CellFormat(60, 7, " "+deductions[i].Title, "L", 0, "L", false, 0, "")
-			pdf.CellFormat(35, 7, formatCurrency(deductions[i].Amount)+" ", "R", 1, "R", false, 0, "")
+			_ = pdf.CellWithOption(&gopdf.Rect{W: labelW, H: rowH}, "   "+deductions[i].Title, gopdf.CellOption{Border: gopdf.Left, Align: gopdf.Middle | gopdf.Left})
+			pdf.SetXY(col2X+labelW, currentY)
+			_ = pdf.CellWithOption(&gopdf.Rect{W: valueW, H: rowH}, formatCurrency(deductions[i].Amount)+"   ", gopdf.CellOption{Border: gopdf.Right, Align: gopdf.Middle | gopdf.Right})
 		} else {
-			pdf.CellFormat(60, 7, "", "L", 0, "L", false, 0, "")
-			pdf.CellFormat(35, 7, "", "R", 1, "R", false, 0, "")
+			_ = pdf.CellWithOption(&gopdf.Rect{W: labelW, H: rowH}, "", gopdf.CellOption{Border: gopdf.Left})
+			pdf.SetXY(col2X+labelW, currentY)
+			_ = pdf.CellWithOption(&gopdf.Rect{W: valueW, H: rowH}, "", gopdf.CellOption{Border: gopdf.Right})
 		}
+		currentY += rowH
 	}
 
-	pdf.CellFormat(95, 0, "", "T", 0, "", false, 0, "")
-	pdf.CellFormat(95, 0, "", "T", 1, "", false, 0, "")
+	// Total Row
+	_ = pdf.SetFont("Roboto-Bold", "", 11)
 
-	pdf.Ln(2)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(60, 8, " Total Earnings", "", 0, "L", false, 0, "")
-	pdf.CellFormat(35, 8, formatCurrency(payroll.TotalAllowance)+" ", "", 0, "R", false, 0, "")
+	pdf.Line(marginLeft, currentY, marginRight, currentY)
 
-	pdf.CellFormat(60, 8, " Total Deductions", "", 0, "L", false, 0, "")
-	pdf.CellFormat(35, 8, formatCurrency(payroll.TotalDeduction)+" ", "", 1, "R", false, 0, "")
+	pdf.SetXY(marginLeft, currentY)
+	_ = pdf.CellWithOption(&gopdf.Rect{W: labelW, H: 25}, "   Total Earnings", gopdf.CellOption{Border: gopdf.Left | gopdf.Bottom, Align: gopdf.Middle | gopdf.Left})
+	pdf.SetXY(marginLeft+labelW, currentY)
+	_ = pdf.CellWithOption(&gopdf.Rect{W: valueW, H: 25}, formatCurrency(payroll.TotalAllowance)+"   ", gopdf.CellOption{Border: gopdf.Right | gopdf.Bottom, Align: gopdf.Middle | gopdf.Right})
 
-	pdf.Ln(5)
+	pdf.SetXY(col2X, currentY)
+	_ = pdf.CellWithOption(&gopdf.Rect{W: labelW, H: 25}, "   Total Deductions", gopdf.CellOption{Border: gopdf.Left | gopdf.Bottom, Align: gopdf.Middle | gopdf.Left})
+	pdf.SetXY(col2X+labelW, currentY)
+	_ = pdf.CellWithOption(&gopdf.Rect{W: valueW, H: 25}, formatCurrency(payroll.TotalDeduction)+"   ", gopdf.CellOption{Border: gopdf.Right | gopdf.Bottom, Align: gopdf.Middle | gopdf.Right})
+
+	currentY += 40
+
+	// --- SECTION: TAKE HOME PAY ---
+	thpLabelW := 350.0
+	thpValueW := contentWidth - thpLabelW
+
 	pdf.SetFillColor(220, 230, 241)
-	pdf.SetFont("Arial", "B", 12)
-	pdf.CellFormat(130, 12, "  TAKE HOME PAY ", "1", 0, "L", true, 0, "")
-	pdf.CellFormat(60, 12, formatCurrency(payroll.NetSalary)+"  ", "1", 1, "R", true, 0, "")
+	pdf.RectFromUpperLeftWithStyle(marginLeft, currentY, contentWidth, 30, "F")
 
-	pdf.Ln(20)
-	pdf.SetFont("Arial", "", 10)
+	pdf.SetTextColor(0, 0, 0)
 
-	xAuth := 140.0
-	pdf.SetX(xAuth)
-	pdf.CellFormat(50, 5, "Authorized Signature,", "", 1, "C", false, 0, "")
-	pdf.Ln(20)
-	pdf.SetX(xAuth)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(50, 5, "( HR Manager )", "T", 1, "C", false, 0, "")
+	_ = pdf.SetFont("Roboto-Bold", "", 14)
+	pdf.SetXY(marginLeft, currentY)
+	_ = pdf.CellWithOption(&gopdf.Rect{W: thpLabelW, H: 30}, "   TAKE HOME PAY ", gopdf.CellOption{Border: gopdf.Left | gopdf.Top | gopdf.Bottom, Align: gopdf.Middle | gopdf.Left})
+
+	pdf.SetXY(marginLeft+thpLabelW, currentY)
+	_ = pdf.CellWithOption(&gopdf.Rect{W: thpValueW, H: 30}, formatCurrency(payroll.NetSalary)+"   ", gopdf.CellOption{Border: gopdf.Right | gopdf.Top | gopdf.Bottom, Align: gopdf.Middle | gopdf.Right})
+
+	currentY += 80
+
+	// --- SECTION: SIGNATURE ---
+	signatureX := marginRight - 150.0
+	_ = pdf.SetFont("Roboto", "", 11)
+	pdf.SetXY(signatureX, currentY)
+	_ = pdf.CellWithOption(&gopdf.Rect{W: 150, H: 15}, "Authorized Signature,", gopdf.CellOption{Align: gopdf.Center})
+
+	currentY += 70
+	_ = pdf.SetFont("Roboto-Bold", "", 11)
+	pdf.SetXY(signatureX, currentY)
+	_ = pdf.CellWithOption(&gopdf.Rect{W: 150, H: 15}, "( HR Manager )", gopdf.CellOption{Border: gopdf.Top, Align: gopdf.Center})
 
 	return pdf, payroll, nil
 }
@@ -367,4 +479,56 @@ func (s *service) MarkAsPaid(ctx context.Context, id uint) error {
 
 		return nil
 	})
+}
+
+func (s *service) BlastPayslipEmail(ctx context.Context, id uint) error {
+	pdfBytes, payroll, err := s.generatePayslipPDFBytes(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed generate pdf: %w", err)
+	}
+
+	if payroll.Status != constants.PayrollStatusPaid {
+		return fmt.Errorf("payroll status must paid")
+	}
+
+	if payroll.Employee.Email == "" {
+		return fmt.Errorf("email required, make sure to update first")
+	}
+
+	periodStr := payroll.PeriodDate.Format(constants.PayrollTimeFormat)
+	subject := fmt.Sprintf("Payslip: %s - %s", periodStr, payroll.Employee.FullName)
+	fileName := fmt.Sprintf("Payslip_%s_%s.pdf", strings.ReplaceAll(payroll.Employee.FullName, " ", "-"), payroll.PeriodDate.Format("Jan2006"))
+
+	htmlBody := fmt.Sprintf(`
+		<h3>Hello %s,</h3>
+		<p>Terlampir adalah slip gaji Anda untuk periode <strong>%s</strong>.</p>
+		<p>Harap jaga kerahasiaan dokumen ini. Jika ada pertanyaan, silakan hubungi tim HR.</p>
+		<br>
+		<p>Salam,</p>
+		<p><strong>HR Manager</strong></p>
+	`, payroll.Employee.FullName, periodStr)
+
+	err = s.email.SendWithAttachment(
+		payroll.Employee.Email,
+		subject,
+		htmlBody,
+		fileName,
+		pdfBytes,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to send email %s: %w", payroll.Employee.Email, err)
+	}
+
+	return nil
+}
+
+func (s *service) generatePayslipPDFBytes(ctx context.Context, id uint) ([]byte, *Payroll, error) {
+	pdf, payroll, err := s.GeneratePayslipPDF(ctx, id)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	pdfBytes := pdf.GetBytesPdf()
+
+	return pdfBytes, payroll, nil
 }
