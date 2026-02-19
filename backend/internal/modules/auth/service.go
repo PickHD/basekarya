@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"hris-backend/pkg/constants"
 )
@@ -24,7 +25,7 @@ func NewService(user UserProvider, hasher Hasher, tokenProvider TokenProvider) S
 }
 
 func (s *service) Login(username, password string) (*LoginResponse, error) {
-	foundUser, err := s.user.FindByUsername(username)
+	foundUser, err := s.user.FindByUsername(context.Background(), username)
 	if err != nil {
 		return nil, errors.New("invalid credentials")
 	}

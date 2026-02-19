@@ -1,22 +1,24 @@
 package attendance
 
 import (
+	"context"
 	"hris-backend/pkg/constants"
 	"hris-backend/pkg/response"
+	"hris-backend/pkg/utils"
 	"time"
 
 	"gorm.io/gorm"
 )
 
 type Repository interface {
-	GetTodayAttendance(employeeID uint) (*Attendance, error)
-	Create(attendance *Attendance) error
-	Update(attendance *Attendance) error
-	GetHistory(employeeID uint, month, year, limit int, cursor string) ([]Attendance, *response.Cursor, error)
-	FindAll(filter *FilterParams) ([]Attendance, *response.Cursor, error)
-	CountByStatus(status constants.AttendanceStatus, todayDate string) (int64, error)
-	CountAttendanceToday(todayDate string) (int64, error)
-	GetBulkLateDuration(month, year int) (map[uint]int, error)
+	GetTodayAttendance(ctx context.Context, employeeID uint) (*Attendance, error)
+	Create(ctx context.Context, attendance *Attendance) error
+	Update(ctx context.Context, attendance *Attendance) error
+	GetHistory(ctx context.Context, employeeID uint, month, year, limit int, cursor string) ([]Attendance, *response.Cursor, error)
+	FindAll(ctx context.Context, filter *FilterParams) ([]Attendance, *response.Cursor, error)
+	CountByStatus(ctx context.Context, status constants.AttendanceStatus, todayDate string) (int64, error)
+	CountAttendanceToday(ctx context.Context, todayDate string) (int64, error)
+	GetBulkLateDuration(ctx context.Context, month, year int) (map[uint]int, error)
 }
 
 type repository struct {
@@ -27,10 +29,11 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db}
 }
 
-func (r *repository) GetTodayAttendance(employeeID uint) (*Attendance, error) {
+func (r *repository) GetTodayAttendance(ctx context.Context, employeeID uint) (*Attendance, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var att Attendance
 
-	err := r.db.Where("employee_id = ? AND date = ?", employeeID, time.Now().Format("2006-01-02")).
+	err := db.Where("employee_id = ? AND date = ?", employeeID, time.Now().Format("2006-01-02")).
 		First(&att).Error
 	if err != nil {
 		return nil, err
@@ -39,18 +42,21 @@ func (r *repository) GetTodayAttendance(employeeID uint) (*Attendance, error) {
 	return &att, nil
 }
 
-func (r *repository) Create(attendance *Attendance) error {
-	return r.db.Create(attendance).Error
+func (r *repository) Create(ctx context.Context, attendance *Attendance) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	return db.Create(attendance).Error
 }
 
-func (r *repository) Update(attendance *Attendance) error {
-	return r.db.Save(attendance).Error
+func (r *repository) Update(ctx context.Context, attendance *Attendance) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	return db.Save(attendance).Error
 }
 
-func (r *repository) GetHistory(employeeID uint, month, year, limit int, cursor string) ([]Attendance, *response.Cursor, error) {
+func (r *repository) GetHistory(ctx context.Context, employeeID uint, month, year, limit int, cursor string) ([]Attendance, *response.Cursor, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var logs []Attendance
 
-	query := r.db.Model(&Attendance{}).
+	query := db.Model(&Attendance{}).
 		Where("employee_id = ? ", employeeID).
 		Order("created_at DESC, id DESC").
 		Limit(limit + 1)
@@ -93,10 +99,11 @@ func (r *repository) GetHistory(employeeID uint, month, year, limit int, cursor 
 	return logs, nextCursor, nil
 }
 
-func (r *repository) FindAll(filter *FilterParams) ([]Attendance, *response.Cursor, error) {
+func (r *repository) FindAll(ctx context.Context, filter *FilterParams) ([]Attendance, *response.Cursor, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var logs []Attendance
 
-	query := r.db.Model(&Attendance{}).
+	query := db.Model(&Attendance{}).
 		Select("attendances.*").
 		Joins("JOIN employees ON employees.id = attendances.employee_id").
 		Joins("JOIN ref_departments ON ref_departments.id = employees.department_id").
@@ -156,9 +163,10 @@ func (r *repository) FindAll(filter *FilterParams) ([]Attendance, *response.Curs
 	return logs, nextCursor, nil
 }
 
-func (r *repository) CountByStatus(status constants.AttendanceStatus, todayDate string) (int64, error) {
+func (r *repository) CountByStatus(ctx context.Context, status constants.AttendanceStatus, todayDate string) (int64, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var totalStatus int64
-	if err := r.db.Model(&Attendance{}).
+	if err := db.Model(&Attendance{}).
 		Where("date = ? AND status = ?", todayDate, string(status)).
 		Count(&totalStatus).Error; err != nil {
 		return 0, err
@@ -167,9 +175,10 @@ func (r *repository) CountByStatus(status constants.AttendanceStatus, todayDate 
 	return totalStatus, nil
 }
 
-func (r *repository) CountAttendanceToday(todayDate string) (int64, error) {
+func (r *repository) CountAttendanceToday(ctx context.Context, todayDate string) (int64, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var totalStatus int64
-	if err := r.db.Model(&Attendance{}).
+	if err := db.Model(&Attendance{}).
 		Where("date = ?", todayDate).
 		Count(&totalStatus).Error; err != nil {
 		return 0, err
@@ -178,14 +187,15 @@ func (r *repository) CountAttendanceToday(todayDate string) (int64, error) {
 	return totalStatus, nil
 }
 
-func (r *repository) GetBulkLateDuration(month, year int) (map[uint]int, error) {
+func (r *repository) GetBulkLateDuration(ctx context.Context, month, year int) (map[uint]int, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	type Result struct {
 		UserID      uint
 		TotalMinute int
 	}
 	var results []Result
 
-	err := r.db.Model(&Attendance{}).
+	err := db.Model(&Attendance{}).
 		Select("employee_id, COALESCE(SUM(late_duration_minute), 0) as total_minute").
 		Where("MONTH(check_in_time) = ? AND YEAR(check_in_time) = ?", month, year).
 		Group("employee_id").

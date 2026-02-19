@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"hris-backend/internal/modules/user"
 )
 
@@ -13,5 +14,5 @@ type TokenProvider interface {
 }
 
 type UserProvider interface {
-	FindByUsername(username string) (*user.User, error)
+	FindByUsername(ctx context.Context, username string) (*user.User, error)
 }

@@ -77,7 +77,7 @@ func (h *Handler) ChangePassword(ctx echo.Context) error {
 		return response.NewResponses[any](ctx, http.StatusBadRequest, "Invalid Request", nil, err, nil)
 	}
 
-	err = h.service.ChangePassword(userContext.UserID, &req)
+	err = h.service.ChangePassword(ctx.Request().Context(), userContext.UserID, &req)
 	if err != nil {
 		logger.Errorw("Change password failed : ", err)
 

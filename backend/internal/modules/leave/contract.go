@@ -17,5 +17,5 @@ type NotificationProvider interface {
 }
 
 type UserProvider interface {
-	FindAdminID() (uint, error)
+	FindAdminID(ctx context.Context) (uint, error)
 }

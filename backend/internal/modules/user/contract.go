@@ -3,8 +3,6 @@ package user
 import (
 	"context"
 	"mime/multipart"
-
-	"gorm.io/gorm"
 )
 
 type Hasher interface {
@@ -17,5 +15,5 @@ type StorageProvider interface {
 }
 
 type LeaveBalanceGenerator interface {
-	GenerateInitialBalance(ctx context.Context, tx interface{}, employeeID uint) (*gorm.DB, error)
+	GenerateInitialBalance(ctx context.Context, employeeID uint) error
 }

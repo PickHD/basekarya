@@ -17,7 +17,7 @@ func NewHandler(service Service) *Handler {
 }
 
 func (h *Handler) GetProfile(ctx echo.Context) error {
-	company, err := h.service.GetProfile()
+	company, err := h.service.GetProfile(ctx.Request().Context())
 	if err != nil {
 		logger.Errorw("Get company profile failed: ", err)
 

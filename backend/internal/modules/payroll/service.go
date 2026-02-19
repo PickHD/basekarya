@@ -43,7 +43,7 @@ func NewService(repo Repository,
 }
 
 func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*GenerateResponse, error) {
-	employees, err := s.user.FindAllEmployeeActive()
+	employees, err := s.user.FindAllEmployeeActive(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch all employee active: %w", err)
 	}
@@ -53,12 +53,12 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 		return nil, fmt.Errorf("failed to fetch existing employee id: %w", err)
 	}
 
-	attendanceMap, err := s.attendance.GetBulkLateDuration(req.Month, req.Year)
+	attendanceMap, err := s.attendance.GetBulkLateDuration(ctx, req.Month, req.Year)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch bulk late duration: %w", err)
 	}
 
-	reimburseMap, err := s.reimbursement.GetBulkApprovedAmount(req.Month, req.Year)
+	reimburseMap, err := s.reimbursement.GetBulkApprovedAmount(ctx, req.Month, req.Year)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch bulk approved amount: %w", err)
 	}
@@ -227,7 +227,7 @@ func (s *service) GeneratePayslipPDF(ctx context.Context, id uint) (*fpdf.Fpdf, 
 		return nil, nil, err
 	}
 
-	company, err := s.company.FindByID(1)
+	company, err := s.company.FindByID(ctx, 1)
 	if err != nil {
 		return nil, nil, err
 	}

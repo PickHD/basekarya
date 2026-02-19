@@ -8,7 +8,7 @@ import (
 )
 
 type Service interface {
-	GetProfile() (*CompanyProfileResponse, error)
+	GetProfile(ctx context.Context) (*CompanyProfileResponse, error)
 	UpdateProfile(ctx context.Context, req *UpdateCompanyProfileRequest, file *multipart.FileHeader) error
 }
 
@@ -21,8 +21,8 @@ func NewService(repo Repository, storage StorageProvider) Service {
 	return &service{repo, storage}
 }
 
-func (s *service) GetProfile() (*CompanyProfileResponse, error) {
-	data, err := s.repo.FindByID(1)
+func (s *service) GetProfile(ctx context.Context) (*CompanyProfileResponse, error) {
+	data, err := s.repo.FindByID(ctx, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (s *service) GetProfile() (*CompanyProfileResponse, error) {
 }
 
 func (s *service) UpdateProfile(ctx context.Context, req *UpdateCompanyProfileRequest, file *multipart.FileHeader) error {
-	data, err := s.repo.FindByID(1)
+	data, err := s.repo.FindByID(ctx, 1)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (s *service) UpdateProfile(ctx context.Context, req *UpdateCompanyProfileRe
 		return err
 	}
 
-	return s.repo.Update(company)
+	return s.repo.Update(ctx, company)
 }
 
 func (s *service) buildCompanyProfileData(ctx context.Context, curr *Company, update *UpdateCompanyProfileRequest, file *multipart.FileHeader) (*Company, error) {

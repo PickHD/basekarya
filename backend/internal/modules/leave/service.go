@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"hris-backend/internal/infrastructure"
 	"hris-backend/internal/modules/attendance"
 	"hris-backend/internal/modules/master"
 	"hris-backend/internal/modules/user"
@@ -12,8 +13,6 @@ import (
 	"hris-backend/pkg/response"
 	"hris-backend/pkg/utils"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type Service interface {
@@ -21,19 +20,20 @@ type Service interface {
 	RequestAction(ctx context.Context, req *LeaveActionRequest) error
 	GetList(ctx context.Context, filter *LeaveFilter) ([]LeaveRequestListResponse, *response.Meta, error)
 	GetDetail(ctx context.Context, id uint) (*LeaveRequestDetailResponse, error)
-	GenerateInitialBalance(ctx context.Context, txObj interface{}, employeeID uint) (*gorm.DB, error)
+	GenerateInitialBalance(ctx context.Context, employeeID uint) error
 	GenerateAnnualBalance(ctx context.Context) error
 }
 
 type service struct {
-	repo         Repository
-	storage      StorageProvider
-	notification NotificationProvider
-	user         UserProvider
+	repo               Repository
+	storage            StorageProvider
+	notification       NotificationProvider
+	user               UserProvider
+	transactionManager infrastructure.TransactionManager
 }
 
-func NewService(repo Repository, storage StorageProvider, notification NotificationProvider, user UserProvider) Service {
-	return &service{repo, storage, notification, user}
+func NewService(repo Repository, storage StorageProvider, notification NotificationProvider, user UserProvider, transactionManager infrastructure.TransactionManager) Service {
+	return &service{repo, storage, notification, user, transactionManager}
 }
 
 func (s *service) Apply(ctx context.Context, req *ApplyRequest) error {
@@ -55,7 +55,7 @@ func (s *service) Apply(ctx context.Context, req *ApplyRequest) error {
 	totalDays := int(end.Sub(start).Hours()/24) + 1
 
 	// check balance still available or not
-	balance, err := s.repo.GetBalance(req.EmployeeID, req.LeaveTypeID, start.Year())
+	balance, err := s.repo.GetBalance(ctx, req.EmployeeID, req.LeaveTypeID, start.Year())
 	if err != nil {
 		return err
 	}
@@ -96,12 +96,12 @@ func (s *service) Apply(ctx context.Context, req *ApplyRequest) error {
 		Status:        constants.LeaveStatusPending,
 	}
 
-	err = s.repo.CreateRequest(leaveReq)
+	err = s.repo.CreateRequest(ctx, leaveReq)
 	if err != nil {
 		return err
 	}
 
-	adminID, err := s.user.FindAdminID()
+	adminID, err := s.user.FindAdminID(ctx)
 	if err != nil {
 		return err
 	}
@@ -121,108 +121,110 @@ func (s *service) Apply(ctx context.Context, req *ApplyRequest) error {
 }
 
 func (s *service) RequestAction(ctx context.Context, req *LeaveActionRequest) error {
-	leaveRequest, err := s.repo.FindRequestByID(req.RequestID)
-	if err != nil {
-		return err
-	}
-
-	if leaveRequest.Status != constants.LeaveStatusPending {
-		return errors.New("request is not pending")
-	}
-
-	var (
-		notificationType    constants.NotificationType
-		notificationTitle   string
-		notificationMessage string
-	)
-	switch constants.LeaveAction(req.Action) {
-	case constants.LeaveActionApprove:
-		shouldDeduct := leaveRequest.LeaveType.IsDeducted
-		if shouldDeduct {
-			balance, err := s.repo.GetBalance(leaveRequest.EmployeeID, leaveRequest.LeaveTypeID, leaveRequest.StartDate.Year())
-			if err != nil {
-				return errors.New("balance record not found for this employee/year")
-			}
-			if balance.QuotaLeft < leaveRequest.TotalDays {
-				return errors.New("insufficient leave balance quota")
-			}
-		}
-
-		var attendanceRecords []attendance.Attendance
-
-		currentDate := leaveRequest.StartDate
-		for !currentDate.After(leaveRequest.EndDate) {
-
-			if currentDate.Weekday() == time.Saturday || currentDate.Weekday() == time.Sunday {
-				currentDate = currentDate.AddDate(0, 0, 1)
-				continue
-			}
-
-			status := constants.AttendanceStatusExcused
-			if leaveRequest.LeaveType.Name == "Sick" {
-				status = constants.AttendanceStatusSick
-			}
-
-			attendance := attendance.Attendance{
-				EmployeeID:         leaveRequest.EmployeeID,
-				ShiftID:            leaveRequest.Employee.ShiftID,
-				Date:               currentDate,
-				CheckInTime:        currentDate,
-				CheckInLat:         0,
-				CheckInLong:        0,
-				CheckInAddress:     "SYSTEM_GENERATED",
-				CheckInImageURL:    "",
-				Status:             string(status),
-				Notes:              "",
-				LateDurationMinute: 0,
-				IsSuspicious:       false,
-			}
-			attendanceRecords = append(attendanceRecords, attendance)
-
-			currentDate = currentDate.AddDate(0, 0, 1)
-		}
-
-		err := s.repo.ApproveRequest(req.RequestID, req.ApproverID, attendanceRecords, shouldDeduct, leaveRequest.TotalDays)
+	return s.transactionManager.RunInTransaction(ctx, func(ctx context.Context) error {
+		leaveRequest, err := s.repo.FindRequestByID(ctx, req.RequestID)
 		if err != nil {
 			return err
 		}
 
-		notificationType = constants.NotificationTypeApproved
-		notificationTitle = "Permintaan Disetujui"
-		notificationMessage = "Cuti Anda telah disetujui oleh Admin."
-	case constants.LeaveActionReject:
-		if req.RejectionReason == "" {
-			return errors.New("rejection reason required")
+		if leaveRequest.Status != constants.LeaveStatusPending {
+			return errors.New("request is not pending")
 		}
 
-		err := s.repo.RejectRequest(req.RequestID, req.ApproverID, req.RejectionReason)
-		if err != nil {
-			return err
-		}
-
-		notificationType = constants.NotificationTypeRejected
-		notificationTitle = "Permintaan Ditolak"
-		notificationMessage = "Cuti Anda telah ditolak oleh Admin."
-	default:
-		return errors.New("invalid action")
-	}
-
-	// send notification to requester
-	go func() {
-		_ = s.notification.SendNotification(
-			leaveRequest.User.ID,
-			string(notificationType),
-			notificationTitle,
-			notificationMessage,
-			leaveRequest.ID,
+		var (
+			notificationType    constants.NotificationType
+			notificationTitle   string
+			notificationMessage string
 		)
-	}()
+		switch constants.LeaveAction(req.Action) {
+		case constants.LeaveActionApprove:
+			shouldDeduct := leaveRequest.LeaveType.IsDeducted
+			if shouldDeduct {
+				balance, err := s.repo.GetBalance(ctx, leaveRequest.EmployeeID, leaveRequest.LeaveTypeID, leaveRequest.StartDate.Year())
+				if err != nil {
+					return errors.New("balance record not found for this employee/year")
+				}
+				if balance.QuotaLeft < leaveRequest.TotalDays {
+					return errors.New("insufficient leave balance quota")
+				}
+			}
 
-	return nil
+			var attendanceRecords []attendance.Attendance
+
+			currentDate := leaveRequest.StartDate
+			for !currentDate.After(leaveRequest.EndDate) {
+
+				if currentDate.Weekday() == time.Saturday || currentDate.Weekday() == time.Sunday {
+					currentDate = currentDate.AddDate(0, 0, 1)
+					continue
+				}
+
+				status := constants.AttendanceStatusExcused
+				if leaveRequest.LeaveType.Name == "Sick" {
+					status = constants.AttendanceStatusSick
+				}
+
+				attendance := attendance.Attendance{
+					EmployeeID:         leaveRequest.EmployeeID,
+					ShiftID:            leaveRequest.Employee.ShiftID,
+					Date:               currentDate,
+					CheckInTime:        currentDate,
+					CheckInLat:         0,
+					CheckInLong:        0,
+					CheckInAddress:     "SYSTEM_GENERATED",
+					CheckInImageURL:    "",
+					Status:             string(status),
+					Notes:              "",
+					LateDurationMinute: 0,
+					IsSuspicious:       false,
+				}
+				attendanceRecords = append(attendanceRecords, attendance)
+
+				currentDate = currentDate.AddDate(0, 0, 1)
+			}
+
+			err := s.repo.ApproveRequest(ctx, req.RequestID, req.ApproverID, attendanceRecords, shouldDeduct, leaveRequest.TotalDays)
+			if err != nil {
+				return err
+			}
+
+			notificationType = constants.NotificationTypeApproved
+			notificationTitle = "Permintaan Disetujui"
+			notificationMessage = "Cuti Anda telah disetujui oleh Admin."
+		case constants.LeaveActionReject:
+			if req.RejectionReason == "" {
+				return errors.New("rejection reason required")
+			}
+
+			err := s.repo.RejectRequest(ctx, req.RequestID, req.ApproverID, req.RejectionReason)
+			if err != nil {
+				return err
+			}
+
+			notificationType = constants.NotificationTypeRejected
+			notificationTitle = "Permintaan Ditolak"
+			notificationMessage = "Cuti Anda telah ditolak oleh Admin."
+		default:
+			return errors.New("invalid action")
+		}
+
+		// send notification to requester
+		go func() {
+			_ = s.notification.SendNotification(
+				leaveRequest.User.ID,
+				string(notificationType),
+				notificationTitle,
+				notificationMessage,
+				leaveRequest.ID,
+			)
+		}()
+
+		return nil
+	})
 }
 
 func (s *service) GetList(ctx context.Context, filter *LeaveFilter) ([]LeaveRequestListResponse, *response.Meta, error) {
-	requests, total, err := s.repo.FindAllRequests(filter)
+	requests, total, err := s.repo.FindAllRequests(ctx, filter)
 	if err != nil {
 		return []LeaveRequestListResponse{}, nil, nil
 	}
@@ -274,7 +276,7 @@ func (s *service) GetDetail(ctx context.Context, id uint) (*LeaveRequestDetailRe
 	empNik := "-"
 	leaveTypeResp := &master.LookupLeaveTypeResponse{}
 
-	detail, err := s.repo.FindRequestByID(id)
+	detail, err := s.repo.FindRequestByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -309,16 +311,10 @@ func (s *service) GetDetail(ctx context.Context, id uint) (*LeaveRequestDetailRe
 	}, nil
 }
 
-func (s *service) GenerateInitialBalance(ctx context.Context, txObj interface{}, employeeID uint) (*gorm.DB, error) {
-	tx, ok := txObj.(*gorm.DB)
-	if !ok {
-		return nil, errors.New("invalid transaction type")
-	}
-
-	var leaveTypes []master.LeaveType
-	if err := tx.Find(&leaveTypes).Error; err != nil {
-		tx.Rollback()
-		return nil, err
+func (s *service) GenerateInitialBalance(ctx context.Context, employeeID uint) error {
+	leaveTypes, err := s.repo.FindAllLeaveTypes(ctx)
+	if err != nil {
+		return err
 	}
 
 	currentYear := time.Now().Year()
@@ -344,65 +340,58 @@ func (s *service) GenerateInitialBalance(ctx context.Context, txObj interface{},
 	}
 
 	if len(balances) > 0 {
-		if err := tx.Create(&balances).Error; err != nil {
-			tx.Rollback()
-			return nil, err
-		}
-	}
-
-	return tx, nil
-}
-
-func (s *service) GenerateAnnualBalance(ctx context.Context) error {
-	tx := s.repo.StartTX()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	currentYear := time.Now().Year()
-
-	var employees []user.Employee
-	if err := tx.Find(&employees).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	var leaveTypes []master.LeaveType
-	if err := tx.Find(&leaveTypes).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	var newBalances []LeaveBalance
-
-	for _, emp := range employees {
-		for _, lt := range leaveTypes {
-			var count int64
-			tx.Model(&LeaveBalance{}).
-				Where("employee_id = ? AND leave_type_id = ? AND year = ?", emp.ID, lt.ID, currentYear).
-				Count(&count)
-
-			if count == 0 {
-				newBalances = append(newBalances, LeaveBalance{
-					EmployeeID:  emp.ID,
-					LeaveTypeID: lt.ID,
-					Year:        currentYear,
-					QuotaTotal:  lt.DefaultQuota,
-					QuotaUsed:   0,
-					QuotaLeft:   lt.DefaultQuota,
-				})
-			}
-		}
-	}
-
-	if len(newBalances) > 0 {
-		if err := tx.CreateInBatches(newBalances, 100).Error; err != nil {
-			tx.Rollback()
+		if err := s.repo.CreateLeaveBalances(ctx, balances); err != nil {
 			return err
 		}
 	}
 
-	return tx.Commit().Error
+	return nil
+}
+
+func (s *service) GenerateAnnualBalance(ctx context.Context) error {
+	return s.transactionManager.RunInTransaction(ctx, func(ctx context.Context) error {
+		tx := utils.GetDBFromContext(ctx, nil)
+
+		currentYear := time.Now().Year()
+
+		var employees []user.Employee
+		if err := tx.Find(&employees).Error; err != nil {
+			return err
+		}
+
+		var leaveTypes []master.LeaveType
+		if err := tx.Find(&leaveTypes).Error; err != nil {
+			return err
+		}
+
+		var newBalances []LeaveBalance
+
+		for _, emp := range employees {
+			for _, lt := range leaveTypes {
+				var count int64
+				tx.Model(&LeaveBalance{}).
+					Where("employee_id = ? AND leave_type_id = ? AND year = ?", emp.ID, lt.ID, currentYear).
+					Count(&count)
+
+				if count == 0 {
+					newBalances = append(newBalances, LeaveBalance{
+						EmployeeID:  emp.ID,
+						LeaveTypeID: lt.ID,
+						Year:        currentYear,
+						QuotaTotal:  lt.DefaultQuota,
+						QuotaUsed:   0,
+						QuotaLeft:   lt.DefaultQuota,
+					})
+				}
+			}
+		}
+
+		if len(newBalances) > 0 {
+			if err := tx.CreateInBatches(newBalances, 100).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }

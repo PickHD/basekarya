@@ -1,15 +1,18 @@
 package reimbursement
 
 import (
+	"context"
+	"hris-backend/pkg/utils"
+
 	"gorm.io/gorm"
 )
 
 type Repository interface {
-	Create(reimbursement *Reimbursement) error
-	FindByID(id uint) (*Reimbursement, error)
-	FindAll(filter ReimbursementFilter) ([]Reimbursement, int64, error)
-	Update(reimbursement *Reimbursement) error
-	GetBulkApprovedAmount(month, year int) (map[uint]float64, error)
+	Create(ctx context.Context, reimbursement *Reimbursement) error
+	FindByID(ctx context.Context, id uint) (*Reimbursement, error)
+	FindAll(ctx context.Context, filter ReimbursementFilter) ([]Reimbursement, int64, error)
+	Update(ctx context.Context, reimbursement *Reimbursement) error
+	GetBulkApprovedAmount(ctx context.Context, month, year int) (map[uint]float64, error)
 }
 
 type repository struct {
@@ -20,14 +23,16 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db}
 }
 
-func (r *repository) Create(reimbursement *Reimbursement) error {
-	return r.db.Create(reimbursement).Error
+func (r *repository) Create(ctx context.Context, reimbursement *Reimbursement) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	return db.Create(reimbursement).Error
 }
 
-func (r *repository) FindByID(id uint) (*Reimbursement, error) {
+func (r *repository) FindByID(ctx context.Context, id uint) (*Reimbursement, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var reimburstment Reimbursement
 
-	err := r.db.Preload("User").First(&reimburstment, id).Error
+	err := db.Preload("User").First(&reimburstment, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -35,11 +40,12 @@ func (r *repository) FindByID(id uint) (*Reimbursement, error) {
 	return &reimburstment, nil
 }
 
-func (r *repository) FindAll(filter ReimbursementFilter) ([]Reimbursement, int64, error) {
+func (r *repository) FindAll(ctx context.Context, filter ReimbursementFilter) ([]Reimbursement, int64, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var reimbursements []Reimbursement
 	var total int64
 
-	query := r.db.Model(&Reimbursement{})
+	query := db.Model(&Reimbursement{})
 
 	if filter.UserID > 0 {
 		query = query.Where("user_id = ?", filter.UserID)
@@ -63,18 +69,20 @@ func (r *repository) FindAll(filter ReimbursementFilter) ([]Reimbursement, int64
 	return reimbursements, total, err
 }
 
-func (r *repository) Update(reimbursement *Reimbursement) error {
-	return r.db.Save(reimbursement).Error
+func (r *repository) Update(ctx context.Context, reimbursement *Reimbursement) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	return db.Save(reimbursement).Error
 }
 
-func (r *repository) GetBulkApprovedAmount(month, year int) (map[uint]float64, error) {
+func (r *repository) GetBulkApprovedAmount(ctx context.Context, month, year int) (map[uint]float64, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	type Result struct {
 		UserID      uint
 		TotalAmount float64
 	}
 	var results []Result
 
-	err := r.db.Model(&Reimbursement{}).
+	err := db.Model(&Reimbursement{}).
 		Select("user_id, COALESCE(SUM(amount), 0) as total_amount").
 		Where("status = ?", "APPROVED").
 		Where("MONTH(date_of_expense) = ? AND YEAR(date_of_expense) = ?", month, year).

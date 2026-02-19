@@ -1,9 +1,12 @@
 package leave
 
 import (
+	"context"
 	"errors"
 	"hris-backend/internal/modules/attendance"
+	"hris-backend/internal/modules/master"
 	"hris-backend/pkg/constants"
+	"hris-backend/pkg/utils"
 	"time"
 
 	"gorm.io/gorm"
@@ -11,15 +14,18 @@ import (
 )
 
 type Repository interface {
-	CreateRequest(req *LeaveRequest) error
-	FindRequestByID(id uint) (*LeaveRequest, error)
-	FindAllRequests(filter *LeaveFilter) ([]LeaveRequest, int64, error)
+	CreateRequest(ctx context.Context, req *LeaveRequest) error
+	FindRequestByID(ctx context.Context, id uint) (*LeaveRequest, error)
+	FindAllRequests(ctx context.Context, filter *LeaveFilter) ([]LeaveRequest, int64, error)
 
-	GetBalance(employeeID, leaveTypeID uint, year int) (*LeaveBalance, error)
+	GetBalance(ctx context.Context, employeeID, leaveTypeID uint, year int) (*LeaveBalance, error)
 
-	ApproveRequest(requestID uint, approverID uint, attendanceRecords []attendance.Attendance, shouldDeduct bool, days int) error
-	RejectRequest(requestID uint, approverID uint, reason string) error
-	StartTX() *gorm.DB
+	ApproveRequest(ctx context.Context, requestID uint, approverID uint, attendanceRecords []attendance.Attendance, shouldDeduct bool, days int) error
+	RejectRequest(ctx context.Context, requestID uint, approverID uint, reason string) error
+
+	// For Initial Balance Generation
+	FindAllLeaveTypes(ctx context.Context) ([]master.LeaveType, error)
+	CreateLeaveBalances(ctx context.Context, balances []LeaveBalance) error
 }
 
 type repository struct {
@@ -30,13 +36,15 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db}
 }
 
-func (r *repository) CreateRequest(req *LeaveRequest) error {
-	return r.db.Create(req).Error
+func (r *repository) CreateRequest(ctx context.Context, req *LeaveRequest) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	return db.Create(req).Error
 }
 
-func (r *repository) FindRequestByID(id uint) (*LeaveRequest, error) {
+func (r *repository) FindRequestByID(ctx context.Context, id uint) (*LeaveRequest, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var req LeaveRequest
-	err := r.db.
+	err := db.
 		Preload("User").
 		Preload("Employee").
 		Preload("LeaveType").
@@ -45,13 +53,14 @@ func (r *repository) FindRequestByID(id uint) (*LeaveRequest, error) {
 	return &req, err
 }
 
-func (r *repository) FindAllRequests(filter *LeaveFilter) ([]LeaveRequest, int64, error) {
+func (r *repository) FindAllRequests(ctx context.Context, filter *LeaveFilter) ([]LeaveRequest, int64, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var requests []LeaveRequest
 	var total int64
 
 	offset := (filter.Page - 1) * filter.Limit
 
-	query := r.db.Model(&LeaveRequest{}).
+	query := db.Model(&LeaveRequest{}).
 		Joins("JOIN employees ON employees.id = leave_requests.employee_id").
 		Joins("JOIN ref_leave_types ON ref_leave_types.id = leave_requests.leave_type_id").
 		Preload("Employee").
@@ -81,72 +90,73 @@ func (r *repository) FindAllRequests(filter *LeaveFilter) ([]LeaveRequest, int64
 	return requests, total, err
 }
 
-func (r *repository) GetBalance(employeeID, leaveTypeID uint, year int) (*LeaveBalance, error) {
+func (r *repository) GetBalance(ctx context.Context, employeeID, leaveTypeID uint, year int) (*LeaveBalance, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var balance LeaveBalance
-	err := r.db.
+	err := db.
 		Where("employee_id = ? AND leave_type_id = ? AND year = ?",
 			employeeID, leaveTypeID, year).First(&balance).Error
 
 	return &balance, err
 }
 
-func (r *repository) ApproveRequest(requestID uint, approverID uint, attendanceRecords []attendance.Attendance, shouldDeduct bool, days int) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&LeaveRequest{}).Where("id = ?", requestID).
-			Updates(map[string]interface{}{
-				"status":      constants.LeaveStatusApproved,
-				"approved_by": approverID,
-			}).Error; err != nil {
+func (r *repository) ApproveRequest(ctx context.Context, requestID uint, approverID uint, attendanceRecords []attendance.Attendance, shouldDeduct bool, days int) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+
+	if err := db.Model(&LeaveRequest{}).Where("id = ?", requestID).
+		Updates(map[string]interface{}{
+			"status":      constants.LeaveStatusApproved,
+			"approved_by": approverID,
+		}).Error; err != nil {
+		return err
+	}
+
+	if len(attendanceRecords) > 0 {
+		if err := db.Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "employee_id"}, {Name: "date"}},
+			DoUpdates: clause.AssignmentColumns([]string{
+				"shift_id",
+				"check_in_time",
+				"check_in_lat",
+				"check_in_long",
+				"check_in_address",
+				"check_in_image_url",
+				"status",
+				"notes",
+				"late_duration_minute",
+				"is_suspicious",
+			}),
+		}).CreateInBatches(attendanceRecords, 31).Error; err != nil {
+			return err
+		}
+	}
+
+	if shouldDeduct {
+		var req LeaveRequest
+		if err := db.First(&req, requestID).Error; err != nil {
 			return err
 		}
 
-		if len(attendanceRecords) > 0 {
-			if err := tx.Clauses(clause.OnConflict{
-				Columns: []clause.Column{{Name: "employee_id"}, {Name: "date"}},
-				DoUpdates: clause.AssignmentColumns([]string{
-					"shift_id",
-					"check_in_time",
-					"check_in_lat",
-					"check_in_long",
-					"check_in_address",
-					"check_in_image_url",
-					"status",
-					"notes",
-					"late_duration_minute",
-					"is_suspicious",
-				}),
-			}).CreateInBatches(attendanceRecords, 31).Error; err != nil {
-				return err
-			}
+		if err := db.Model(&LeaveBalance{}).
+			Where("employee_id = ? AND leave_type_id = ? AND year = ?", req.EmployeeID, req.LeaveTypeID, time.Now().Year()).
+			Updates(map[string]interface{}{
+				"quota_used": gorm.Expr("quota_used + ?", days),
+				"quota_left": gorm.Expr("quota_left - ?", days),
+			}).Error; err != nil {
+			return err
 		}
+	}
 
-		if shouldDeduct {
-			var req LeaveRequest
-			if err := tx.First(&req, requestID).Error; err != nil {
-				return err
-			}
-
-			if err := tx.Model(&LeaveBalance{}).
-				Where("employee_id = ? AND leave_type_id = ? AND year = ?", req.EmployeeID, req.LeaveTypeID, time.Now().Year()).
-				Updates(map[string]interface{}{
-					"quota_used": gorm.Expr("quota_used + ?", days),
-					"quota_left": gorm.Expr("quota_left - ?", days),
-				}).Error; err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-
+	return nil
 }
 
-func (r *repository) RejectRequest(requestID uint, approverID uint, reason string) error {
+func (r *repository) RejectRequest(ctx context.Context, requestID uint, approverID uint, reason string) error {
+	db := utils.GetDBFromContext(ctx, r.db)
 	if reason == "" {
 		return errors.New("reject reason required")
 	}
 
-	return r.db.Model(&LeaveRequest{}).Where("id = ?", requestID).
+	return db.Model(&LeaveRequest{}).Where("id = ?", requestID).
 		Updates(map[string]interface{}{
 			"status":           constants.LeaveStatusRejected,
 			"approved_by":      approverID,
@@ -154,6 +164,19 @@ func (r *repository) RejectRequest(requestID uint, approverID uint, reason strin
 		}).Error
 }
 
-func (r *repository) StartTX() *gorm.DB {
-	return r.db.Begin()
+func (r *repository) FindAllLeaveTypes(ctx context.Context) ([]master.LeaveType, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
+	var leaveTypes []master.LeaveType
+	if err := db.Find(&leaveTypes).Error; err != nil {
+		return nil, err
+	}
+	return leaveTypes, nil
+}
+
+func (r *repository) CreateLeaveBalances(ctx context.Context, balances []LeaveBalance) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	if len(balances) == 0 {
+		return nil
+	}
+	return db.Create(&balances).Error
 }

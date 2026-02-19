@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"hris-backend/internal/infrastructure"
 	"hris-backend/pkg/constants"
 	"hris-backend/pkg/response"
 	"mime/multipart"
@@ -13,7 +14,7 @@ import (
 type Service interface {
 	GetProfile(userID uint) (*UserProfileResponse, error)
 	UpdateProfile(ctx context.Context, userID uint, req *UpdateProfileRequest, file *multipart.FileHeader) error
-	ChangePassword(userID uint, req *ChangePasswordRequest) error
+	ChangePassword(ctx context.Context, userID uint, req *ChangePasswordRequest) error
 	GetAllEmployees(ctx context.Context, page, limit int, search string) ([]EmployeeListResponse, *response.Meta, error)
 	CreateEmployee(ctx context.Context, req *CreateEmployeeRequest) error
 	UpdateEmployee(ctx context.Context, id uint, req *UpdateEmployeeRequest) error
@@ -21,18 +22,19 @@ type Service interface {
 }
 
 type service struct {
-	repo           Repository
-	bcrypt         Hasher
-	storage        StorageProvider
-	leaveGenerator LeaveBalanceGenerator
+	repo               Repository
+	bcrypt             Hasher
+	storage            StorageProvider
+	leaveGenerator     LeaveBalanceGenerator
+	transactionManager infrastructure.TransactionManager
 }
 
-func NewService(repo Repository, bcrypt Hasher, storage StorageProvider, leaveGenerator LeaveBalanceGenerator) Service {
-	return &service{repo, bcrypt, storage, leaveGenerator}
+func NewService(repo Repository, bcrypt Hasher, storage StorageProvider, leaveGenerator LeaveBalanceGenerator, transactionManager infrastructure.TransactionManager) Service {
+	return &service{repo, bcrypt, storage, leaveGenerator, transactionManager}
 }
 
 func (s *service) GetProfile(userID uint) (*UserProfileResponse, error) {
-	user, err := s.repo.FindByID(userID)
+	user, err := s.repo.FindByID(context.Background(), userID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +73,7 @@ func (s *service) GetProfile(userID uint) (*UserProfileResponse, error) {
 }
 
 func (s *service) UpdateProfile(ctx context.Context, userID uint, req *UpdateProfileRequest, file *multipart.FileHeader) error {
-	user, err := s.repo.FindByID(userID)
+	user, err := s.repo.FindByID(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -85,11 +87,11 @@ func (s *service) UpdateProfile(ctx context.Context, userID uint, req *UpdatePro
 		return err
 	}
 
-	return s.repo.UpdateEmployee(user.Employee)
+	return s.repo.UpdateEmployee(ctx, user.Employee)
 }
 
-func (s *service) ChangePassword(userID uint, req *ChangePasswordRequest) error {
-	user, err := s.repo.FindByID(userID)
+func (s *service) ChangePassword(ctx context.Context, userID uint, req *ChangePasswordRequest) error {
+	user, err := s.repo.FindByID(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -106,11 +108,11 @@ func (s *service) ChangePassword(userID uint, req *ChangePasswordRequest) error 
 	user.PasswordHash = hashedPassword
 	user.MustChangePassword = false
 
-	return s.repo.UpdateUser(user)
+	return s.repo.UpdateUser(ctx, user)
 }
 
 func (s *service) GetAllEmployees(ctx context.Context, page, limit int, search string) ([]EmployeeListResponse, *response.Meta, error) {
-	users, total, err := s.repo.FindAllEmployees(page, limit, search)
+	users, total, err := s.repo.FindAllEmployees(ctx, page, limit, search)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -153,62 +155,49 @@ func (s *service) GetAllEmployees(ctx context.Context, page, limit int, search s
 }
 
 func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest) error {
-	tx := s.repo.StartTX()
-	if tx.Error != nil {
-		return tx.Error
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
+	return s.transactionManager.RunInTransaction(ctx, func(ctx context.Context) error {
+		checkUser, err := s.repo.FindByUsername(ctx, req.Username)
+		if err == nil && checkUser.ID != 0 {
+			return errors.New("username already exists")
 		}
-	}()
 
-	checkUser, err := s.repo.FindByUsername(req.Username)
-	if err == nil && checkUser.ID != 0 {
-		return errors.New("username already exists")
-	}
+		hashPass, _ := s.bcrypt.HashPassword(req.Username)
 
-	hashPass, _ := s.bcrypt.HashPassword(req.Username)
+		newUser := User{
+			Username:           req.Username,
+			PasswordHash:       hashPass,
+			Role:               string(constants.UserRoleEmployee),
+			MustChangePassword: true,
+		}
 
-	newUser := User{
-		Username:           req.Username,
-		PasswordHash:       hashPass,
-		Role:               string(constants.UserRoleEmployee),
-		MustChangePassword: true,
-	}
+		if err := s.repo.CreateUser(ctx, &newUser); err != nil {
+			return err
+		}
 
-	if err := s.repo.CreateUser(tx, &newUser); err != nil {
-		return err
-	}
+		newEmp := Employee{
+			UserID:       newUser.ID,
+			FullName:     req.FullName,
+			NIK:          req.NIK,
+			DepartmentID: req.DepartmentID,
+			ShiftID:      req.ShiftID,
+			BaseSalary:   req.BaseSalary,
+		}
 
-	newEmp := Employee{
-		UserID:       newUser.ID,
-		FullName:     req.FullName,
-		NIK:          req.NIK,
-		DepartmentID: req.DepartmentID,
-		ShiftID:      req.ShiftID,
-		BaseSalary:   req.BaseSalary,
-	}
+		if err := s.repo.CreateEmployee(ctx, &newEmp); err != nil {
+			return err
+		}
 
-	if err := s.repo.CreateEmployee(tx, &newEmp); err != nil {
-		return err
-	}
+		err = s.leaveGenerator.GenerateInitialBalance(ctx, newEmp.ID)
+		if err != nil {
+			return err
+		}
 
-	tx, err = s.leaveGenerator.GenerateInitialBalance(ctx, tx, newEmp.ID)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		return err
-	}
-
-	return nil
+		return nil
+	})
 }
 
 func (s *service) UpdateEmployee(ctx context.Context, id uint, req *UpdateEmployeeRequest) error {
-	emp, err := s.repo.FindEmployeeByID(id)
+	emp, err := s.repo.FindEmployeeByID(ctx, id)
 	if err != nil {
 		return errors.New("employee not found")
 	}
@@ -229,16 +218,16 @@ func (s *service) UpdateEmployee(ctx context.Context, id uint, req *UpdateEmploy
 		emp.BaseSalary = req.BaseSalary
 	}
 
-	return s.repo.UpdateEmployee(emp)
+	return s.repo.UpdateEmployee(ctx, emp)
 }
 
 func (s *service) DeleteEmployee(ctx context.Context, id uint) error {
-	emp, err := s.repo.FindEmployeeByID(id)
+	emp, err := s.repo.FindEmployeeByID(ctx, id)
 	if err != nil {
 		return errors.New("employee not found")
 	}
 
-	return s.repo.DeleteUser(emp.UserID)
+	return s.repo.DeleteUser(ctx, emp.UserID)
 }
 
 func (s *service) buildEmployeeData(ctx context.Context, user *User, req *UpdateProfileRequest, file *multipart.FileHeader) (*User, error) {

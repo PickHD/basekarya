@@ -3,6 +3,7 @@ package reimbursement
 import (
 	"context"
 	"fmt"
+	"hris-backend/internal/infrastructure"
 	"hris-backend/pkg/constants"
 	"hris-backend/pkg/response"
 	"path/filepath"
@@ -19,73 +20,76 @@ type Service interface {
 }
 
 type service struct {
-	repo         Repository
-	storage      StorageProvider
-	notification NotificationProvider
-	user         UserProvider
+	repo               Repository
+	storage            StorageProvider
+	notification       NotificationProvider
+	user               UserProvider
+	transactionManager infrastructure.TransactionManager
 }
 
-func NewService(repo Repository, storage StorageProvider, notification NotificationProvider, user UserProvider) Service {
-	return &service{repo, storage, notification, user}
+func NewService(repo Repository, storage StorageProvider, notification NotificationProvider, user UserProvider, transactionManager infrastructure.TransactionManager) Service {
+	return &service{repo, storage, notification, user, transactionManager}
 }
 
 func (s *service) Create(ctx context.Context, req *ReimbursementRequest) error {
-	if req.UserID == 0 {
-		return fmt.Errorf("user id is invalid")
-	}
+	return s.transactionManager.RunInTransaction(ctx, func(ctx context.Context) error {
+		if req.UserID == 0 {
+			return fmt.Errorf("user id is invalid")
+		}
 
-	ext := filepath.Ext(req.File.Filename)
-	newFileName := fmt.Sprintf("%s%s", uuid.New().String(), ext)
+		ext := filepath.Ext(req.File.Filename)
+		newFileName := fmt.Sprintf("%s%s", uuid.New().String(), ext)
 
-	now := time.Now()
-	objectName := fmt.Sprintf("reimbursements/%d/%02d/%s", now.Year(), now.Month(), newFileName)
+		now := time.Now()
+		objectName := fmt.Sprintf("reimbursements/%d/%02d/%s", now.Year(), now.Month(), newFileName)
 
-	fileURL, err := s.storage.UploadFileMultipart(ctx, req.File, objectName)
-	if err != nil {
-		return fmt.Errorf("failed to upload proof: %w", err)
-	}
+		fileURL, err := s.storage.UploadFileMultipart(ctx, req.File, objectName)
+		if err != nil {
+			return fmt.Errorf("failed to upload proof: %w", err)
+		}
 
-	dateExpense, err := time.Parse(constants.DefaultTimeFormat, req.Date)
-	if err != nil {
-		return fmt.Errorf("invalid date format: %w", err)
-	}
+		dateExpense, err := time.Parse(constants.DefaultTimeFormat, req.Date)
+		if err != nil {
+			return fmt.Errorf("invalid date format: %w", err)
+		}
 
-	reimburstment := &Reimbursement{
-		UserID:        req.UserID,
-		Title:         req.Title,
-		Description:   req.Description,
-		Amount:        req.Amount,
-		DateOfExpense: dateExpense,
-		ProofFileURL:  fileURL,
-		Status:        constants.ReimbursementStatusPending,
-	}
+		reimburstment := &Reimbursement{
+			UserID:        req.UserID,
+			Title:         req.Title,
+			Description:   req.Description,
+			Amount:        req.Amount,
+			DateOfExpense: dateExpense,
+			ProofFileURL:  fileURL,
+			Status:        constants.ReimbursementStatusPending,
+		}
 
-	err = s.repo.Create(reimburstment)
-	if err != nil {
-		return err
-	}
+		err = s.repo.Create(ctx, reimburstment)
+		if err != nil {
+			return err
+		}
 
-	adminID, err := s.user.FindAdminID()
-	if err != nil {
-		return err
-	}
+		adminID, err := s.user.FindAdminID(ctx)
+		if err != nil {
+			return err
+		}
 
-	// send notification to admin
-	go func() {
-		_ = s.notification.SendNotification(
-			adminID,
-			string(constants.NotificationTypeReimburseApprovalReq),
-			"Pengajuan Reimbursement Baru",
-			fmt.Sprintf("Karyawan mengajukan reimburse pada tanggal %s", req.Date),
-			reimburstment.ID,
-		)
-	}()
+		// send notification to admin
+		go func() {
+			_ = s.notification.SendNotification(
+				adminID,
+				string(constants.NotificationTypeReimburseApprovalReq),
+				"Pengajuan Reimbursement Baru",
+				fmt.Sprintf("Karyawan mengajukan reimburse pada tanggal %s", req.Date),
+				reimburstment.ID,
+			)
+		}()
 
-	return nil
+		return nil
+	})
 }
 
 func (s *service) GetReimburseDetail(ctx context.Context, id uint) (*ReimbursementDetailResponse, error) {
-	detail, err := s.repo.FindByID(id)
+	detail, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +117,7 @@ func (s *service) GetReimburseDetail(ctx context.Context, id uint) (*Reimburseme
 }
 
 func (s *service) GetReimbursements(ctx context.Context, filter ReimbursementFilter) ([]ReimbursementListResponse, *response.Meta, error) {
-	reimbursements, total, err := s.repo.FindAll(filter)
+	reimbursements, total, err := s.repo.FindAll(ctx, filter)
 	if err != nil {
 		return []ReimbursementListResponse{}, nil, nil
 	}
@@ -139,62 +143,64 @@ func (s *service) GetReimbursements(ctx context.Context, filter ReimbursementFil
 }
 
 func (s *service) ProcessAction(ctx context.Context, req *ActionRequest) error {
-	data, err := s.repo.FindByID(req.ID)
-	if err != nil {
-		return err
-	}
-
-	// check data only reimburstment with status PENDING can do further process action
-	if data.Status != constants.ReimbursementStatusPending {
-		return fmt.Errorf("cannot process reimburstment with status %s", data.Status)
-	}
-
-	var (
-		notificationType    constants.NotificationType
-		notificationTitle   string
-		notificationMessage string
-	)
-	switch constants.ReimbursementAction(req.Action) {
-	case constants.ReimbursementActionApprove:
-		data.Status = constants.ReimbursementStatusApproved
-		data.ApprovedBy = &req.SuperAdminID
-
-		notificationType = constants.NotificationTypeApproved
-		notificationTitle = "Permintaan Disetujui"
-		notificationMessage = "Reimburse Anda telah disetujui oleh Admin."
-	case constants.ReimbursementActionReject:
-		data.Status = constants.ReimbursementStatusRejected
-
-		// if rejected, reason become required
-		if req.RejectionReason == "" {
-			return fmt.Errorf("rejection reason is required")
+	return s.transactionManager.RunInTransaction(ctx, func(ctx context.Context) error {
+		data, err := s.repo.FindByID(ctx, req.ID)
+		if err != nil {
+			return err
 		}
 
-		data.RejectionReason.String = req.RejectionReason
-		data.RejectionReason.Valid = true
+		// check data only reimburstment with status PENDING can do further process action
+		if data.Status != constants.ReimbursementStatusPending {
+			return fmt.Errorf("cannot process reimburstment with status %s", data.Status)
+		}
 
-		notificationType = constants.NotificationTypeRejected
-		notificationTitle = "Permintaan Ditolak"
-		notificationMessage = "Reimburse Anda telah ditolak oleh Admin."
-	default:
-		return fmt.Errorf("invalid action: %s", req.Action)
-	}
-
-	err = s.repo.Update(data)
-	if err != nil {
-		return err
-	}
-
-	// send notification to requester
-	go func() {
-		_ = s.notification.SendNotification(
-			data.User.ID,
-			string(notificationType),
-			notificationTitle,
-			notificationMessage,
-			data.ID,
+		var (
+			notificationType    constants.NotificationType
+			notificationTitle   string
+			notificationMessage string
 		)
-	}()
+		switch constants.ReimbursementAction(req.Action) {
+		case constants.ReimbursementActionApprove:
+			data.Status = constants.ReimbursementStatusApproved
+			data.ApprovedBy = &req.SuperAdminID
 
-	return nil
+			notificationType = constants.NotificationTypeApproved
+			notificationTitle = "Permintaan Disetujui"
+			notificationMessage = "Reimburse Anda telah disetujui oleh Admin."
+		case constants.ReimbursementActionReject:
+			data.Status = constants.ReimbursementStatusRejected
+
+			// if rejected, reason become required
+			if req.RejectionReason == "" {
+				return fmt.Errorf("rejection reason is required")
+			}
+
+			data.RejectionReason.String = req.RejectionReason
+			data.RejectionReason.Valid = true
+
+			notificationType = constants.NotificationTypeRejected
+			notificationTitle = "Permintaan Ditolak"
+			notificationMessage = "Reimburse Anda telah ditolak oleh Admin."
+		default:
+			return fmt.Errorf("invalid action: %s", req.Action)
+		}
+
+		err = s.repo.Update(ctx, data)
+		if err != nil {
+			return err
+		}
+
+		// send notification to requester
+		go func() {
+			_ = s.notification.SendNotification(
+				data.User.ID,
+				string(notificationType),
+				notificationTitle,
+				notificationMessage,
+				data.ID,
+			)
+		}()
+
+		return nil
+	})
 }

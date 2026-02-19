@@ -15,6 +15,6 @@ type LocationFetcher interface {
 }
 
 type UserProvider interface {
-	FindByID(id uint) (*user.User, error)
-	CountActiveEmployee() (int64, error)
+	FindByID(ctx context.Context, id uint) (*user.User, error)
+	CountActiveEmployee(ctx context.Context) (int64, error)
 }

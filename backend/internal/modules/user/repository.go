@@ -1,26 +1,27 @@
 package user
 
 import (
+	"context"
 	"hris-backend/pkg/constants"
 	"hris-backend/pkg/logger"
+	"hris-backend/pkg/utils"
 
 	"gorm.io/gorm"
 )
 
 type Repository interface {
-	FindByUsername(username string) (*User, error)
-	FindByID(id uint) (*User, error)
-	UpdateEmployee(emp *Employee) error
-	UpdateUser(user *User) error
-	FindAllEmployees(page, limit int, search string) ([]User, int64, error)
-	CreateUser(tx *gorm.DB, user *User) error
-	CreateEmployee(tx *gorm.DB, emp *Employee) error
-	DeleteUser(id uint) error
-	FindEmployeeByID(id uint) (*Employee, error)
-	StartTX() *gorm.DB
-	CountActiveEmployee() (int64, error)
-	FindAllEmployeeActive() ([]Employee, error)
-	FindAdminID() (uint, error)
+	FindByUsername(ctx context.Context, username string) (*User, error)
+	FindByID(ctx context.Context, id uint) (*User, error)
+	UpdateEmployee(ctx context.Context, emp *Employee) error
+	UpdateUser(ctx context.Context, user *User) error
+	FindAllEmployees(ctx context.Context, page, limit int, search string) ([]User, int64, error)
+	CreateUser(ctx context.Context, user *User) error
+	CreateEmployee(ctx context.Context, emp *Employee) error
+	DeleteUser(ctx context.Context, id uint) error
+	FindEmployeeByID(ctx context.Context, id uint) (*Employee, error)
+	CountActiveEmployee(ctx context.Context) (int64, error)
+	FindAllEmployeeActive(ctx context.Context) ([]Employee, error)
+	FindAdminID(ctx context.Context) (uint, error)
 }
 
 type repository struct {
@@ -31,10 +32,11 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db}
 }
 
-func (r *repository) FindByUsername(username string) (*User, error) {
+func (r *repository) FindByUsername(ctx context.Context, username string) (*User, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var user User
 
-	err := r.db.Preload("Employee").Where("username = ?", username).First(&user).Error
+	err := db.Preload("Employee").Where("username = ?", username).First(&user).Error
 	if err != nil {
 		logger.Errorw("UserRepository.FindByUsername ERROR: ", err)
 
@@ -44,10 +46,11 @@ func (r *repository) FindByUsername(username string) (*User, error) {
 	return &user, nil
 }
 
-func (r *repository) FindByID(id uint) (*User, error) {
+func (r *repository) FindByID(ctx context.Context, id uint) (*User, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var user User
 
-	err := r.db.Preload("Employee.Department").Preload("Employee.Shift").First(&user, id).Error
+	err := db.Preload("Employee.Department").Preload("Employee.Shift").First(&user, id).Error
 	if err != nil {
 		logger.Errorw("UserRepository.FindByID ERROR: ", err)
 
@@ -57,19 +60,22 @@ func (r *repository) FindByID(id uint) (*User, error) {
 	return &user, nil
 }
 
-func (r *repository) UpdateEmployee(emp *Employee) error {
-	return r.db.Save(emp).Error
+func (r *repository) UpdateEmployee(ctx context.Context, emp *Employee) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	return db.Save(emp).Error
 }
 
-func (r *repository) UpdateUser(user *User) error {
-	return r.db.Save(user).Error
+func (r *repository) UpdateUser(ctx context.Context, user *User) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	return db.Save(user).Error
 }
 
-func (r *repository) FindAllEmployees(page, limit int, search string) ([]User, int64, error) {
+func (r *repository) FindAllEmployees(ctx context.Context, page, limit int, search string) ([]User, int64, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var users []User
 	var total int64
 
-	query := r.db.Model(&User{}).
+	query := db.Model(&User{}).
 		Joins("JOIN employees ON employees.user_id = users.id").
 		Preload("Employee").
 		Preload("Employee.Department").
@@ -91,31 +97,32 @@ func (r *repository) FindAllEmployees(page, limit int, search string) ([]User, i
 	return users, total, err
 }
 
-func (r *repository) CreateUser(tx *gorm.DB, user *User) error {
-	return tx.Create(user).Error
+func (r *repository) CreateUser(ctx context.Context, user *User) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	return db.Create(user).Error
 }
 
-func (r *repository) CreateEmployee(tx *gorm.DB, emp *Employee) error {
-	return tx.Create(emp).Error
+func (r *repository) CreateEmployee(ctx context.Context, emp *Employee) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	return db.Create(emp).Error
 }
 
-func (r *repository) DeleteUser(id uint) error {
-	return r.db.Delete(&User{}, id).Error
+func (r *repository) DeleteUser(ctx context.Context, id uint) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	return db.Delete(&User{}, id).Error
 }
 
-func (r *repository) FindEmployeeByID(id uint) (*Employee, error) {
+func (r *repository) FindEmployeeByID(ctx context.Context, id uint) (*Employee, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var emp Employee
-	err := r.db.Preload("User").First(&emp, id).Error
+	err := db.Preload("User").First(&emp, id).Error
 	return &emp, err
 }
 
-func (r *repository) StartTX() *gorm.DB {
-	return r.db.Begin()
-}
-
-func (r *repository) CountActiveEmployee() (int64, error) {
+func (r *repository) CountActiveEmployee(ctx context.Context) (int64, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var totalActive int64
-	if err := r.db.Model(&User{}).
+	if err := db.Model(&User{}).
 		Where("is_active = ? AND role = ?", true, string(constants.UserRoleEmployee)).
 		Count(&totalActive).Error; err != nil {
 		return 0, err
@@ -124,10 +131,11 @@ func (r *repository) CountActiveEmployee() (int64, error) {
 	return totalActive, nil
 }
 
-func (r *repository) FindAllEmployeeActive() ([]Employee, error) {
+func (r *repository) FindAllEmployeeActive(ctx context.Context) ([]Employee, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var employees []Employee
 
-	if err := r.db.Model(&Employee{}).
+	if err := db.Model(&Employee{}).
 		Joins("User").
 		Where("User.is_active = ? AND User.role = ?", true, string(constants.UserRoleEmployee)).
 		Preload("User").
@@ -140,9 +148,10 @@ func (r *repository) FindAllEmployeeActive() ([]Employee, error) {
 	return employees, nil
 }
 
-func (r *repository) FindAdminID() (uint, error) {
+func (r *repository) FindAdminID(ctx context.Context) (uint, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
 	var id uint
-	err := r.db.Model(&User{}).
+	err := db.Model(&User{}).
 		Select("id").
 		Where("role = ?", string(constants.UserRoleSuperadmin)).
 		Scan(&id).Error
