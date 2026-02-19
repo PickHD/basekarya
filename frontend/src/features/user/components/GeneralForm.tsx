@@ -50,6 +50,13 @@ const generalSchema = z.object({
       message: "NPWP at least 15-16 number digit",
     })
     .transform((val) => val.replace(/[.-]/g, "")),
+  email: z
+    .string()
+    .min(5, "Email too short")
+    .regex(
+      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+      "Invalid email format",
+    ),
 });
 
 interface GeneralFormProps {
@@ -70,6 +77,7 @@ export function GeneralForm({ user }: GeneralFormProps) {
       bank_account_number: user.bank_account_number || "",
       bank_account_holder: user.bank_account_holder || "",
       npwp: user.npwp || "",
+      email: user.email || "",
     },
   });
 
@@ -90,6 +98,7 @@ export function GeneralForm({ user }: GeneralFormProps) {
     formData.append("bank_account_number", values.bank_account_number);
     formData.append("bank_account_holder", values.bank_account_holder);
     formData.append("npwp", values.npwp);
+    formData.append("email", values.email);
 
     if (selectedFile) {
       formData.append("photo", selectedFile);
@@ -208,6 +217,20 @@ export function GeneralForm({ user }: GeneralFormProps) {
               <FormLabel>NPWP Number</FormLabel>
               <FormControl>
                 <Input placeholder="319287391.." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input placeholder="test@gmail.." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

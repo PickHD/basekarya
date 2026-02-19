@@ -60,6 +60,13 @@ const formSchema = z.object({
       .min(0, "Base salary cannot be a negative number")
       .max(1000000000, "Base salary exceed the limit"),
   ),
+  email: z
+    .string()
+    .min(5, "Email too short")
+    .regex(
+      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+      "Invalid email format",
+    ),
 });
 
 interface EmployeeFormDialogProps {
@@ -91,6 +98,7 @@ export function EmployeeFormDialog({
       department_id: "",
       shift_id: "",
       base_salary: 0,
+      email: "",
     },
   });
 
@@ -104,6 +112,7 @@ export function EmployeeFormDialog({
           department_id: employeeToEdit.department_name === "Umum" ? "1" : "2",
           shift_id: "1",
           base_salary: employeeToEdit.base_salary,
+          email: employeeToEdit.email,
         });
       } else {
         form.reset({
@@ -113,6 +122,7 @@ export function EmployeeFormDialog({
           department_id: "",
           shift_id: "",
           base_salary: 0,
+          email: "",
         });
       }
     }
@@ -143,6 +153,7 @@ export function EmployeeFormDialog({
                 department_id: Number(values.department_id),
                 shift_id: Number(values.shift_id),
                 base_salary: Number(values.base_salary),
+                email: values.email,
               };
               onSubmit(payload);
             })}
@@ -285,6 +296,20 @@ export function EmployeeFormDialog({
                         field.onChange(rawValue);
                       }}
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
