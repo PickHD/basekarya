@@ -1,13 +1,15 @@
 package notification
 
 import (
+	"context"
+	"hris-backend/pkg/utils"
 	"time"
 
 	"gorm.io/gorm"
 )
 
 type Repository interface {
-	Create(notification *Notification) error
+	Create(ctx context.Context, notification *Notification) error
 	FindByID(id uint) (*Notification, error)
 	FindAllByUserID(userID uint) ([]Notification, error)
 	MarkAsRead(id uint) error
@@ -22,8 +24,9 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db}
 }
 
-func (r *repository) Create(notification *Notification) error {
-	return r.db.Create(notification).Error
+func (r *repository) Create(ctx context.Context, notification *Notification) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	return db.Create(notification).Error
 }
 
 func (r *repository) FindByID(id uint) (*Notification, error) {

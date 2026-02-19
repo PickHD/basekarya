@@ -1,7 +1,9 @@
 package payroll
 
 import (
+	"context"
 	"hris-backend/pkg/constants"
+	"hris-backend/pkg/utils"
 	"time"
 
 	"gorm.io/gorm"
@@ -12,7 +14,7 @@ type Repository interface {
 	FindAll(filter *PayrollFilter) ([]Payroll, int64, error)
 	FindByID(id uint) (*Payroll, error)
 	GetExistingEmployeeID(month, year int) (map[uint]bool, error)
-	UpdateStatus(id uint, status constants.PayrollStatus) error
+	UpdateStatus(ctx context.Context, id uint, status constants.PayrollStatus) error
 }
 
 type repository struct {
@@ -100,8 +102,9 @@ func (r *repository) GetExistingEmployeeID(month, year int) (map[uint]bool, erro
 	return existingMap, nil
 }
 
-func (r *repository) UpdateStatus(id uint, status constants.PayrollStatus) error {
-	return r.db.Model(&Payroll{}).
+func (r *repository) UpdateStatus(ctx context.Context, id uint, status constants.PayrollStatus) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	return db.Model(&Payroll{}).
 		Where("id = ?", id).
 		Update("status", status).Error
 }

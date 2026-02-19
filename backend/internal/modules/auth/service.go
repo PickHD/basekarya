@@ -2,7 +2,6 @@ package auth
 
 import (
 	"errors"
-	"hris-backend/internal/modules/user"
 	"hris-backend/pkg/constants"
 )
 
@@ -11,21 +10,21 @@ type Service interface {
 }
 
 type service struct {
-	userRepo      user.Repository
+	user          UserProvider
 	hasher        Hasher
 	tokenProvider TokenProvider
 }
 
-func NewService(userRepo user.Repository, hasher Hasher, tokenProvider TokenProvider) Service {
+func NewService(user UserProvider, hasher Hasher, tokenProvider TokenProvider) Service {
 	return &service{
-		userRepo:      userRepo,
+		user:          user,
 		hasher:        hasher,
 		tokenProvider: tokenProvider,
 	}
 }
 
 func (s *service) Login(username, password string) (*LoginResponse, error) {
-	foundUser, err := s.userRepo.FindByUsername(username)
+	foundUser, err := s.user.FindByUsername(username)
 	if err != nil {
 		return nil, errors.New("invalid credentials")
 	}

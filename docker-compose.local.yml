@@ -102,6 +102,21 @@ services:
       "
     networks:
       - hris_net
+  redis:
+    image: redis:alpine
+    container_name: hris_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - hris_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
   backend:
     build:
       context: ./backend
@@ -115,6 +130,8 @@ services:
       db:
         condition: service_healthy
       minio:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       MYSQL_USER: ${MYSQL_USER}
@@ -140,6 +157,8 @@ services:
       NOMINATIM_URL: ${NOMINATIM_URL}
       SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME}
       SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD}
+      REDIS_ADDR: ${REDIS_ADDR}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     networks:
       - hris_net
     healthcheck:
@@ -186,3 +205,4 @@ networks:
 volumes:
   db_data:
   minio_data:
+  redis_data:

@@ -20,3 +20,10 @@ type ReimbursementProvider interface {
 type CompanyProvider interface {
 	FindByID(id uint) (*company.Company, error)
 }
+
+type NotificationProvider interface {
+	SendNotification(userID uint,
+		Type string,
+		Title string,
+		Message string, relatedID uint) error
+}

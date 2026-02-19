@@ -22,10 +22,10 @@ type MinioStorageProvider struct {
 	publicDomain string
 }
 
-func NewMinioStorage(cfg *config.Config) *MinioStorageProvider {
-	minioClient, err := minio.New(cfg.Minio.Endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(cfg.Minio.AccessKey, cfg.Minio.SecretKey, ""),
-		Secure: cfg.Minio.IsSecure,
+func NewMinioStorage(cfg *config.MinioConfig) *MinioStorageProvider {
+	minioClient, err := minio.New(cfg.Endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(cfg.AccessKey, cfg.SecretKey, ""),
+		Secure: cfg.IsSecure,
 	})
 	if err != nil {
 		logger.Errorw("Failed to connect to MinIO:", err)
@@ -35,9 +35,9 @@ func NewMinioStorage(cfg *config.Config) *MinioStorageProvider {
 
 	return &MinioStorageProvider{
 		client:       minioClient,
-		bucketName:   cfg.Minio.BucketName,
-		isSecure:     cfg.Minio.IsSecure,
-		publicDomain: cfg.Minio.PublicDomain,
+		bucketName:   cfg.BucketName,
+		isSecure:     cfg.IsSecure,
+		publicDomain: cfg.PublicDomain,
 	}
 }
 

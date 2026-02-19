@@ -18,7 +18,7 @@ type NominatimFetcher struct {
 	url    string
 }
 
-func NewNominatimFetcher(cfg *config.Config) *NominatimFetcher {
+func NewNominatimFetcher(cfg *config.ExternalServiceConfig) *NominatimFetcher {
 	t := &http.Transport{
 		MaxIdleConns:      10,
 		IdleConnTimeout:   30 * time.Second,
@@ -32,7 +32,7 @@ func NewNominatimFetcher(cfg *config.Config) *NominatimFetcher {
 
 	return &NominatimFetcher{
 		client: client,
-		url:    cfg.ExternalServiceConfig.NominatimUrl,
+		url:    cfg.NominatimUrl,
 	}
 }
 

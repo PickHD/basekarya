@@ -15,11 +15,11 @@ type JwtProvider struct {
 	expireDuration time.Duration
 }
 
-func NewJWTProvider(cfg *config.Config) *JwtProvider {
+func NewJWTProvider(cfg *config.JWTConfig) *JwtProvider {
 	return &JwtProvider{
-		secretKey:      cfg.JWT.Secret,
+		secretKey:      cfg.Secret,
 		issuer:         "hris-app",
-		expireDuration: time.Hour * time.Duration(cfg.JWT.ExpiresIn),
+		expireDuration: time.Hour * time.Duration(cfg.ExpiresIn),
 	}
 }
 

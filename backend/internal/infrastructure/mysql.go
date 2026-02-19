@@ -15,9 +15,9 @@ type GormConnectionProvider struct {
 	DB *gorm.DB
 }
 
-func NewGormConnection(cfg *config.Config) *GormConnectionProvider {
+func NewGormConnection(cfg *config.DatabaseConfig) *GormConnectionProvider {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Asia%%2FJakarta",
-		cfg.Database.User, cfg.Database.Password, cfg.Database.Host, cfg.Database.Port, cfg.Database.DBName)
+		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName)
 
 	// Configure GORM logger
 	gormLogger := gormLogger.Default.LogMode(gormLogger.Info)

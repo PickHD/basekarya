@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"hris-backend/internal/infrastructure"
 	"hris-backend/pkg/constants"
 	"hris-backend/pkg/logger"
 	"hris-backend/pkg/response"
@@ -22,19 +23,23 @@ type Service interface {
 }
 
 type service struct {
-	repo          Repository
-	user          UserProvider
-	reimbursement ReimbursementProvider
-	attendance    AttendanceProvider
-	company       CompanyProvider
+	repo               Repository
+	user               UserProvider
+	reimbursement      ReimbursementProvider
+	attendance         AttendanceProvider
+	company            CompanyProvider
+	notification       NotificationProvider
+	transactionManager infrastructure.TransactionManager
 }
 
 func NewService(repo Repository,
 	user UserProvider,
 	reimbursement ReimbursementProvider,
 	attendance AttendanceProvider,
-	company CompanyProvider) Service {
-	return &service{repo, user, reimbursement, attendance, company}
+	company CompanyProvider,
+	notification NotificationProvider,
+	transactionManager infrastructure.TransactionManager) Service {
+	return &service{repo, user, reimbursement, attendance, company, notification, transactionManager}
 }
 
 func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*GenerateResponse, error) {
@@ -203,7 +208,7 @@ func (s *service) GetDetail(ctx context.Context, id uint) (*PayrollDetailRespons
 		EmployeeID:     emp.ID,
 		EmployeeName:   emp.FullName,
 		EmployeeNIK:    emp.NIK,
-		PeriodDate:     payroll.PeriodDate.Format("2006-01-02"),
+		PeriodDate:     payroll.PeriodDate.Format(constants.DefaultTimeFormat),
 		BaseSalary:     payroll.BaseSalary,
 		TotalAllowance: payroll.TotalAllowance,
 		TotalDeduction: payroll.TotalDeduction,
@@ -340,10 +345,26 @@ func (s *service) GeneratePayslipPDF(ctx context.Context, id uint) (*fpdf.Fpdf, 
 }
 
 func (s *service) MarkAsPaid(ctx context.Context, id uint) error {
-	_, err := s.repo.FindByID(id)
-	if err != nil {
-		return err
-	}
+	return s.transactionManager.RunInTransaction(ctx, func(ctx context.Context) error {
+		payroll, err := s.repo.FindByID(id)
+		if err != nil {
+			return err
+		}
 
-	return s.repo.UpdateStatus(id, constants.PayrollStatusPaid)
+		if err := s.repo.UpdateStatus(ctx, id, constants.PayrollStatusPaid); err != nil {
+			return err
+		}
+
+		go func() {
+			_ = s.notification.SendNotification(
+				payroll.Employee.UserID,
+				string(constants.NotificationTypePayrollPaid),
+				"Payroll Sudah dibayarkan",
+				fmt.Sprintf("Payroll %s sudah dibayarkan.", payroll.PeriodDate.Format(constants.PayrollTimeFormat)),
+				id,
+			)
+		}()
+
+		return nil
+	})
 }

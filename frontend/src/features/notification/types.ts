@@ -5,7 +5,8 @@ export interface NotificationPayload {
     | "APPROVED"
     | "REJECTED"
     | "LEAVE_APPROVAL_REQ"
-    | "REIMBURSE_APPROVAL_REQ";
+    | "REIMBURSE_APPROVAL_REQ"
+    | "PAYROLL_PAID"; 
   title: string;
   message: string;
   related_id: number;

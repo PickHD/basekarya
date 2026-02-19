@@ -91,6 +91,7 @@ export const useWebSocket = () => {
           const message = payload.message || payload.message || "";
 
           switch (payload.type) {
+            case "PAYROLL_PAID":
             case "APPROVED":
               toast.success(title, { description: message, duration: 3000 });
               break;

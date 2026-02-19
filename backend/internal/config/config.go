@@ -13,6 +13,12 @@ type Config struct {
 	FileUpload            FileUploadConfig
 	ExternalServiceConfig ExternalServiceConfig
 	CredentialConfig      CredentialConfig
+	Redis                 RedisConfig
+}
+
+type RedisConfig struct {
+	Addr     string
+	Password string
 }
 
 type DatabaseConfig struct {
@@ -102,6 +108,10 @@ func Load() *Config {
 		CredentialConfig: CredentialConfig{
 			SuperadminUsername: getEnv("SUPERADMIN_USERNAME", "superadmin"),
 			SuperadminPassword: getEnv("SUPERADMIN_PASSWORD", "12390182309812039812093801"),
+		},
+		Redis: RedisConfig{
+			Addr:     getEnv("REDIS_ADDR", "localhost:6379"),
+			Password: getEnv("REDIS_PASSWORD", ""),
 		},
 	}
 

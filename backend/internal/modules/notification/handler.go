@@ -32,6 +32,7 @@ var upgrader = websocket.Upgrader{
 func (h *Handler) HandleWebSocket(ctx echo.Context) error {
 	userContext, err := utils.GetUserContext(ctx)
 	if err != nil {
+		logger.Errorw("[WS] Failed to get user context", err)
 		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
 	}
 

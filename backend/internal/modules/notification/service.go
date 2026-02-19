@@ -40,7 +40,7 @@ func (s *service) SendNotification(userID uint,
 		IsRead:    false,
 	}
 
-	err := s.repo.Create(&notification)
+	err := s.repo.Create(context.Background(), &notification)
 	if err != nil {
 		return err
 	}

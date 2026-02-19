@@ -24,6 +24,7 @@ type Container struct {
 	Bcrypt       *infrastructure.BcryptHasher
 	Location     *infrastructure.NominatimFetcher
 	WebsocketHub *infrastructure.Hub
+	Redis        *infrastructure.RedisClientProvider
 
 	HealthCheckHandler   *health.Handler
 	AuthHandler          *auth.Handler
@@ -47,13 +48,16 @@ type Container struct {
 func NewContainer() (*Container, error) {
 	cfg := config.Load()
 
-	db := infrastructure.NewGormConnection(cfg)
-	storage := infrastructure.NewMinioStorage(cfg)
-	jwt := infrastructure.NewJWTProvider(cfg)
+	db := infrastructure.NewGormConnection(&cfg.Database)
+	storage := infrastructure.NewMinioStorage(&cfg.Minio)
+	jwt := infrastructure.NewJWTProvider(&cfg.JWT)
 	bcrypt := infrastructure.NewBcryptHasher(12)
-	nominatim := infrastructure.NewNominatimFetcher(cfg)
+	nominatim := infrastructure.NewNominatimFetcher(&cfg.ExternalServiceConfig)
 	cronScheduler := infrastructure.NewCronProvider()
-	wsHub := infrastructure.NewHub()
+	redis := infrastructure.NewRedisClient(&cfg.Redis)
+	transactionManager := infrastructure.NewGormTransactionManager(db.GetDB())
+
+	wsHub := infrastructure.NewHub(redis.GetClient())
 	geocodeWorker := attendance.NewGeocodeWorker(db.GetDB(), nominatim, 100)
 
 	healthRepo := health.NewRepository(db.GetDB())
@@ -71,7 +75,7 @@ func NewContainer() (*Container, error) {
 	authSvc := auth.NewService(userRepo, bcrypt, jwt)
 	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeWorker)
 	masterSvc := master.NewService(masterRepo)
-	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo)
+	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo, notificationSvc, transactionManager)
 	leaveSvc := leave.NewService(leaveRepo, storage, notificationSvc, userRepo)
 	userSvc := user.NewService(userRepo, bcrypt, storage, leaveSvc)
 	reimburseSvc := reimbursement.NewService(reimburseRepo, storage, notificationSvc, userRepo)
@@ -102,6 +106,7 @@ func NewContainer() (*Container, error) {
 		Bcrypt:       bcrypt,
 		Location:     nominatim,
 		WebsocketHub: wsHub,
+		Redis:        redis,
 
 		HealthCheckHandler:   healthHandler,
 		AuthHandler:          authHandler,
@@ -139,6 +144,10 @@ func (c *Container) Close() error {
 
 	if c.NotificationScheduler != nil {
 		c.NotificationScheduler.Stop()
+	}
+
+	if c.Redis != nil {
+		c.Redis.Close()
 	}
 
 	return nil
