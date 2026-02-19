@@ -61,12 +61,14 @@ export default function DashboardLayout() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
+                    size="icon"
                     className="relative h-10 w-10 rounded-full"
                   >
                     <Avatar>
                       <AvatarImage
                         src={user?.profile_picture_url}
                         alt={user?.full_name}
+                        className="object-cover"
                       />
                       <AvatarFallback>
                         {user?.full_name?.charAt(0) || "U"}
