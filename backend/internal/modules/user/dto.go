@@ -17,6 +17,7 @@ type UserProfileResponse struct {
 	BankAccountNumber  string  `json:"bank_account_number"`
 	BankAccountHolder  string  `json:"bank_account_holder"`
 	NPWP               string  `json:"npwp"`
+	Email              string  `json:"email"`
 	BaseSalary         float64 `json:"base_salary"`
 }
 
@@ -27,6 +28,7 @@ type UpdateProfileRequest struct {
 	BankAccountNumber string `form:"bank_account_number" json:"bank_account_number" validate:"omitempty,min=3"`
 	BankAccountHolder string `form:"bank_account_holder" json:"bank_account_holder" validate:"omitempty,min=3"`
 	NPWP              string `form:"npwp" json:"npwp" validate:"omitempty,min=12"`
+	Email             string `form:"email" json:"email" validate:"omitempty"`
 }
 
 type ChangePasswordRequest struct {
@@ -43,6 +45,7 @@ type EmployeeListResponse struct {
 	DepartmentName string  `json:"department_name"`
 	ShiftName      string  `json:"shift_name"`
 	BaseSalary     float64 `json:"base_salary"`
+	Email          string  `json:"email"`
 }
 
 type CreateEmployeeRequest struct {
@@ -52,6 +55,7 @@ type CreateEmployeeRequest struct {
 	DepartmentID uint    `json:"department_id" validate:"required"`
 	ShiftID      uint    `json:"shift_id" validate:"required"`
 	BaseSalary   float64 `json:"base_salary" validate:"required"`
+	Email        string  `json:"email" validate:"required"`
 }
 
 type UpdateEmployeeRequest struct {
@@ -60,4 +64,5 @@ type UpdateEmployeeRequest struct {
 	DepartmentID uint    `json:"department_id"`
 	ShiftID      uint    `json:"shift_id"`
 	BaseSalary   float64 `json:"base_salary"`
+	Email        string  `json:"email"`
 }

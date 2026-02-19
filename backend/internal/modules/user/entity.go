@@ -34,7 +34,8 @@ type Employee struct {
 	BankAccountNumber string `gorm:"type:varchar(50)" json:"bank_account_number"`
 	BankAccountHolder string `gorm:"type:varchar(100)" json:"bank_account_holder"`
 
-	NPWP string `gorm:"type:varchar(30)" json:"npwp"`
+	NPWP  string `gorm:"type:varchar(30)" json:"npwp"`
+	Email string `gorm:"type:varchar(255)" json:"email"`
 
 	User User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 

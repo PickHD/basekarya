@@ -56,6 +56,7 @@ func (s *service) GetProfile(userID uint) (*UserProfileResponse, error) {
 		resp.BankAccountNumber = user.Employee.BankAccountNumber
 		resp.BankAccountHolder = user.Employee.BankAccountHolder
 		resp.NPWP = user.Employee.NPWP
+		resp.Email = user.Employee.Email
 
 		if user.Employee.Department != nil {
 			resp.DepartmentName = user.Employee.Department.Name
@@ -146,6 +147,7 @@ func (s *service) GetAllEmployees(ctx context.Context, page, limit int, search s
 				DepartmentName: deptName,
 				ShiftName:      shiftName,
 				BaseSalary:     baseSalary,
+				Email:          u.Employee.Email,
 			})
 		}
 	}
@@ -181,6 +183,7 @@ func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest
 			DepartmentID: req.DepartmentID,
 			ShiftID:      req.ShiftID,
 			BaseSalary:   req.BaseSalary,
+			Email:        req.Email,
 		}
 
 		if err := s.repo.CreateEmployee(ctx, &newEmp); err != nil {
@@ -216,6 +219,9 @@ func (s *service) UpdateEmployee(ctx context.Context, id uint, req *UpdateEmploy
 	}
 	if req.BaseSalary > 0 {
 		emp.BaseSalary = req.BaseSalary
+	}
+	if req.Email != "" {
+		emp.Email = req.Email
 	}
 
 	return s.repo.UpdateEmployee(ctx, emp)
@@ -253,6 +259,10 @@ func (s *service) buildEmployeeData(ctx context.Context, user *User, req *Update
 
 	if req.NPWP != "" {
 		user.Employee.NPWP = req.NPWP
+	}
+
+	if req.Email != "" {
+		user.Employee.Email = req.Email
 	}
 
 	if file != nil {

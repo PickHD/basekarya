@@ -93,3 +93,18 @@ export const useMarkAsPaid = () => {
     },
   });
 };
+
+export const useSendPayslipEmail = () => {
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await api.post(`/admin/payrolls/${id}/send-email`, id);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Email sedang dikirim...");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Gagal trigger kirim email");
+    },
+  });
+};

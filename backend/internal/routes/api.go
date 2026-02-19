@@ -98,6 +98,7 @@ func (r *Router) setupRoutes() {
 		adminOnly.GET("/payrolls/:id", r.container.PayrollHandler.GetDetail)
 		adminOnly.GET("/payrolls/:id/download", r.container.PayrollHandler.DownloadPayslipPDF)
 		adminOnly.PUT("/payrolls/:id/status", r.container.PayrollHandler.MarkAsPaid)
+		adminOnly.POST("/payrolls/:id/send-email", r.container.PayrollHandler.BlastPayslipEmail)
 
 		adminOnly.GET("/company/profile", r.container.CompanyHandler.GetProfile)
 		adminOnly.PUT("/company/profile", r.container.CompanyHandler.UpdateProfile)

@@ -6,6 +6,7 @@ export interface Employee {
   department_name: string;
   shift_name: string;
   base_salary: number;
+  email: string;
 }
 
 export interface AttendanceRecap {
@@ -28,6 +29,7 @@ export interface CreateEmployeePayload {
   department_id: number;
   shift_id: number;
   base_salary: number;
+  email: string;
 }
 
 export interface LookupItem {

@@ -36,6 +36,7 @@ import {
 } from "@/features/payroll/hooks/usePayroll";
 import { useDebounce } from "@/hooks/useDebounce";
 import { PayrollDetailDialog } from "./PayrollDetailDialog";
+import { SendEmailAction } from "./SendEmailAction";
 
 export default function PayrollList() {
   const [page, setPage] = useState(1);
@@ -270,6 +271,16 @@ export default function PayrollList() {
                           )}
                           <span className="sr-only">Download</span>
                         </Button>
+
+                        <SendEmailAction
+                          payrollId={item.id}
+                          employeeName={item.employee_name}
+                          period={format(
+                            new Date(item.period_date),
+                            "MMMM yyyy",
+                          )}
+                          isDraft={item.status === "DRAFT"}
+                        />
                       </TableCell>
                     </TableRow>
                   ))
@@ -281,21 +292,21 @@ export default function PayrollList() {
           {/* Mobile View */}
           <div className="grid grid-cols-1 gap-4 md:hidden">
             {isLoading ? (
-               <div className="flex justify-center py-10">
+              <div className="flex justify-center py-10">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
               </div>
             ) : data?.data.length === 0 ? (
-                <div className="text-center py-10 text-slate-500 border rounded-md">
+              <div className="text-center py-10 text-slate-500 border rounded-md">
                 <div className="flex flex-col items-center justify-center gap-2">
                   <FileText className="h-10 w-10 text-slate-300" />
                   <p>No payroll data found.</p>
                 </div>
               </div>
             ) : (
-                data?.data.map((item) => (
+              data?.data.map((item) => (
                 <div
                   key={item.id}
-                  className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-3"
+                  className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-4"
                 >
                   <div className="flex justify-between items-start">
                     <div>
@@ -305,14 +316,12 @@ export default function PayrollList() {
                       <div className="text-xs text-slate-500">
                         {item.employee_nik}
                       </div>
-                       <div className="text-xs text-slate-500 mt-1">
-                          {format(new Date(item.period_date), "MMMM yyyy")}
-                       </div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        {format(new Date(item.period_date), "MMMM yyyy")}
+                      </div>
                     </div>
                     <Badge
-                      variant={
-                        item.status === "PAID" ? "default" : "secondary"
-                      }
+                      variant={item.status === "PAID" ? "default" : "secondary"}
                       className={
                         item.status === "PAID"
                           ? "bg-green-100 text-green-700 hover:bg-green-100"
@@ -323,47 +332,59 @@ export default function PayrollList() {
                     </Badge>
                   </div>
 
-                  <div className="flex items-center justify-between border-t pt-2">
+                  <div className="flex items-center justify-between border-t pt-3">
                     <div className="flex flex-col">
-                        <span className="text-xs text-slate-500">Net Salary</span>
-                         <span className="font-bold text-slate-700 text-lg">
+                      <span className="text-xs text-slate-500">Net Salary</span>
+                      <span className="font-bold text-slate-700 text-lg">
                         {formatCurrency(item.net_salary)}
-                        </span>
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 pt-1">
+                    <div className="grid grid-cols-2 gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1"
+                        className="w-full"
                         onClick={() => {
                           setSelectedPayrollId(item.id);
                           setIsDetailOpen(true);
                         }}
                       >
-                        <Eye className="mr-2 h-4 w-4" /> View Details
+                        <Eye className="mr-2 h-4 w-4" /> View
                       </Button>
+
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1"
-                         onClick={() =>
-                            handleDownload(
-                              item.id,
-                              item.employee_nik,
-                              item.period_date,
-                            )
-                          }
-                          disabled={isDownloading === item.id}
+                        className="w-full"
+                        onClick={() =>
+                          handleDownload(
+                            item.id,
+                            item.employee_nik,
+                            item.period_date,
+                          )
+                        }
+                        disabled={isDownloading === item.id}
                       >
-                         {isDownloading === item.id ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <Download className="mr-2 h-4 w-4" />
-                          )}
-                        Payslip
+                        {isDownloading === item.id ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="mr-2 h-4 w-4" />
+                        )}
+                        PDF
                       </Button>
+                    </div>
+
+                    <div className="w-full [&>button]:w-full [&>button>span]:!inline [&>button]:justify-center">
+                      <SendEmailAction
+                        payrollId={item.id}
+                        employeeName={item.employee_name}
+                        period={format(new Date(item.period_date), "MMMM yyyy")}
+                        isDraft={item.status === "DRAFT"}
+                      />
+                    </div>
                   </div>
                 </div>
               ))

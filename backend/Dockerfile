@@ -29,6 +29,9 @@ ENV TZ=Asia/Jakarta
 # Copy built binary from builder stage
 COPY --from=builder /app/hris-be-service .
 
+# Copy asset fonts
+COPY --from=builder /app/assets ./assets
+
 # Expose application port
 EXPOSE 8080
 

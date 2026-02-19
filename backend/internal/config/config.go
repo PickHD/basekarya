@@ -14,6 +14,7 @@ type Config struct {
 	ExternalServiceConfig ExternalServiceConfig
 	CredentialConfig      CredentialConfig
 	Redis                 RedisConfig
+	Email                 EmailConfig
 }
 
 type RedisConfig struct {
@@ -68,6 +69,14 @@ type CredentialConfig struct {
 	SuperadminPassword string
 }
 
+type EmailConfig struct {
+	Host     string
+	Port     int
+	Username string
+	Password string
+	From     string
+}
+
 func Load() *Config {
 	config := &Config{
 		Database: DatabaseConfig{
@@ -112,6 +121,13 @@ func Load() *Config {
 		Redis: RedisConfig{
 			Addr:     getEnv("REDIS_ADDR", "localhost:6379"),
 			Password: getEnv("REDIS_PASSWORD", ""),
+		},
+		Email: EmailConfig{
+			Host:     getEnv("SMTP_HOST", "gmail.com"),
+			Port:     getEnvInt("SMTP_PORT", 567),
+			Username: getEnv("SMTP_USER", "user@gmail.com"),
+			Password: getEnv("SMTP_PASS", "pass"),
+			From:     getEnv("SMTP_FROM", "from"),
 		},
 	}
 

@@ -28,3 +28,7 @@ type NotificationProvider interface {
 		Title string,
 		Message string, relatedID uint) error
 }
+
+type EmailProvider interface {
+	SendWithAttachment(to, subject, htmlBody, fileName string, attachmentBytes []byte) error
+}
