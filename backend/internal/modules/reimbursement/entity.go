@@ -2,8 +2,8 @@ package reimbursement
 
 import (
 	"database/sql"
-	"hris-backend/internal/modules/user"
-	"hris-backend/pkg/constants"
+	"basekarya-backend/internal/modules/user"
+	"basekarya-backend/pkg/constants"
 	"time"
 
 	"gorm.io/gorm"

@@ -3,7 +3,7 @@ package infrastructure
 import (
 	"errors"
 	"fmt"
-	"hris-backend/internal/config"
+	"basekarya-backend/internal/config"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"

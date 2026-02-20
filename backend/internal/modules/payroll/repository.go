@@ -2,8 +2,8 @@ package payroll
 
 import (
 	"context"
-	"hris-backend/pkg/constants"
-	"hris-backend/pkg/utils"
+	"basekarya-backend/pkg/constants"
+	"basekarya-backend/pkg/utils"
 	"time"
 
 	"gorm.io/gorm"

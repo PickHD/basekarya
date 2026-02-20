@@ -1,9 +1,9 @@
 package routes
 
 import (
-	"hris-backend/internal/bootstrap"
-	"hris-backend/pkg/constants"
-	"hris-backend/pkg/utils"
+	"basekarya-backend/internal/bootstrap"
+	"basekarya-backend/pkg/constants"
+	"basekarya-backend/pkg/utils"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"

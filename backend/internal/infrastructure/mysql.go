@@ -2,8 +2,8 @@ package infrastructure
 
 import (
 	"fmt"
-	"hris-backend/internal/config"
-	"hris-backend/pkg/logger"
+	"basekarya-backend/internal/config"
+	"basekarya-backend/pkg/logger"
 	"time"
 
 	"gorm.io/driver/mysql"

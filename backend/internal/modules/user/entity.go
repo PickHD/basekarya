@@ -1,7 +1,7 @@
 package user
 
 import (
-	"hris-backend/internal/modules/master"
+	"basekarya-backend/internal/modules/master"
 	"time"
 )
 

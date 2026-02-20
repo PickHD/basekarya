@@ -1,7 +1,7 @@
 package notification
 
 import (
-	"hris-backend/internal/modules/user"
+	"basekarya-backend/internal/modules/user"
 	"time"
 )
 

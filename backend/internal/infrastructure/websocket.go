@@ -3,8 +3,8 @@ package infrastructure
 import (
 	"context"
 	"encoding/json"
-	"hris-backend/pkg/constants"
-	"hris-backend/pkg/logger"
+	"basekarya-backend/pkg/constants"
+	"basekarya-backend/pkg/logger"
 	"sync"
 	"time"
 

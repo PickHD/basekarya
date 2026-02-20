@@ -1,9 +1,9 @@
 package leave
 
 import (
-	"hris-backend/internal/modules/master"
-	"hris-backend/internal/modules/user"
-	"hris-backend/pkg/constants"
+	"basekarya-backend/internal/modules/master"
+	"basekarya-backend/internal/modules/user"
+	"basekarya-backend/pkg/constants"
 	"time"
 
 	"gorm.io/gorm"

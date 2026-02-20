@@ -3,8 +3,8 @@ package infrastructure
 import (
 	"encoding/json"
 	"fmt"
-	"hris-backend/internal/config"
-	"hris-backend/pkg/logger"
+	"basekarya-backend/internal/config"
+	"basekarya-backend/pkg/logger"
 	"net/http"
 	"time"
 )

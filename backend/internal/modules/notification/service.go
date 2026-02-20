@@ -3,7 +3,7 @@ package notification
 import (
 	"context"
 	"encoding/json"
-	"hris-backend/internal/infrastructure"
+	"basekarya-backend/internal/infrastructure"
 )
 
 type Service interface {

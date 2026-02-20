@@ -1,8 +1,8 @@
 package health
 
 import (
-	"hris-backend/pkg/logger"
-	"hris-backend/pkg/response"
+	"basekarya-backend/pkg/logger"
+	"basekarya-backend/pkg/response"
 	"net/http"
 
 	"github.com/labstack/echo/v4"

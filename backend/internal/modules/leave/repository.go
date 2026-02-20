@@ -3,10 +3,10 @@ package leave
 import (
 	"context"
 	"errors"
-	"hris-backend/internal/modules/attendance"
-	"hris-backend/internal/modules/master"
-	"hris-backend/pkg/constants"
-	"hris-backend/pkg/utils"
+	"basekarya-backend/internal/modules/attendance"
+	"basekarya-backend/internal/modules/master"
+	"basekarya-backend/pkg/constants"
+	"basekarya-backend/pkg/utils"
 	"time"
 
 	"gorm.io/gorm"

@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
-	"hris-backend/pkg/constants"
+	"basekarya-backend/pkg/constants"
 )
 
 type Service interface {

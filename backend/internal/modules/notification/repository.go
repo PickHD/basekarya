@@ -2,7 +2,7 @@ package notification
 
 import (
 	"context"
-	"hris-backend/pkg/utils"
+	"basekarya-backend/pkg/utils"
 	"time"
 
 	"gorm.io/gorm"

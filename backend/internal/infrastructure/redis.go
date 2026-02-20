@@ -2,8 +2,8 @@ package infrastructure
 
 import (
 	"context"
-	"hris-backend/internal/config"
-	"hris-backend/pkg/logger"
+	"basekarya-backend/internal/config"
+	"basekarya-backend/pkg/logger"
 
 	"github.com/redis/go-redis/v9"
 )

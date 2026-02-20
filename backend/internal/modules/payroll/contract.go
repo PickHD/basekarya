@@ -2,8 +2,8 @@ package payroll
 
 import (
 	"context"
-	"hris-backend/internal/modules/company"
-	"hris-backend/internal/modules/user"
+	"basekarya-backend/internal/modules/company"
+	"basekarya-backend/internal/modules/user"
 )
 
 type UserProvider interface {

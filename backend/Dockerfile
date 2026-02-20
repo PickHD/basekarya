@@ -12,8 +12,8 @@ RUN go mod download
 COPY . .
 
 # Build Go application
-# -ldflags="-s -w" memperkecil ukuran binary (strip debug info)
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o hris-be-service ./cmd/api
+# -ldflags="-s -w" make binary smaller (strip debug info)
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o basekarya-be-service ./cmd/api
 
 # Final stage
 FROM alpine:latest
@@ -27,7 +27,7 @@ RUN apk add --no-cache tzdata ca-certificates curl
 ENV TZ=Asia/Jakarta
 
 # Copy built binary from builder stage
-COPY --from=builder /app/hris-be-service .
+COPY --from=builder /app/basekarya-be-service .
 
 # Copy asset fonts
 COPY --from=builder /app/assets ./assets
@@ -36,4 +36,4 @@ COPY --from=builder /app/assets ./assets
 EXPOSE 8080
 
 # Run the executable
-ENTRYPOINT ["./hris-be-service", "http"]
+ENTRYPOINT ["./basekarya-be-service", "http"]

@@ -1,4 +1,4 @@
-module hris-backend
+module basekarya-backend
 
 go 1.25.1
 

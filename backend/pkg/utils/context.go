@@ -3,8 +3,8 @@ package utils
 import (
 	"context"
 	"errors"
-	"hris-backend/internal/infrastructure"
-	"hris-backend/pkg/constants"
+	"basekarya-backend/internal/infrastructure"
+	"basekarya-backend/pkg/constants"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"

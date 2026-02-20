@@ -1,7 +1,7 @@
 package attendance
 
 import (
-	"hris-backend/pkg/logger"
+	"basekarya-backend/pkg/logger"
 	"sync"
 	"time"
 

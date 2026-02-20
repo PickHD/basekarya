@@ -3,8 +3,8 @@ package payroll
 import (
 	"context"
 	"fmt"
-	"hris-backend/pkg/logger"
-	"hris-backend/pkg/response"
+	"basekarya-backend/pkg/logger"
+	"basekarya-backend/pkg/response"
 	"net/http"
 	"strconv"
 	"time"

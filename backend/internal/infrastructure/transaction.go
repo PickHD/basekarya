@@ -2,7 +2,7 @@ package infrastructure
 
 import (
 	"context"
-	"hris-backend/pkg/constants"
+	"basekarya-backend/pkg/constants"
 
 	"gorm.io/gorm"
 )

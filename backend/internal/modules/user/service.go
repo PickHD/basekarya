@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"hris-backend/internal/infrastructure"
-	"hris-backend/pkg/constants"
-	"hris-backend/pkg/response"
+	"basekarya-backend/internal/infrastructure"
+	"basekarya-backend/pkg/constants"
+	"basekarya-backend/pkg/response"
 	"mime/multipart"
 	"time"
 )

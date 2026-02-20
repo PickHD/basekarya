@@ -1,8 +1,8 @@
 package attendance
 
 import (
-	"hris-backend/internal/modules/master"
-	"hris-backend/internal/modules/user"
+	"basekarya-backend/internal/modules/master"
+	"basekarya-backend/internal/modules/user"
 	"time"
 )
 

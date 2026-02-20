@@ -2,9 +2,9 @@ package user
 
 import (
 	"fmt"
-	"hris-backend/pkg/logger"
-	"hris-backend/pkg/response"
-	"hris-backend/pkg/utils"
+	"basekarya-backend/pkg/logger"
+	"basekarya-backend/pkg/response"
+	"basekarya-backend/pkg/utils"
 	"net/http"
 	"strconv"
 

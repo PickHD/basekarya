@@ -1,8 +1,8 @@
 package notification
 
 import (
-	"hris-backend/internal/infrastructure"
-	"hris-backend/pkg/logger"
+	"basekarya-backend/internal/infrastructure"
+	"basekarya-backend/pkg/logger"
 )
 
 type Scheduler interface {

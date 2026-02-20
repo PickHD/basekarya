@@ -2,9 +2,9 @@ package attendance
 
 import (
 	"context"
-	"hris-backend/pkg/constants"
-	"hris-backend/pkg/response"
-	"hris-backend/pkg/utils"
+	"basekarya-backend/pkg/constants"
+	"basekarya-backend/pkg/response"
+	"basekarya-backend/pkg/utils"
 	"time"
 
 	"gorm.io/gorm"

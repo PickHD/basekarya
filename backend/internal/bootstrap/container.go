@@ -1,19 +1,19 @@
 package bootstrap
 
 import (
-	"hris-backend/internal/config"
-	"hris-backend/internal/infrastructure"
-	"hris-backend/internal/middleware"
-	"hris-backend/internal/modules/attendance"
-	"hris-backend/internal/modules/auth"
-	"hris-backend/internal/modules/company"
-	"hris-backend/internal/modules/health"
-	"hris-backend/internal/modules/leave"
-	"hris-backend/internal/modules/master"
-	"hris-backend/internal/modules/notification"
-	"hris-backend/internal/modules/payroll"
-	"hris-backend/internal/modules/reimbursement"
-	"hris-backend/internal/modules/user"
+	"basekarya-backend/internal/config"
+	"basekarya-backend/internal/infrastructure"
+	"basekarya-backend/internal/middleware"
+	"basekarya-backend/internal/modules/attendance"
+	"basekarya-backend/internal/modules/auth"
+	"basekarya-backend/internal/modules/company"
+	"basekarya-backend/internal/modules/health"
+	"basekarya-backend/internal/modules/leave"
+	"basekarya-backend/internal/modules/master"
+	"basekarya-backend/internal/modules/notification"
+	"basekarya-backend/internal/modules/payroll"
+	"basekarya-backend/internal/modules/reimbursement"
+	"basekarya-backend/internal/modules/user"
 )
 
 type Container struct {

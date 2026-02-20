@@ -4,7 +4,7 @@ export
 .PHONY: help build run build-be run-be build-fe run-fe run-docker migrate-create migrate-up migrate-down clean-be clean-fe test seed
 
 # Variables
-APP_NAME := hris-app
+APP_NAME := basekarya-app
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 BUILD_DIR_BE := bin
 BUILD_DIR_FE := dist

@@ -1,7 +1,7 @@
 package payroll
 
 import (
-	"hris-backend/pkg/constants"
+	"basekarya-backend/pkg/constants"
 	"time"
 )
 

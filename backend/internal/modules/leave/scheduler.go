@@ -2,8 +2,8 @@ package leave
 
 import (
 	"context"
-	"hris-backend/internal/infrastructure"
-	"hris-backend/pkg/logger"
+	"basekarya-backend/internal/infrastructure"
+	"basekarya-backend/pkg/logger"
 )
 
 type Scheduler interface {

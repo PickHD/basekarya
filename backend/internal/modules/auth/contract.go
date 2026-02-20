@@ -2,7 +2,7 @@ package auth
 
 import (
 	"context"
-	"hris-backend/internal/modules/user"
+	"basekarya-backend/internal/modules/user"
 )
 
 type Hasher interface {

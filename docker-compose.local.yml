@@ -1,7 +1,7 @@
 services:
   gateway:
     image: nginx:alpine
-    container_name: hris_gateway
+    container_name: basekarya_gateway
     restart: always
     ports:
       - "80:80"
@@ -15,10 +15,10 @@ services:
       - frontend
       - backend
     networks:
-      - hris_net
+      - basekarya_net
   db:
     image: mysql:8.0
-    container_name: hris_db
+    container_name: basekarya_db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -30,7 +30,7 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     networks:
-      - hris_net
+      - basekarya_net
     healthcheck:
       test:
         [
@@ -62,7 +62,7 @@ services:
       db:
         condition: service_healthy
     networks:
-      - hris_net
+      - basekarya_net
   minio:
     image: minio/minio
     container_name: minio
@@ -77,7 +77,7 @@ services:
       - minio_data:/data
     command: server --console-address ":9001" /data
     networks:
-      - hris_net
+      - basekarya_net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://minio:9000/minio/health/live"]
       interval: 5s
@@ -101,17 +101,17 @@ services:
       exit 0;
       "
     networks:
-      - hris_net
+      - basekarya_net
   redis:
     image: redis:alpine
-    container_name: hris_redis
+    container_name: basekarya_redis
     restart: always
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
-      - hris_net
+      - basekarya_net
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -121,8 +121,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: hris-backend:latest
-    container_name: hris_backend
+    image: basekarya-backend:latest
+    container_name: basekarya_backend
     restart: unless-stopped
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
@@ -165,7 +165,7 @@ services:
       SMTP_PASS: ${SMTP_PASS}
       SMTP_FROM: ${SMTP_FROM}
     networks:
-      - hris_net
+      - basekarya_net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
       interval: 5s
@@ -177,8 +177,8 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL}
-    image: hris-frontend:latest
-    container_name: hris_frontend
+    image: basekarya-frontend:latest
+    container_name: basekarya_frontend
     restart: unless-stopped
     depends_on:
       backend:
@@ -201,10 +201,10 @@ services:
       - /var/log/nginx
       - /run
     networks:
-      - hris_net
+      - basekarya_net
 
 networks:
-  hris_net:
+  basekarya_net:
     driver: bridge
 
 volumes:

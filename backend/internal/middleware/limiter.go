@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"hris-backend/pkg/response"
+	"basekarya-backend/pkg/response"
 	"net/http"
 	"time"
 

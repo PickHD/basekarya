@@ -1,12 +1,12 @@
 package seeder
 
 import (
-	"hris-backend/internal/config"
-	"hris-backend/internal/modules/company"
-	"hris-backend/internal/modules/master"
-	"hris-backend/internal/modules/user"
-	"hris-backend/pkg/constants"
-	"hris-backend/pkg/logger"
+	"basekarya-backend/internal/config"
+	"basekarya-backend/internal/modules/company"
+	"basekarya-backend/internal/modules/master"
+	"basekarya-backend/internal/modules/user"
+	"basekarya-backend/pkg/constants"
+	"basekarya-backend/pkg/logger"
 
 	"gorm.io/gorm"
 )

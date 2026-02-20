@@ -2,7 +2,7 @@ package infrastructure
 
 import (
 	"fmt"
-	"hris-backend/internal/config"
+	"basekarya-backend/internal/config"
 	"io"
 
 	"gopkg.in/gomail.v2"

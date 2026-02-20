@@ -2,9 +2,9 @@ package user
 
 import (
 	"context"
-	"hris-backend/pkg/constants"
-	"hris-backend/pkg/logger"
-	"hris-backend/pkg/utils"
+	"basekarya-backend/pkg/constants"
+	"basekarya-backend/pkg/logger"
+	"basekarya-backend/pkg/utils"
 
 	"gorm.io/gorm"
 )
