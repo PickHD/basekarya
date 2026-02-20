@@ -1,4 +1,4 @@
-# Base Karya
+# BaseKarya
 
 A modern, full-stack Human Resource Information System with a React frontend and Go backend.
 <img width="2310" height="1044" alt="Screenshot 2026-01-11 115810" src="https://github.com/user-attachments/assets/30082270-5577-44d8-9aec-1d2ad17932a4" />
