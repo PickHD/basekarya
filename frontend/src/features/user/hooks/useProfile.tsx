@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { toast } from "sonner";
-import type { UserProfile, PasswordPayload } from "../types";
+import type { UserProfile, PasswordPayload } from "@/features/user/types";
 
 export const useProfile = () => {
   return useQuery({

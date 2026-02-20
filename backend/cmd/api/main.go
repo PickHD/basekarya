@@ -1,12 +1,12 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"basekarya-backend/internal/bootstrap"
 	"basekarya-backend/internal/routes"
 	"basekarya-backend/internal/seeder"
 	"basekarya-backend/pkg/logger"
+	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -21,8 +21,8 @@ const (
 	seedMode       = "seed"
 )
 
-// @title HRIS Backend
-// @version 1.0.0
+// @title BaseKarya API
+// @version 2.5.0
 // @description A REST API built with Go, Echo, and Clean Architecture
 // @host localhost:8080
 // @BasePath /api/v1
@@ -75,7 +75,7 @@ func main() {
 		appContainer.NotificationScheduler.Start()
 		go appContainer.WebsocketHub.Run()
 
-		logger.Info("Starting HRIS API Server...")
+		logger.Info("Starting BaseKarya API Server...")
 
 		appRouter := routes.ServeHTTP(appContainer)
 

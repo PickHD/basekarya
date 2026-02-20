@@ -26,7 +26,7 @@ import { useProfile } from "@/features/user/hooks/useProfile";
 import {
   useReimbursement,
   useReimbursementAction,
-} from "../hooks/useReimbursement";
+} from "@/features/reimbursement/hooks/useReimbursement";
 
 interface ReimbursementDetailDialogProps {
   open: boolean;

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { NotificationPayload, NotificationResponse } from "../types";
+import type { NotificationPayload, NotificationResponse } from "@/features/notification/types";
 import { api } from "@/lib/axios";
 
 export const useNotifications = () => {

@@ -40,7 +40,7 @@ export function Sidebar({ className }: { className?: string }) {
         {/* HEADER */}
         <div className="px-3 py-2">
           <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-            HRIS Platform
+            BaseKarya
           </h2>
 
           {/* LOADING STATE */}

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
-import type { LookupItem } from "../types";
+import type { LookupItem } from "@/features/admin/types";
 
 export const useDepartments = () => {
   return useQuery({

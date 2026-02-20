@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { NotificationPayload } from "../types";
+import type { NotificationPayload } from "@/features/notification/types";
 import { toast } from "sonner";
 import { useProfile } from "@/features/user/hooks/useProfile";
 import {

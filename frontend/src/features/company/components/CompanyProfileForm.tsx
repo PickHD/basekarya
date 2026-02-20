@@ -17,8 +17,8 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { useUpdateCompanyProfile } from "../hooks/useCompany";
-import type { CompanyProfile } from "../types";
+import { useUpdateCompanyProfile } from "@/features/company/hooks/useCompany";
+import type { CompanyProfile } from "@/features/company/types";
 
 const companySchema = z.object({
   name: z

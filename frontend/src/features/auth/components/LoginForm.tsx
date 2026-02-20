@@ -84,24 +84,24 @@ export function LoginForm() {
           if (mustChange) {
             toast.warning("Security Alert", {
               description:
-                "You must change your password before continuing, go to profile > open security tab",
+                "Anda harus mengubah kata sandi sebelum melanjutkan, buka profil > buka tab keamanan",
             });
             navigate("/profile");
             return;
           }
 
-          toast.success("Login successful", {
+          toast.success("Login berhasil", {
             description: "Redirecting to your workspace...",
           });
 
           handleRedirect(token);
         } else {
-          toast.error("Login failed", { description: "No token received" });
+          toast.error("Login gagal", { description: "No token received" });
         }
       },
       onError: (err: any) => {
-        const msg = err.response?.data?.message || "Login Failed";
-        toast.error("Authentication failed", {
+        const msg = err.response?.data?.message || "Login Gagal";
+        toast.error("Login gagal", {
           description: msg,
         });
       },
@@ -118,7 +118,7 @@ export function LoginForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-slate-900 font-semibold">
-                  Username or Employee ID
+                  Username atau Employee ID
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -166,10 +166,10 @@ export function LoginForm() {
           {isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Authenticating...
+              Sedang memverifikasi...
             </>
           ) : (
-            "Sign In"
+            "Masuk"
           )}
         </Button>
       </form>

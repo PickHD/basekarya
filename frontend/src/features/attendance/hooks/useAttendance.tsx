@@ -8,7 +8,7 @@ import type {
   ClockPayload,
   ClockResponse,
   TodayAttendanceResponse,
-} from "../types";
+} from "@/features/attendance/types";
 import { api } from "@/lib/axios";
 import { toast } from "sonner";
 

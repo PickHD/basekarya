@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { GeneratePayrollPayload, Payroll, PayrollFilter } from "../types";
+import type { GeneratePayrollPayload, Payroll, PayrollFilter } from "@/features/payroll/types";
 import { api } from "@/lib/axios";
 import { toast } from "sonner";
 import type { Meta } from "@/types/api";

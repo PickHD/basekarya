@@ -1,4 +1,4 @@
-# HRIS Backend
+# BaseKarya Backend
 
 A REST API built with Go following Clean Architecture principles for the Human Resource Information System.
 
@@ -57,7 +57,7 @@ docker compose logs -f backend
 ```
 
 The API will be available at `http://localhost:8081` (internal)
-Note: When using Docker Compose, access the API through the NGINX gateway at `http://hris.local/api/v1`
+Note: When using Docker Compose, access the API through the NGINX gateway at `http://basekarya.local/api/v1`
 
 ### Local Development
 
@@ -68,7 +68,7 @@ cd backend
 go mod download
 
 # Run database migrations
-migrate -path ./migrations -database "mysql://user:password@tcp(localhost:3306)/hris_db" up
+migrate -path ./migrations -database "mysql://user:password@tcp(localhost:3306)/basekarya_db" up
 
 # Run the server
 go run cmd/api/main.go
@@ -96,7 +96,7 @@ Key variables (see root `.env.example` for complete list):
 | `SERVER_ENV` | Environment | development |
 | `MYSQL_HOST` | Database host | localhost |
 | `MYSQL_PORT` | Database port | 3306 |
-| `MYSQL_DATABASE` | Database name | hris_db |
+| `MYSQL_DATABASE` | Database name | basekarya_db |
 | `JWT_SECRET` | JWT signing key | - |
 | `JWT_EXPIRES_IN` | JWT expiration | 24h |
 | `LOG_LEVEL` | Logging level | debug |
@@ -109,7 +109,7 @@ Key variables (see root `.env.example` for complete list):
 
 ```bash
 # Health check through gateway
-curl http://hris.local/api/v1/health
+curl http://basekarya.local/api/v1/health
 
 # Expected response
 {
@@ -146,7 +146,7 @@ go fmt ./...
 go vet ./...
 
 # Build binary
-go build -o hris-be-service ./cmd/api
+go build -o basekarya-be-service ./cmd/api
 ```
 
 ## Troubleshooting

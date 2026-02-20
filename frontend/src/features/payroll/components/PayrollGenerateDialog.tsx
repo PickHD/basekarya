@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Calculator } from "lucide-react";
-import { useGeneratePayroll } from "../hooks/usePayroll";
+import { useGeneratePayroll } from "@/features/payroll/hooks/usePayroll";
 
 interface Props {
   open: boolean;

@@ -16,7 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
-import { useUpdateProfile } from "../hooks/useProfile";
+import { useUpdateProfile } from "@/features/user/hooks/useProfile";
 
 const generalSchema = z.object({
   full_name: z

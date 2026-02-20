@@ -16,7 +16,7 @@ A modern, full-stack Human Resource Information System with a React frontend and
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd hris-app
+cd basekarya
 
 # Copy environment template
 cp .env.example .env
@@ -27,7 +27,7 @@ docker compose up -d --build
 
 **Access the application:**
 
-- Main Application: http://basekarya.local (add to `/etc/hosts`: `127.0.0.1 hris.local`)
+- Main Application: http://basekarya.local (add to `/etc/hosts`: `127.0.0.1 basekarya.local`)
 - API Health Check: http://basekarya.local/api/v1/health
 
 **Stop services:**
@@ -63,13 +63,19 @@ docker compose down
 ## Features
 
 - Secure authentication with JWT
+- Comprehensive Employee Management (Admin)
+- Attendance tracking and summary 
+- Company profile & structing configuration
+- Real-time Notifications via WebSockets
+- Automated Payroll generation and email delivery
+- Employee Reimbursement tracking & workflow
 - File upload and management
 - Database migrations
 - Clean architecture
 - Docker-based deployment
 - Responsive UI with dark mode
 - **NGINX reverse proxy** with:
-  - Subdomain routing (hris.local, minio.hris.local)
+  - Subdomain routing (basekarya.local, storage.basekarya.local)
   - Gzip compression
   - WebSocket support for hot reload
   - Load balancing capabilities
@@ -77,7 +83,7 @@ docker compose down
 ## Project Structure
 
 ```
-hris-app/
+basekarya/
 ├── backend/         # Go backend API
 ├── frontend/        # React frontend application
 ├── gateway/         # NGINX reverse proxy configuration
@@ -127,21 +133,21 @@ This project uses **NGINX as a reverse proxy** to route traffic between the fron
 Internet (Port 80/443)
     ↓
 [NGINX Gateway]
-    ├─→ hris.local/api/v1/*      → Backend (Go API)
-    ├─→ hris.local/*             → Frontend (React App)
-    └─→ storage.hris.local/ → MinIO (Object Storage)
+    ├─→ basekarya.local/api/v1/*      → Backend (Go API)
+    ├─→ basekarya.local/*             → Frontend (React App)
+    └─→ storage.basekarya.local/ → MinIO (Object Storage)
 ```
 
 ### Routing Configuration
 
 The gateway is configured in `gateway/nginx.conf`:
 
-1. **Main Application** (`hris.local`):
+1. **Main Application** (`basekarya.local`):
    - `/api/v1/*` → Proxies to Backend API (port 8081)
    - `/` → Proxies to Frontend (port 8080)
    - Supports WebSocket for React hot reload
 
-2. **MinIO API S3** (`storage.hris.local`):
+2. **MinIO API S3** (`storage.basekarya.local`):
    - `/` → MinIO API S3 (port 9000)
 
 ### Features
@@ -164,8 +170,8 @@ To access the application locally, add these entries to your `/etc/hosts` file:
 sudo nano /etc/hosts
 
 # Add these lines:
-127.0.0.1 hris.local
-127.0.0.1 storage.hris.local
+127.0.0.1 basekarya.local
+127.0.0.1 storage.basekarya.local
 ```
 
 For Windows:
@@ -213,4 +219,4 @@ The configuration includes commented-out volumes for Let's Encrypt certificates.
 
 ## License
 
-[MIT License](https://github.com/PickHD/hris-app/blob/main/LICENSE)
+[MIT License](https://github.com/PickHD/basekarya/blob/main/LICENSE)

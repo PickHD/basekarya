@@ -24,8 +24,8 @@ import { Loader2 } from "lucide-react";
 import type {
   CreateReimbursementPayload,
   ReimbursementFormDialogProps,
-} from "../types";
-import { useCreateReimbursement } from "../hooks/useReimbursement";
+} from "@/features/reimbursement/types";
+import { useCreateReimbursement } from "@/features/reimbursement/hooks/useReimbursement";
 import { toast } from "sonner";
 
 const reimbursementSchema = z.object({

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, UserCheck, Clock, UserX, Loader2 } from "lucide-react";
-import type { DashboardStats } from "../types";
+import type { DashboardStats } from "@/features/admin/types";
 
 interface StatsCardsProps {
   data?: DashboardStats;

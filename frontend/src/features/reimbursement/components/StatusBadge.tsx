@@ -1,4 +1,4 @@
-import type { ReimbursementStatus } from '../types';
+import type { ReimbursementStatus } from '@/features/reimbursement/types';
 
 export const StatusBadge = ({ status }: { status: ReimbursementStatus }) => {
   const styles = {

@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { toast } from "sonner";
-import type { LoginPayload, LoginResponse } from "../types";
+import type { LoginPayload, LoginResponse } from "@/features/auth/types";
 
 export const useLogin = () => {
   return useMutation({

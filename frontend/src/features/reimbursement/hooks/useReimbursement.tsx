@@ -4,7 +4,7 @@ import type {
   ReimbursementActionPayload,
   ReimbursementFilter,
   Reimbursement,
-} from "../types";
+} from "@/features/reimbursement/types";
 import { api } from "@/lib/axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";

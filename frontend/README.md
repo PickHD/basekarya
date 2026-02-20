@@ -1,4 +1,4 @@
-# HRIS Frontend
+# BaseKarya Frontend
 
 A modern, responsive Human Resource Information System frontend built with React, TypeScript, and Vite.
 
@@ -85,7 +85,7 @@ docker compose logs -f frontend
 ```
 
 The app will be available at `http://localhost:8080` (internal)
-Note: When using Docker Compose, access the app through the NGINX gateway at `http://hris.local`
+Note: When using Docker Compose, access the app through the NGINX gateway at `http://basekarya.local`
 
 ### Local Development
 
@@ -114,6 +114,12 @@ pnpm lint         # Run ESLint
 
 - **Authentication**: Login, session management, JWT tokens
 - **User Profile**: View and update profile, change password, upload avatar
+- **Core HR Management**: Administrative options including master data & stats dashboards
+- **Attendance Processing**: Real-time attendance check-ins and check-outs
+- **Company Tools**: Organize company hierarchy & profiles
+- **Automated Payroll**: Generate payrolls and send email payslips
+- **Reimbursements**: Easily apply for and track work-related reimbursements
+- **Real-time Notifications**: WebSockets-driven personalized alert bell 
 - **Modern UI**: Radix UI components with TailwindCSS styling
 - **Type Safety**: Full TypeScript with strict mode and type imports
 - **Data Fetching**: TanStack Query for API state management and caching

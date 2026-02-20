@@ -13,7 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { PasswordInput } from "@/components/ui/password-input";
-import { useChangePassword } from "../hooks/useProfile";
+import { useChangePassword } from "@/features/user/hooks/useProfile";
 
 const passwordSchema = z
   .object({

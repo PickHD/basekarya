@@ -2,9 +2,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 
 // Auth Components
-import { ProtectedRoute } from "./components/auth/ProtectedRoute";
-import { PublicRoute } from "./components/auth/PublicRoute";
-import DashboardLayout from "./components/layout/DashboardLayout";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { PublicRoute } from "@/components/auth/PublicRoute";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 // Pages - Auth & General
 import LoginPage from "@/pages/auth/LoginPage";
@@ -17,9 +17,9 @@ import ReimbursementListPage from "@/pages/reimbursement/ReimbursementListPage";
 // Pages - Admin
 import EmployeeListPage from "@/pages/admin/EmployeeListPage";
 import AttendanceRecapPage from "@/pages/admin/AttendanceRecapPage";
-import PayrollListPage from "./pages/payroll/PayrollListPage";
-import LeaveListPage from "./pages/leave/LeaveListPage";
-import CompanySettingsPage from "./pages/admin/CompanySettingsPage";
+import PayrollListPage from "@/pages/payroll/PayrollListPage";
+import LeaveListPage from "@/pages/leave/LeaveListPage";
+import CompanySettingsPage from "@/pages/admin/CompanySettingsPage";
 
 function App() {
   return (

@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useSendPayslipEmail } from "../hooks/usePayroll";
+import { useSendPayslipEmail } from "@/features/payroll/hooks/usePayroll";
 
 interface SendEmailActionProps {
   payrollId: number;

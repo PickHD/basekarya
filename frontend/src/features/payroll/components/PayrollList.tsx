@@ -35,8 +35,8 @@ import {
   downloadPayslip,
 } from "@/features/payroll/hooks/usePayroll";
 import { useDebounce } from "@/hooks/useDebounce";
-import { PayrollDetailDialog } from "./PayrollDetailDialog";
-import { SendEmailAction } from "./SendEmailAction";
+import { PayrollDetailDialog } from "@/features/payroll/components/PayrollDetailDialog";
+import { SendEmailAction } from "@/features/payroll/components/SendEmailAction";
 
 export default function PayrollList() {
   const [page, setPage] = useState(1);

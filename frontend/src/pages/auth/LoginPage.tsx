@@ -14,15 +14,14 @@ export default function LoginPage() {
               <Building2 className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold tracking-tight">
-              Enterprise HRIS
+              BaseKarya
             </h1>
           </div>
           <blockquote className="space-y-2 border-l-4 border-blue-600 pl-6">
             <p className="text-lg font-medium leading-relaxed">
-              "Sistem manajemen sumber daya manusia yang terintegrasi, aman, dan
-              efisien untuk mendukung operasional perusahaan Anda."
+              "Sistem manajemen sumber daya manusia yang terintegrasi, aman, dan efisien untuk mendukung operasional perusahaan Anda."
             </p>
-            <footer className="text-sm text-slate-400">HRIS v2.0</footer>
+            <footer className="text-sm text-slate-400">BaseKarya v2.5</footer>
           </blockquote>
         </div>
       </div>
@@ -31,10 +30,10 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-8 flex flex-col justify-center h-full">
           <div className="flex flex-col space-y-2 text-left">
             <h2 className="text-3xl font-bold tracking-tight text-slate-950">
-              Portal Login
+              Login
             </h2>
             <p className="text-sm text-slate-500">
-              Please enter your systematic credentials to access the dashboard.
+              Silahkan masukkan kredensial Anda untuk mengakses dashboard.
             </p>
           </div>
 
@@ -43,7 +42,7 @@ export default function LoginPage() {
           </div>
 
           <p className="px-8 text-center text-sm text-slate-500 w-full mt-auto">
-            HRIS v2.0 &copy; 2026.
+            BaseKarya v2.5 &copy; 2026.
           </p>
         </div>
       </div>
