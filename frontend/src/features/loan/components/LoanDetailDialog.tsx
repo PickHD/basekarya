@@ -122,12 +122,6 @@ export function LoanDetailDialog({
                   </h3>
                   <p className="text-sm text-slate-500">NIK: {data.employee_nik || "-"}</p>
                 </div>
-                <div>
-                  <h3 className="font-bold text-lg text-slate-900">
-                    {data.employee_bank_number || "-"}
-                  </h3>
-                  <p className="text-sm text-slate-500">No. Rekening</p>
-                </div>
                 <div className="text-right">
                   <p className="text-xs text-slate-500 mb-1">Total Kasbon</p>
                   <p className="text-xl font-bold text-blue-600">
