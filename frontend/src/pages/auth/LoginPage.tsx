@@ -42,7 +42,7 @@ export default function LoginPage() {
           </div>
 
           <p className="px-8 text-center text-sm text-slate-500 w-full mt-auto">
-            BaseKarya v2.5 &copy; 2026.
+            BaseKarya v2.7 &copy; 2026.
           </p>
         </div>
       </div>
