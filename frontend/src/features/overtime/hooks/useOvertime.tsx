@@ -1,19 +1,19 @@
 import type {
-  CreateLoanPayload,
-  Loan,
-  LoanFilter,
-} from "@/features/loan/types";
+  CreateOvertimePayload,
+  Overtime,
+  OvertimeFilter,
+} from "@/features/overtime/types";
 import { api } from "@/lib/axios";
 import type { Meta } from "@/types/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { LoanActionPayload } from "../types";
+import type { OvertimeActionPayload } from "../types";
 import { toast } from "sonner";
 
-export const useLoans = (filter: LoanFilter) => {
+export const useOvertimes = (filter: OvertimeFilter) => {
   return useQuery({
-    queryKey: ["loans", filter],
+    queryKey: ["overtimes", filter],
     queryFn: async () => {
-      const { data } = await api.get<{ data: Loan[]; meta: Meta }>("/loans", {
+      const { data } = await api.get<{ data: Overtime[]; meta: Meta }>("/overtimes", {
         params: filter,
       });
 
@@ -24,11 +24,11 @@ export const useLoans = (filter: LoanFilter) => {
   });
 };
 
-export const useLoan = (id: string) => {
+export const useOvertime = (id: string) => {
   return useQuery({
-    queryKey: ["loan", id],
+    queryKey: ["overtime", id],
     queryFn: async () => {
-      const { data } = await api.get<{ data: Loan }>(`/loans/${id}`);
+      const { data } = await api.get<{ data: Overtime }>(`/overtimes/${id}`);
 
       return data.data;
     },
@@ -36,30 +36,30 @@ export const useLoan = (id: string) => {
   });
 };
 
-export const useCreateLoan = () => {
+export const useCreateOvertime = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: CreateLoanPayload) => {
-      const { data } = await api.post("/loans", payload);
+    mutationFn: async (payload: CreateOvertimePayload) => {
+      const { data } = await api.post("/overtimes", payload);
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["loans"] });
-      toast.success("Pengajuan kasbon berhasil dikirim!");
+      queryClient.invalidateQueries({ queryKey: ["overtimes"] });
+      toast.success("Pengajuan lembur berhasil dikirim!");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data.message || "Gagal Mengajukan kasbon");
+      toast.error(error.response?.data.message || "Gagal Mengajukan lembur");
     },
   });
 };
 
-export const useLoanAction = () => {
+export const useOvertimeAction = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, action, rejection_reason }: LoanActionPayload) => {
-      const { data } = await api.put(`/loans/${id}/action`, {
+    mutationFn: async ({ id, action, rejection_reason }: OvertimeActionPayload) => {
+      const { data } = await api.put(`/overtimes/${id}/action`, {
         action,
         rejection_reason,
       });
@@ -68,11 +68,15 @@ export const useLoanAction = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ["loan", variables.id.toString()],
+        queryKey: ["overtime", variables.id.toString()],
       });
-      queryClient.invalidateQueries({ queryKey: ["loans"] });
+      queryClient.invalidateQueries({ queryKey: ["overtimes"] });
 
-      toast.success(`Kasbon berhasil di-${variables.action.toLowerCase()}`);
+      let actionMsg = "";
+      if (variables.action === "APPROVE") actionMsg = "disetujui";
+      else if (variables.action === "REJECT") actionMsg = "ditolak";
+      
+      toast.success(`Lembur berhasil ${actionMsg}`);
     },
     onError: (error: any) => {
       const errMsg =
@@ -82,10 +86,10 @@ export const useLoanAction = () => {
   });
 };
 
-export const useExportLoans = () => {
+export const useExportOvertimes = () => {
   return useMutation({
     mutationFn: async (params: { status?: string; search?: string }) => {
-      const response = await api.get("/loans/export", {
+      const response = await api.get("/overtimes/export", {
         params,
         responseType: "blob",
       });
@@ -95,7 +99,7 @@ export const useExportLoans = () => {
       const url = window.URL.createObjectURL(new Blob([data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", "loans.xlsx");
+      link.setAttribute("download", "overtimes.xlsx");
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);

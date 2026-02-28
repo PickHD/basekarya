@@ -15,24 +15,24 @@ import {
   Plus,
   Filter,
   Eye,
-  Calendar,
-  CreditCard,
+  CalendarDays,
+  Clock,
   FileSpreadsheet,
 } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
 import { PaginationControls } from "@/components/shared/PaginationControls";
 import { format, isValid } from "date-fns";
 import { useProfile } from "@/features/user/hooks/useProfile";
-import { useLoans, useExportLoans } from "@/features/loan/hooks/useLoan";
-import { LoanDetailDialog } from "./LoanDetailDialog";
-import { LoanFormDialog } from "./LoanCreateDialog";
+import { useOvertimes, useExportOvertimes } from "@/features/overtime/hooks/useOvertime";
+import { OvertimeDetailDialog } from "./OvertimeDetailDialog";
+import { OvertimeFormDialog } from "./OvertimeCreateDialog";
 
-export const LoanList = () => {
+export const OvertimeList = () => {
   const { data: user } = useProfile();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
 
-  const { data, isLoading } = useLoans({
+  const { data, isLoading } = useOvertimes({
     page: page,
     limit: 10,
     status: statusFilter,
@@ -42,23 +42,15 @@ export const LoanList = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  const { mutate: exportLoans, isPending: isExporting } = useExportLoans();
+  const { mutate: exportOvertimes, isPending: isExporting } = useExportOvertimes();
 
   const handleExport = () => {
-    exportLoans({ status: statusFilter });
+    exportOvertimes({ status: statusFilter });
   };
 
   const handleViewDetail = (id: number) => {
     setSelectedId(id);
     setIsDetailOpen(true);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
   };
 
   const formatDateSafe = (dateStr: string, pattern: string) => {
@@ -68,15 +60,24 @@ export const LoanList = () => {
     return format(date, pattern);
   };
 
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    
+    if (hours > 0 && mins > 0) return `${hours} jam ${mins} m`;
+    if (hours > 0) return `${hours} jam`;
+    return `${mins} menit`;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Loans
+            Overtime
           </h2>
           <p className="text-sm sm:text-base text-slate-500">
-            Manage financial loans and approvals.
+            Kelola pengajuan lembur dan persetujuan.
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
@@ -100,7 +101,7 @@ export const LoanList = () => {
               onClick={() => setIsCreateOpen(true)}
               className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
             >
-              <Plus className="mr-2 h-4 w-4" /> Ajukan Pinjaman (Kasbon)
+              <Plus className="mr-2 h-4 w-4" /> Ajukan Lembur
             </Button>
           )}
         </div>
@@ -110,7 +111,7 @@ export const LoanList = () => {
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <CreditCard className="h-5 w-5" /> Request List
+              <Clock className="h-5 w-5" /> Daftar Lembur
             </CardTitle>
 
             <div className="flex gap-2 w-full md:w-auto">
@@ -124,9 +125,10 @@ export const LoanList = () => {
                     setPage(1);
                   }}
                 >
-                  <option value="">All Status</option>
+                  <option value="">Semua Status</option>
                   <option value="PENDING">Pending</option>
                   <option value="APPROVED">Approved</option>
+                  <option value="PAID">Paid</option>
                   <option value="REJECTED">Rejected</option>
                 </select>
               </div>
@@ -153,8 +155,8 @@ export const LoanList = () => {
                           {item.employee_name || 'Karyawan'}
                         </h4>
                         <div className="flex items-center text-xs text-slate-500 mt-1">
-                          <Calendar className="mr-1 h-3 w-3" />
-                          {formatDateSafe(item.created_at, "dd MMM yyyy")}
+                          <CalendarDays className="mr-1 h-3 w-3" />
+                          {formatDateSafe(item.date, "dd MMM yyyy")}
                         </div>
                       </div>
                       <StatusBadge status={item.status} />
@@ -162,12 +164,12 @@ export const LoanList = () => {
 
                     <div className="space-y-1 mt-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-500">Total Kasbon:</span>
-                        <span className="font-bold">{formatCurrency(item.total_amount)}</span>
+                        <span className="text-slate-500">Waktu:</span>
+                        <span className="font-medium">{item.start_time} - {item.end_time}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-500">Sisa:</span>
-                        <span className="font-medium text-amber-600">{formatCurrency(item.remaining_amount)}</span>
+                        <span className="text-slate-500">Durasi:</span>
+                        <span className="font-bold text-blue-600">{formatDuration(item.duration_minutes)}</span>
                       </div>
                     </div>
 
@@ -190,9 +192,9 @@ export const LoanList = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Employee</TableHead>
-                      <TableHead>Total Amount</TableHead>
-                      <TableHead>Installment Amount</TableHead>
-                      <TableHead>Remaining Amount</TableHead>
+                      <TableHead>Tanggal</TableHead>
+                      <TableHead>Waktu</TableHead>
+                      <TableHead>Durasi</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Action</TableHead>
                     </TableRow>
@@ -203,17 +205,17 @@ export const LoanList = () => {
                         <TableCell className="font-medium">
                           {item.employee_name || "Karyawan"}
                           <div className="text-xs text-slate-400 font-normal">
-                            {formatDateSafe(item.created_at, "dd MMM yyyy")}
+                            Pengajuan: {formatDateSafe(item.created_at, "dd MMM yyyy")}
                           </div>
                         </TableCell>
-                        <TableCell className="font-bold">
-                          {formatCurrency(item.total_amount)}
+                        <TableCell>
+                          {formatDateSafe(item.date, "dd MMM yyyy")}
                         </TableCell>
                         <TableCell>
-                          {formatCurrency(item.installment_amount)}/bln
+                          {item.start_time} - {item.end_time}
                         </TableCell>
-                        <TableCell className="text-amber-600 font-medium">
-                          {formatCurrency(item.remaining_amount)}
+                        <TableCell className="text-blue-600 font-medium">
+                          {formatDuration(item.duration_minutes)}
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={item.status} />
@@ -238,7 +240,7 @@ export const LoanList = () => {
                 <div className="text-center py-10 text-slate-500 border rounded-md mt-4 md:mt-0">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Receipt className="h-10 w-10 text-slate-300" />
-                    <p>No loan requests found.</p>
+                    <p>No overtime requests found.</p>
                   </div>
                 </div>
               )}
@@ -262,15 +264,15 @@ export const LoanList = () => {
         </CardContent>
       </Card>
 
-      <LoanFormDialog
+      <OvertimeFormDialog
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
       />
 
-      <LoanDetailDialog
+      <OvertimeDetailDialog
         open={isDetailOpen}
         onOpenChange={setIsDetailOpen}
-        loanId={selectedId}
+        overtimeId={selectedId}
       />
     </div>
   );

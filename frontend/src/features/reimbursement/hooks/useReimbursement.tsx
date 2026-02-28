@@ -96,3 +96,27 @@ export const useReimbursementAction = () => {
     },
   });
 };
+
+export const useExportReimbursements = () => {
+  return useMutation({
+    mutationFn: async (params: { status?: string; search?: string }) => {
+      const response = await api.get("/reimbursements/export", {
+        params,
+        responseType: "blob",
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      const url = window.URL.createObjectURL(new Blob([data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "reimbursements.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    },
+    onError: () => {
+      toast.error("Gagal mengunduh data");
+    },
+  });
+};

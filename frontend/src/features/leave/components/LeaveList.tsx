@@ -17,11 +17,12 @@ import {
   Eye,
   User,
   Clock,
+  FileSpreadsheet,
 } from "lucide-react";
 import { PaginationControls } from "@/components/shared/PaginationControls";
 import { format, isValid, parseISO } from "date-fns";
 import { useProfile } from "@/features/user/hooks/useProfile";
-import { useLeaves } from "@/features/leave/hooks/useLeave";
+import { useLeaves, useExportLeaves } from "@/features/leave/hooks/useLeave";
 import { LeaveStatusBadge } from "@/features/leave/components/LeaveStatusBadge";
 import { LeaveApplyDialog } from "@/features/leave/components/LeaveApplyDialog";
 import { LeaveDetailDialog } from "@/features/leave/components/LeaveDetailDialog";
@@ -40,6 +41,12 @@ export const LeaveList = () => {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+
+  const { mutate: exportLeaves, isPending: isExporting } = useExportLeaves();
+
+  const handleExport = () => {
+    exportLeaves({ status: statusFilter });
+  };
 
   const handleViewDetail = (id: number) => {
     setSelectedId(id);
@@ -67,14 +74,31 @@ export const LeaveList = () => {
             Monitor employee leave and absence permissions.
           </p>
         </div>
-        {user?.role !== "SUPERADMIN" && (
-          <Button
-            onClick={() => setIsCreateOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
-          >
-            <Plus className="mr-2 h-4 w-4" /> Apply Leave
-          </Button>
-        )}
+        <div className="flex gap-2 w-full sm:w-auto">
+          {user?.role === "SUPERADMIN" && (
+            <Button
+              onClick={handleExport}
+              disabled={isExporting}
+              className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto"
+            >
+              {isExporting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel
+                </>
+              )}
+            </Button>
+          )}
+          {user?.role !== "SUPERADMIN" && (
+            <Button
+              onClick={() => setIsCreateOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+            >
+              <Plus className="mr-2 h-4 w-4" /> Ajukan Cuti
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>
