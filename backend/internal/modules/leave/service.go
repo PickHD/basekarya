@@ -22,6 +22,7 @@ type Service interface {
 	GetDetail(ctx context.Context, id uint) (*LeaveRequestDetailResponse, error)
 	GenerateInitialBalance(ctx context.Context, employeeID uint) error
 	GenerateAnnualBalance(ctx context.Context) error
+	Export(ctx context.Context, filter *LeaveFilter) ([]byte, error)
 }
 
 type service struct {
@@ -30,10 +31,11 @@ type service struct {
 	notification       NotificationProvider
 	user               UserProvider
 	transactionManager infrastructure.TransactionManager
+	excel              infrastructure.ExcelProvider
 }
 
-func NewService(repo Repository, storage StorageProvider, notification NotificationProvider, user UserProvider, transactionManager infrastructure.TransactionManager) Service {
-	return &service{repo, storage, notification, user, transactionManager}
+func NewService(repo Repository, storage StorageProvider, notification NotificationProvider, user UserProvider, transactionManager infrastructure.TransactionManager, excel infrastructure.ExcelProvider) Service {
+	return &service{repo, storage, notification, user, transactionManager, excel}
 }
 
 func (s *service) Apply(ctx context.Context, req *ApplyRequest) error {
@@ -395,4 +397,50 @@ func (s *service) GenerateAnnualBalance(ctx context.Context) error {
 
 		return nil
 	})
+}
+
+func (s *service) Export(ctx context.Context, filter *LeaveFilter) ([]byte, error) {
+	// Fetch all data matching filter
+	filter.Page = 1
+	filter.Limit = 999999
+	requests, _, err := s.repo.FindAllRequests(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	headers := []string{
+		"ID", "Nama Karyawan", "NIK", "Tipe Cuti", "Mulai", "Selesai",
+		"Total Hari", "Status", "Alasan", "Dibuat Pada",
+	}
+
+	var rows [][]interface{}
+	for _, req := range requests {
+		empName := "-"
+		empNik := "-"
+		leaveType := "-"
+
+		if req.Employee != nil {
+			empName = req.Employee.FullName
+			empNik = req.Employee.NIK
+		}
+		if req.LeaveType != nil {
+			leaveType = req.LeaveType.Name
+		}
+
+		row := []interface{}{
+			req.ID,
+			empName,
+			empNik,
+			leaveType,
+			req.StartDate.Format(constants.DefaultTimeFormat),
+			req.EndDate.Format(constants.DefaultTimeFormat),
+			req.TotalDays,
+			req.Status,
+			req.Reason,
+			req.CreatedAt.Format("2006-01-02 15:04:05"),
+		}
+		rows = append(rows, row)
+	}
+
+	return s.excel.GenerateSimpleExcel("Leaves", headers, rows)
 }

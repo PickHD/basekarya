@@ -4,6 +4,7 @@ import (
 	"basekarya-backend/internal/modules/company"
 	"basekarya-backend/internal/modules/loan"
 	"basekarya-backend/internal/modules/user"
+	"basekarya-backend/pkg/constants"
 	"context"
 )
 
@@ -37,4 +38,9 @@ type EmailProvider interface {
 type LoanProvider interface {
 	GetBulkActiveLoansByEmployeeIds(ctx context.Context, ids []uint) (map[uint]loan.Loan, error)
 	Update(ctx context.Context, loan *loan.Loan) error
+}
+
+type OvertimeProvider interface {
+	GetBulkActiveOvertimesByEmployeeIds(ctx context.Context, month, year int, ids []uint) (map[uint]int, error)
+	UpdateBulkStatusByEmployeeId(ctx context.Context, employeeID uint, periodMonth, periodYear int, status constants.OvertimeStatus) error
 }

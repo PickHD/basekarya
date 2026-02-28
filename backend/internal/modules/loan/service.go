@@ -16,6 +16,7 @@ type Service interface {
 	GetLoanDetail(ctx context.Context, id uint) (*LoanDetailResponse, error)
 	GetLoans(ctx context.Context, filter LoanFilter) ([]LoanListResponse, *response.Meta, error)
 	ProcessAction(ctx context.Context, req *ActionRequest) error
+	Export(ctx context.Context, filter LoanFilter) ([]byte, error)
 }
 
 type service struct {
@@ -23,10 +24,11 @@ type service struct {
 	notification       NotificationProvider
 	user               UserProvider
 	transactionManager infrastructure.TransactionManager
+	excel              infrastructure.ExcelProvider
 }
 
-func NewService(repo Repository, notification NotificationProvider, user UserProvider, transactionManager infrastructure.TransactionManager) Service {
-	return &service{repo, notification, user, transactionManager}
+func NewService(repo Repository, notification NotificationProvider, user UserProvider, transactionManager infrastructure.TransactionManager, excel infrastructure.ExcelProvider) Service {
+	return &service{repo, notification, user, transactionManager, excel}
 }
 
 func (s *service) Create(ctx context.Context, req *LoanRequest) error {
@@ -201,4 +203,39 @@ func (s *service) ProcessAction(ctx context.Context, req *ActionRequest) error {
 
 		return nil
 	})
+}
+
+func (s *service) Export(ctx context.Context, filter LoanFilter) ([]byte, error) {
+	filter.Page = 1
+	filter.Limit = 999999
+
+	loans, _, err := s.repo.FindAll(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	headers := []string{
+		"ID", "Karyawan", "Total", "Cicilan / bln", "Sisa", "Status", "Tanggal Pengajuan",
+	}
+
+	var rows [][]interface{}
+	for _, loan := range loans {
+		empName := "-"
+		if loan.Employee.FullName != "" {
+			empName = loan.Employee.FullName
+		}
+
+		row := []interface{}{
+			loan.ID,
+			empName,
+			loan.TotalAmount,
+			loan.InstallmentAmount,
+			loan.RemainingAmount,
+			loan.Status,
+			loan.CreatedAt.Format("2006-01-02 15:04:05"),
+		}
+		rows = append(rows, row)
+	}
+
+	return s.excel.GenerateSimpleExcel("Loans", headers, rows)
 }
