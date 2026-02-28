@@ -21,7 +21,7 @@ export default function LoginPage() {
             <p className="text-lg font-medium leading-relaxed">
               "Sistem manajemen sumber daya manusia yang terintegrasi, aman, dan efisien untuk mendukung operasional perusahaan Anda."
             </p>
-            <footer className="text-sm text-slate-400">BaseKarya v2.5</footer>
+            <footer className="text-sm text-slate-400">BaseKarya v2.7</footer>
           </blockquote>
         </div>
       </div>
