@@ -59,12 +59,14 @@ func (r *Router) setupRoutes() {
 		userOnly.GET("/attendances/history", r.container.AttendanceHandler.GetHistory)
 
 		userOnly.GET("/reimbursements", r.container.ReimbursementHandler.GetAll)
+		userOnly.GET("/reimbursements/export", r.container.ReimbursementHandler.Export)
 		userOnly.POST("/reimbursements", r.container.ReimbursementHandler.Create)
 
 		userOnly.GET("/reimbursements/:id", r.container.ReimbursementHandler.GetDetail)
 		userOnly.PUT("/reimbursements/:id/action", r.container.ReimbursementHandler.ProcessAction)
 
 		userOnly.GET("/leaves/types", r.container.MasterHandler.GetLeaveTypes)
+		userOnly.GET("/leaves/export", r.container.LeaveHandler.Export)
 
 		userOnly.GET("/leaves", r.container.LeaveHandler.GetAll)
 		userOnly.POST("/leaves/apply", r.container.LeaveHandler.Apply)
@@ -76,10 +78,18 @@ func (r *Router) setupRoutes() {
 		userOnly.PUT("/notifications/:id/read", r.container.NotificationHandler.MarkAsRead)
 
 		userOnly.GET("/loans", r.container.LoanHandler.GetAll)
+		userOnly.GET("/loans/export", r.container.LoanHandler.Export)
 		userOnly.POST("/loans", r.container.LoanHandler.Create)
 
 		userOnly.GET("/loans/:id", r.container.LoanHandler.GetDetail)
 		userOnly.PUT("/loans/:id/action", r.container.LoanHandler.ProcessAction)
+
+		// Overtime
+		userOnly.GET("/overtimes", r.container.OvertimeHandler.GetAll)
+		userOnly.GET("/overtimes/export", r.container.OvertimeHandler.Export)
+		userOnly.POST("/overtimes", r.container.OvertimeHandler.Create)
+		userOnly.GET("/overtimes/:id", r.container.OvertimeHandler.GetDetail)
+		userOnly.PUT("/overtimes/:id/action", r.container.OvertimeHandler.ProcessAction)
 	}
 
 	// only admin can access

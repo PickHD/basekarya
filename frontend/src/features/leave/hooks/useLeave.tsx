@@ -98,3 +98,27 @@ export const useLeaveTypes = () => {
     staleTime: 1000 * 60 * 60,
   });
 };
+
+export const useExportLeaves = () => {
+  return useMutation({
+    mutationFn: async (params: { status?: string; search?: string }) => {
+      const response = await api.get("/leaves/export", {
+        params,
+        responseType: "blob",
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      const url = window.URL.createObjectURL(new Blob([data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "leaves.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    },
+    onError: () => {
+      toast.error("Gagal mengunduh data");
+    },
+  });
+};

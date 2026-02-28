@@ -1,11 +1,10 @@
-package reimbursement
+package overtime
 
 import (
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/logger"
 	"basekarya-backend/pkg/response"
 	"basekarya-backend/pkg/utils"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -26,19 +25,25 @@ func (h *Handler) Create(ctx echo.Context) error {
 		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
 	}
 
-	req, err := h.parseAndValidateFormData(ctx, userContext.UserID)
-	if err != nil {
-		return response.NewResponses[any](ctx, http.StatusBadRequest, err.Error(), nil, err, nil)
+	var req OvertimeRequest
+	if err := ctx.Bind(&req); err != nil {
+		return response.NewResponses[any](ctx, http.StatusBadRequest, "Invalid Request", nil, err, nil)
 	}
 
-	err = h.service.Create(ctx.Request().Context(), req)
-	if err != nil {
-		logger.Errorw("reimburstment create failed: ", err)
+	req.UserID = userContext.UserID
+	req.EmployeeID = *userContext.EmployeeID
 
+	if err := ctx.Validate(&req); err != nil {
+		return response.NewResponses[any](ctx, http.StatusBadRequest, "Invalid Request", nil, err, nil)
+	}
+
+	err = h.service.Create(ctx.Request().Context(), &req)
+	if err != nil {
+		logger.Errorw("overtime create failed: ", err)
 		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
 	}
 
-	return response.NewResponses[any](ctx, http.StatusCreated, "Reimburstment created successfully", nil, nil, nil)
+	return response.NewResponses[any](ctx, http.StatusCreated, "Overtime created successfully", nil, nil, nil)
 }
 
 func (h *Handler) GetAll(ctx echo.Context) error {
@@ -57,7 +62,7 @@ func (h *Handler) GetAll(ctx echo.Context) error {
 		limit = 10
 	}
 
-	filter := ReimbursementFilter{
+	filter := OvertimeFilter{
 		Status: status,
 		Page:   page,
 		Limit:  limit,
@@ -67,14 +72,13 @@ func (h *Handler) GetAll(ctx echo.Context) error {
 		filter.UserID = userContext.UserID
 	}
 
-	data, meta, err := h.service.GetReimbursements(ctx.Request().Context(), filter)
+	data, meta, err := h.service.GetList(ctx.Request().Context(), filter)
 	if err != nil {
-		logger.Errorw("get reimbursements failed: ", err)
-
+		logger.Errorw("get overtimes failed: ", err)
 		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
 	}
 
-	return response.NewResponses[any](ctx, http.StatusOK, "Get Reimbursements List Success", data, nil, meta)
+	return response.NewResponses[any](ctx, http.StatusOK, "Get Overtimes Success", data, nil, meta)
 }
 
 func (h *Handler) GetDetail(ctx echo.Context) error {
@@ -83,14 +87,13 @@ func (h *Handler) GetDetail(ctx echo.Context) error {
 		return response.NewResponses[any](ctx, http.StatusBadRequest, "invalid id", nil, err, nil)
 	}
 
-	data, err := h.service.GetReimburseDetail(ctx.Request().Context(), uint(id))
+	data, err := h.service.GetDetail(ctx.Request().Context(), uint(id))
 	if err != nil {
-		logger.Errorw("get reimburse detail failed: ", err)
-
+		logger.Errorw("get overtime detail failed: ", err)
 		return response.NewResponses[any](ctx, http.StatusBadRequest, err.Error(), nil, err, nil)
 	}
 
-	return response.NewResponses[any](ctx, http.StatusOK, "Get Reimbursement Detail Success", data, nil, nil)
+	return response.NewResponses[any](ctx, http.StatusOK, "Get Overtime Detail Success", data, nil, nil)
 }
 
 func (h *Handler) ProcessAction(ctx echo.Context) error {
@@ -118,37 +121,11 @@ func (h *Handler) ProcessAction(ctx echo.Context) error {
 
 	err = h.service.ProcessAction(ctx.Request().Context(), &req)
 	if err != nil {
-		logger.Errorw("Process approval action reimbursement failed: %w", err)
-
+		logger.Errorw("Process approval action overtime failed: %w", err)
 		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
 	}
 
-	return response.NewResponses[any](ctx, http.StatusOK, "Process Approval Action Reimbursement Success", nil, nil, nil)
-}
-
-func (h *Handler) parseAndValidateFormData(ctx echo.Context, userID uint) (*ReimbursementRequest, error) {
-	amount, err := strconv.ParseFloat(ctx.FormValue("amount"), 64)
-	if err != nil {
-		return nil, fmt.Errorf("invalid amount")
-	}
-
-	fileHeader, err := ctx.FormFile("file")
-	if err != nil {
-		return nil, fmt.Errorf("file required")
-	}
-
-	if fileHeader.Size > 5*1024*1024 {
-		return nil, fmt.Errorf("File size exceeds 5MB limit")
-	}
-
-	return &ReimbursementRequest{
-		UserID:      userID,
-		Title:       ctx.FormValue("title"),
-		Description: ctx.FormValue("description"),
-		Date:        ctx.FormValue("date"),
-		Amount:      amount,
-		File:        fileHeader,
-	}, nil
+	return response.NewResponses[any](ctx, http.StatusOK, "Process Approval Action Overtime Success", nil, nil, nil)
 }
 
 func (h *Handler) Export(ctx echo.Context) error {
@@ -159,7 +136,7 @@ func (h *Handler) Export(ctx echo.Context) error {
 
 	status := ctx.QueryParam("status")
 
-	filter := ReimbursementFilter{
+	filter := OvertimeFilter{
 		Status: status,
 	}
 
@@ -169,11 +146,11 @@ func (h *Handler) Export(ctx echo.Context) error {
 
 	excelFile, err := h.service.Export(ctx.Request().Context(), filter)
 	if err != nil {
-		logger.Errorw("export reimbursements failed: ", err)
+		logger.Errorw("export overtimes failed: ", err)
 		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
 	}
 
 	ctx.Response().Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-	ctx.Response().Header().Set("Content-Disposition", "attachment; filename=reimbursements.xlsx")
+	ctx.Response().Header().Set("Content-Disposition", "attachment; filename=overtimes.xlsx")
 	return ctx.Blob(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelFile)
 }

@@ -36,6 +36,7 @@ type service struct {
 	client             *http.Client
 	email              EmailProvider
 	loan               LoanProvider
+	overtime           OvertimeProvider
 }
 
 func NewService(repo Repository,
@@ -47,8 +48,9 @@ func NewService(repo Repository,
 	transactionManager infrastructure.TransactionManager,
 	client *http.Client,
 	email EmailProvider,
-	loan LoanProvider) Service {
-	return &service{repo, user, reimbursement, attendance, company, notification, transactionManager, client, email, loan}
+	loan LoanProvider,
+	overtime OvertimeProvider) Service {
+	return &service{repo, user, reimbursement, attendance, company, notification, transactionManager, client, email, loan, overtime}
 }
 
 func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*GenerateResponse, error) {
@@ -82,6 +84,11 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 		return nil, fmt.Errorf("failed to fetch bulk active loans by employee ids: %w", err)
 	}
 
+	overtimeMap, err := s.overtime.GetBulkActiveOvertimesByEmployeeIds(ctx, req.Month, req.Year, employeeIds)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch bulk overtime amounts: %w", err)
+	}
+
 	successCount := 0
 	periodDate := time.Date(req.Year, time.Month(req.Month), 1, 0, 0, 0, 0, time.Local)
 
@@ -103,9 +110,27 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 		loanAmount := loanData.InstallmentAmount
 		loanData.RemainingAmount -= loanAmount
 
+		// calculate overtime nominal
+		// hourly wage = 1/173 * base salary
+		hourlyWage := baseSalary / 173
+		totalOvertimeMinutes := overtimeMap[emp.ID]
+		overtimeAmount := 0.0
+
+		if totalOvertimeMinutes > 0 {
+			overtimeHours := float64(totalOvertimeMinutes) / 60.0
+
+			// simplified rule: 1.5x for first hour, 2.0x for the rest
+			if overtimeHours <= 1.0 {
+				overtimeAmount = overtimeHours * 1.5 * hourlyWage
+			} else {
+				// first hour is 1.5x, remaining hours are 2.0x
+				overtimeAmount = (1.0 * 1.5 * hourlyWage) + ((overtimeHours - 1.0) * 2.0 * hourlyWage)
+			}
+		}
+
 		// calculate net salary
 		latePenaltyAmount := float64(totalLateMinutes * constants.PenaltyPerMinuteLate)
-		totalAllowance := baseSalary + reimburseAmount
+		totalAllowance := baseSalary + reimburseAmount + overtimeAmount
 		totalDeduction := latePenaltyAmount + loanAmount
 		netSalary := totalAllowance - totalDeduction
 
@@ -133,6 +158,15 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 				Title:  "Reimbursement",
 				Type:   constants.DetailTypeAllowance,
 				Amount: reimburseAmount,
+			})
+		}
+
+		// check if overtime amount not zero
+		if overtimeAmount > 0 {
+			payroll.Details = append(payroll.Details, PayrollDetail{
+				Title:  fmt.Sprintf("Uang Lembur (%d jam %d menit)", totalOvertimeMinutes/60, totalOvertimeMinutes%60),
+				Type:   constants.DetailTypeAllowance,
+				Amount: overtimeAmount,
 			})
 		}
 
@@ -202,7 +236,7 @@ func (s *service) GetList(ctx context.Context, filter *PayrollFilter) ([]Payroll
 			ID:           p.ID,
 			EmployeeName: empName,
 			EmployeeNIK:  empNIK,
-			PeriodDate:   p.PeriodDate.Format("2006-01-02"),
+			PeriodDate:   p.PeriodDate.Format(constants.DefaultTimeFormat),
 			NetSalary:    p.NetSalary,
 			Status:       string(p.Status),
 			CreatedAt:    p.CreatedAt,
@@ -524,6 +558,12 @@ func (s *service) MarkAsPaid(ctx context.Context, id uint) error {
 					return fmt.Errorf("failed to update loan status: %w", err)
 				}
 			}
+		}
+
+		periodMonth := int(payroll.PeriodDate.Month())
+		periodYear := payroll.PeriodDate.Year()
+		if err := s.overtime.UpdateBulkStatusByEmployeeId(ctx, payroll.EmployeeID, periodMonth, periodYear, constants.OvertimeStatusPaid); err != nil {
+			return fmt.Errorf("failed to update overtimes status to paid: %w", err)
 		}
 
 		go func() {

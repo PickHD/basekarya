@@ -12,6 +12,7 @@ import (
 	"basekarya-backend/internal/modules/loan"
 	"basekarya-backend/internal/modules/master"
 	"basekarya-backend/internal/modules/notification"
+	"basekarya-backend/internal/modules/overtime"
 	"basekarya-backend/internal/modules/payroll"
 	"basekarya-backend/internal/modules/reimbursement"
 	"basekarya-backend/internal/modules/user"
@@ -27,6 +28,7 @@ type Container struct {
 	WebsocketHub *infrastructure.Hub
 	Redis        *infrastructure.RedisClientProvider
 	Email        *infrastructure.EmailProvider
+	Excel        infrastructure.ExcelProvider
 
 	HealthCheckHandler   *health.Handler
 	AuthHandler          *auth.Handler
@@ -39,6 +41,7 @@ type Container struct {
 	NotificationHandler  *notification.Handler
 	CompanyHandler       *company.Handler
 	LoanHandler          *loan.Handler
+	OvertimeHandler      *overtime.Handler
 
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
@@ -61,6 +64,7 @@ func NewContainer() (*Container, error) {
 	httpClient := infrastructure.NewHttpClientProvider()
 	nominatim := infrastructure.NewNominatimFetcher(&cfg.ExternalServiceConfig, httpClient.GetClient())
 	email := infrastructure.NewEmailProvider(&cfg.Email)
+	excel := infrastructure.NewExcelProvider()
 
 	wsHub := infrastructure.NewHub(redis.GetClient())
 	geocodeWorker := attendance.NewGeocodeWorker(db.GetDB(), nominatim, 100)
@@ -75,18 +79,20 @@ func NewContainer() (*Container, error) {
 	notificationRepo := notification.NewRepository(db.GetDB())
 	companyRepo := company.NewRepository(db.GetDB())
 	loanRepo := loan.NewRepository(db.GetDB())
+	overtimeRepo := overtime.NewRepository(db.GetDB())
 
 	healthSvc := health.NewService(healthRepo)
 	notificationSvc := notification.NewService(wsHub, notificationRepo)
 	authSvc := auth.NewService(userRepo, bcrypt, jwt)
-	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeWorker, transactionManager)
+	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeWorker, transactionManager, excel)
 	masterSvc := master.NewService(masterRepo)
-	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo, notificationSvc, transactionManager, httpClient.GetClient(), email, loanRepo)
-	leaveSvc := leave.NewService(leaveRepo, storage, notificationSvc, userRepo, transactionManager)
+	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo, notificationSvc, transactionManager, httpClient.GetClient(), email, loanRepo, overtimeRepo)
+	leaveSvc := leave.NewService(leaveRepo, storage, notificationSvc, userRepo, transactionManager, excel)
 	userSvc := user.NewService(userRepo, bcrypt, storage, leaveSvc, transactionManager)
-	reimburseSvc := reimbursement.NewService(reimburseRepo, storage, notificationSvc, userRepo, transactionManager)
+	reimburseSvc := reimbursement.NewService(reimburseRepo, storage, notificationSvc, userRepo, transactionManager, excel)
 	companySvc := company.NewService(companyRepo, storage)
-	loanSvc := loan.NewService(loanRepo, notificationSvc, userRepo, transactionManager)
+	loanSvc := loan.NewService(loanRepo, notificationSvc, userRepo, transactionManager, excel)
+	overtimeSvc := overtime.NewService(overtimeRepo, notificationSvc, userRepo, transactionManager, excel)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)
@@ -99,6 +105,7 @@ func NewContainer() (*Container, error) {
 	notificationHandler := notification.NewHandler(wsHub, notificationSvc)
 	companyHandler := company.NewHandler(companySvc)
 	loanHandler := loan.NewHandler(loanSvc)
+	overtimeHandler := overtime.NewHandler(overtimeSvc)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 	rateLimiterMiddleware := middleware.NewRateLimiterMiddleware()
@@ -116,6 +123,7 @@ func NewContainer() (*Container, error) {
 		WebsocketHub: wsHub,
 		Redis:        redis,
 		Email:        email,
+		Excel:        excel,
 
 		HealthCheckHandler:   healthHandler,
 		AuthHandler:          authHandler,
@@ -128,6 +136,7 @@ func NewContainer() (*Container, error) {
 		NotificationHandler:  notificationHandler,
 		CompanyHandler:       companyHandler,
 		LoanHandler:          loanHandler,
+		OvertimeHandler:      overtimeHandler,
 
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,

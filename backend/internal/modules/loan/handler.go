@@ -131,3 +131,30 @@ func (h *Handler) ProcessAction(ctx echo.Context) error {
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Process Approval Action Loan Success", nil, nil, nil)
 }
+
+func (h *Handler) Export(ctx echo.Context) error {
+	userContext, err := utils.GetUserContext(ctx)
+	if err != nil {
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	status := ctx.QueryParam("status")
+
+	filter := LoanFilter{
+		Status: status,
+	}
+
+	if userContext.Role != string(constants.UserRoleSuperadmin) {
+		filter.UserID = userContext.UserID
+	}
+
+	excelFile, err := h.service.Export(ctx.Request().Context(), filter)
+	if err != nil {
+		logger.Errorw("export loans failed: ", err)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	ctx.Response().Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	ctx.Response().Header().Set("Content-Disposition", "attachment; filename=loans.xlsx")
+	return ctx.Blob(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelFile)
+}

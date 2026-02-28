@@ -14,6 +14,7 @@ import AttendanceHistoryPage from "@/pages/dashboard/AttendanceHistoryPage";
 
 import ReimbursementListPage from "@/pages/reimbursement/ReimbursementListPage";
 import LoanListPage from "@/pages/loan/LoanListPage";
+import OvertimeListPage from "@/pages/overtime/OvertimeListPage";
 
 // Pages - Admin
 import EmployeeListPage from "@/pages/admin/EmployeeListPage";
@@ -59,6 +60,10 @@ function App() {
 
           <Route path="loan">
             <Route index element={<LoanListPage />} />
+          </Route>
+
+          <Route path="overtime">
+            <Route index element={<OvertimeListPage />} />
           </Route>
 
           <Route path="leave">

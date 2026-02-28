@@ -1,10 +1,10 @@
 package attendance
 
 import (
-	"fmt"
 	"basekarya-backend/pkg/logger"
 	"basekarya-backend/pkg/response"
 	"basekarya-backend/pkg/utils"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -110,7 +110,7 @@ func (h *Handler) GetAllAttendanceRecap(ctx echo.Context) error {
 func (h *Handler) ExportAttendance(ctx echo.Context) error {
 	filter := h.parseFilter(ctx)
 
-	f, err := h.service.GenerateExcel(ctx.Request().Context(), filter)
+	excelFile, err := h.service.GenerateExcel(ctx.Request().Context(), filter)
 	if err != nil {
 		logger.Errorw("Generate Excel Attendance Failed: ", err)
 
@@ -121,10 +121,7 @@ func (h *Handler) ExportAttendance(ctx echo.Context) error {
 	ctx.Response().Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	ctx.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 
-	if err := f.Write(ctx.Response().Writer); err != nil {
-		return err
-	}
-	return nil
+	return ctx.Blob(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelFile)
 }
 
 func (h *Handler) GetDashboardStats(ctx echo.Context) error {

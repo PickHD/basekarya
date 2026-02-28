@@ -8,6 +8,7 @@ import {
   CalendarDays,
   Settings,
   CreditCard,
+  Clock,
 } from "lucide-react";
 import type { MenuItem } from "./types";
 
@@ -31,6 +32,11 @@ export const generalMenu: MenuItem[] = [
     title: "My Loan",
     href: "/loan",
     icon: CreditCard,
+  },
+  {
+    title: "My Overtime",
+    href: "/overtime",
+    icon: Clock,
   },
   {
     title: "My Leave Request",
@@ -59,6 +65,11 @@ export const adminMenu: MenuItem[] = [
     title: "Loans",
     href: "/loan",
     icon: CreditCard,
+  },
+  {
+    title: "Overtimes",
+    href: "/overtime",
+    icon: Clock,
   },
   {
     title: "Payrolls",

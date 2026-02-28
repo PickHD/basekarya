@@ -17,6 +17,7 @@ type Service interface {
 	GetReimburseDetail(ctx context.Context, id uint) (*ReimbursementDetailResponse, error)
 	GetReimbursements(ctx context.Context, filter ReimbursementFilter) ([]ReimbursementListResponse, *response.Meta, error)
 	ProcessAction(ctx context.Context, req *ActionRequest) error
+	Export(ctx context.Context, filter ReimbursementFilter) ([]byte, error)
 }
 
 type service struct {
@@ -25,10 +26,11 @@ type service struct {
 	notification       NotificationProvider
 	user               UserProvider
 	transactionManager infrastructure.TransactionManager
+	excel              infrastructure.ExcelProvider
 }
 
-func NewService(repo Repository, storage StorageProvider, notification NotificationProvider, user UserProvider, transactionManager infrastructure.TransactionManager) Service {
-	return &service{repo, storage, notification, user, transactionManager}
+func NewService(repo Repository, storage StorageProvider, notification NotificationProvider, user UserProvider, transactionManager infrastructure.TransactionManager, excel infrastructure.ExcelProvider) Service {
+	return &service{repo, storage, notification, user, transactionManager, excel}
 }
 
 func (s *service) Create(ctx context.Context, req *ReimbursementRequest) error {
@@ -203,4 +205,40 @@ func (s *service) ProcessAction(ctx context.Context, req *ActionRequest) error {
 
 		return nil
 	})
+}
+
+func (s *service) Export(ctx context.Context, filter ReimbursementFilter) ([]byte, error) {
+	filter.Page = 1
+	filter.Limit = 999999
+
+	reimbursements, _, err := s.repo.FindAll(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	headers := []string{
+		"ID", "Karyawan", "Judul", "Nominal", "Tanggal Bon", "Status", "Alasan", "Dibuat Pada",
+	}
+
+	var rows [][]interface{}
+	for _, rem := range reimbursements {
+		empName := "-"
+		if rem.User.Username != "" {
+			empName = rem.User.Username
+		}
+
+		row := []interface{}{
+			rem.ID,
+			empName,
+			rem.Title,
+			rem.Amount,
+			rem.DateOfExpense.Format("2006-01-02"),
+			rem.Status,
+			rem.Description,
+			rem.CreatedAt.Format("2006-01-02 15:04:05"),
+		}
+		rows = append(rows, row)
+	}
+
+	return s.excel.GenerateSimpleExcel("Reimbursements", headers, rows)
 }

@@ -134,3 +134,32 @@ func (h *Handler) GetDetail(ctx echo.Context) error {
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Get Leave Request Detail Success", data, nil, nil)
 }
+
+func (h *Handler) Export(ctx echo.Context) error {
+	userContext, err := utils.GetUserContext(ctx)
+	if err != nil {
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	status := ctx.QueryParam("status")
+	search := ctx.QueryParam("search")
+
+	filter := LeaveFilter{
+		Status: status,
+		Search: search,
+	}
+
+	if userContext.Role != string(constants.UserRoleSuperadmin) {
+		filter.UserID = userContext.UserID
+	}
+
+	excelFile, err := h.service.Export(ctx.Request().Context(), &filter)
+	if err != nil {
+		logger.Errorw("export leave requests failed: ", err)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	ctx.Response().Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	ctx.Response().Header().Set("Content-Disposition", "attachment; filename=leaves.xlsx")
+	return ctx.Blob(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelFile)
+}

@@ -1,14 +1,14 @@
 package attendance
 
 import (
-	"bytes"
-	"context"
-	"errors"
-	"fmt"
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/response"
 	"basekarya-backend/pkg/utils"
+	"bytes"
+	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/xuri/excelize/v2"
@@ -20,7 +20,7 @@ type Service interface {
 	GetTodayStatus(ctx context.Context, userID uint) (*TodayStatusResponse, error)
 	GetMyHistory(ctx context.Context, userID uint, month, year, limit int, cursor string) ([]Attendance, *response.Meta, error)
 	GetAllRecap(ctx context.Context, filter *FilterParams) ([]RecapResponse, *response.Meta, error)
-	GenerateExcel(ctx context.Context, filter *FilterParams) (*excelize.File, error)
+	GenerateExcel(ctx context.Context, filter *FilterParams) ([]byte, error)
 	GetDashboardStats(ctx context.Context) (*DashboardStatResponse, error)
 }
 
@@ -30,10 +30,11 @@ type service struct {
 	storage            StorageProvider
 	geocodeWorker      GeocodeWorker
 	transactionManager infrastructure.TransactionManager
+	excel              infrastructure.ExcelProvider
 }
 
-func NewService(repo Repository, user UserProvider, storage StorageProvider, geocodeWorker GeocodeWorker, transactionManager infrastructure.TransactionManager) Service {
-	return &service{repo, user, storage, geocodeWorker, transactionManager}
+func NewService(repo Repository, user UserProvider, storage StorageProvider, geocodeWorker GeocodeWorker, transactionManager infrastructure.TransactionManager, excel infrastructure.ExcelProvider) Service {
+	return &service{repo, user, storage, geocodeWorker, transactionManager, excel}
 }
 
 func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*AttendanceResponse, error) {
@@ -303,14 +304,14 @@ func (s *service) GetAllRecap(ctx context.Context, filter *FilterParams) ([]Reca
 	return result, meta, nil
 }
 
-func (s *service) GenerateExcel(ctx context.Context, filter *FilterParams) (*excelize.File, error) {
+func (s *service) GenerateExcel(ctx context.Context, filter *FilterParams) ([]byte, error) {
 	filter.Limit = 0
 	data, _, err := s.repo.FindAll(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
 
-	f := excelize.NewFile()
+	f := s.excel.NewFile()
 	sheet := "Sheet1"
 	f.SetSheetName("Sheet1", "Attendance Recap")
 	sheet = "Attendance Recap"
@@ -391,7 +392,7 @@ func (s *service) GenerateExcel(ctx context.Context, filter *FilterParams) (*exc
 	f.SetColWidth(sheet, "H", "H", 12)
 	f.SetColWidth(sheet, "I", "I", 30)
 
-	return f, nil
+	return s.excel.WriteToBuffer(f)
 }
 
 func (s *service) GetDashboardStats(ctx context.Context) (*DashboardStatResponse, error) {
