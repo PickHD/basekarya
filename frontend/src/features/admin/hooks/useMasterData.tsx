@@ -7,7 +7,7 @@ export const useDepartments = () => {
     queryKey: ["departments"],
     queryFn: async () => {
       const { data } = await api.get<{ data: LookupItem[] }>(
-        "/admin/departments"
+        "/masters/departments"
       );
       return data.data;
     },
@@ -19,7 +19,7 @@ export const useShifts = () => {
   return useQuery({
     queryKey: ["shifts"],
     queryFn: async () => {
-      const { data } = await api.get<{ data: LookupItem[] }>("/admin/shifts");
+      const { data } = await api.get<{ data: LookupItem[] }>("/masters/shifts");
       return data.data;
     },
     staleTime: 1000 * 60 * 60,

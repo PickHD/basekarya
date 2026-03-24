@@ -22,6 +22,9 @@ import AttendanceRecapPage from "@/pages/admin/AttendanceRecapPage";
 import PayrollListPage from "@/pages/payroll/PayrollListPage";
 import LeaveListPage from "@/pages/leave/LeaveListPage";
 import CompanySettingsPage from "@/pages/admin/CompanySettingsPage";
+import RoleListPage from "@/pages/admin/RoleListPage";
+
+import { PERMISSIONS } from "@/config/permissions";
 
 function App() {
   return (
@@ -52,27 +55,46 @@ function App() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="profile" element={<ProfilePage />} />
 
-          <Route path="history" element={<AttendanceHistoryPage />} />
-
-          <Route path="reimbursement">
-            <Route index element={<ReimbursementListPage />} />
+          <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.VIEW_ATTENDANCE, PERMISSIONS.VIEW_SELF_ATTENDANCE]} />}>
+            <Route path="history" element={<AttendanceHistoryPage />} />
           </Route>
 
-          <Route path="loan">
-            <Route index element={<LoanListPage />} />
+          <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.VIEW_REIMBURSEMENT, PERMISSIONS.VIEW_SELF_REIMBURSEMENT]} />}>
+            <Route path="reimbursement">
+              <Route index element={<ReimbursementListPage />} />
+            </Route>
           </Route>
 
-          <Route path="overtime">
-            <Route index element={<OvertimeListPage />} />
+          <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.VIEW_LOAN, PERMISSIONS.VIEW_SELF_LOAN]} />}>
+            <Route path="loan">
+              <Route index element={<LoanListPage />} />
+            </Route>
           </Route>
 
-          <Route path="leave">
-            <Route index element={<LeaveListPage />} />
+          <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.VIEW_OVERTIME, PERMISSIONS.VIEW_SELF_OVERTIME]} />}>
+            <Route path="overtime">
+              <Route index element={<OvertimeListPage />} />
+            </Route>
           </Route>
 
-          {/* SUPERADMIN ROUTES */}
-          <Route element={<ProtectedRoute allowedRoles={["SUPERADMIN"]} />}>
+          <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.VIEW_LEAVE, PERMISSIONS.VIEW_SELF_LEAVE]} />}>
+            <Route path="leave">
+              <Route index element={<LeaveListPage />} />
+            </Route>
+          </Route>
+
+          {/* ADMINISTRATIVE ROUTES */}
+          <Route 
+            element={<ProtectedRoute requiredPermissions={[
+              PERMISSIONS.VIEW_EMPLOYEE, 
+              PERMISSIONS.VIEW_ATTENDANCE,
+              PERMISSIONS.VIEW_PAYROLL,
+              PERMISSIONS.VIEW_COMPANY,
+              PERMISSIONS.VIEW_ROLE
+            ]} />}
+          >
             <Route path="admin/employees" element={<EmployeeListPage />} />
+            <Route path="admin/roles" element={<RoleListPage />} />
             <Route path="admin/recap" element={<AttendanceRecapPage />} />
             <Route path="admin/payrolls" element={<PayrollListPage />} />
             <Route

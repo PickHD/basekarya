@@ -22,8 +22,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
-import { useProfile } from "@/features/user/hooks/useProfile";
 import { useOvertime, useOvertimeAction } from "@/features/overtime/hooks/useOvertime";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PERMISSIONS } from "@/config/permissions";
 import { format, isValid } from "date-fns";
 
 interface OvertimeDetailDialogProps {
@@ -37,15 +38,15 @@ export function OvertimeDetailDialog({
   onOpenChange,
   overtimeId,
 }: OvertimeDetailDialogProps) {
-  const { data: userProfile } = useProfile();
   const { data, isLoading } = useOvertime(overtimeId?.toString() || "");
   const { mutate: actionMutate, isPending } = useOvertimeAction();
+  const { hasPermission } = usePermissions();
 
   const [actionType, setActionType] = useState<"APPROVE" | "REJECT" | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const isSuperAdmin = userProfile?.role === "SUPERADMIN";
+  const canApprove = hasPermission(PERMISSIONS.APPROVAL_OVERTIME);
   const isPendingStatus = data?.status === "PENDING";
 
   const handleOpenChangeWrapper = (isOpen: boolean) => {
@@ -162,7 +163,7 @@ export function OvertimeDetailDialog({
             <div className="py-10 text-center text-slate-500">Data not found.</div>
           )}
 
-          {isSuperAdmin && isPendingStatus && (
+          {canApprove && isPendingStatus && (
             <DialogFooter className="gap-2 sm:gap-0 mt-4">
               <Button
                 variant="destructive"

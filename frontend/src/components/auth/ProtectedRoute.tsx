@@ -2,17 +2,19 @@ import { useProfile } from "@/features/user/hooks/useProfile";
 import { Navigate, Outlet } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface ProtectedRouteProps {
   children?: ReactNode;
-  allowedRoles?: string[];
+  requiredPermissions?: string[];
 }
 
 export const ProtectedRoute = ({
   children,
-  allowedRoles,
+  requiredPermissions,
 }: ProtectedRouteProps) => {
   const { data: user, isLoading } = useProfile();
+  const { hasAnyPermission } = usePermissions();
 
   if (isLoading) {
     return (
@@ -29,7 +31,7 @@ export const ProtectedRoute = ({
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  if (requiredPermissions && !hasAnyPermission(requiredPermissions)) {
     return <Navigate to="/dashboard" replace />;
   }
 

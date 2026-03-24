@@ -9,81 +9,76 @@ import {
   Settings,
   CreditCard,
   Clock,
+  ShieldAlert,
 } from "lucide-react";
 import type { MenuItem } from "./types";
+import { PERMISSIONS } from "./permissions";
 
-export const generalMenu: MenuItem[] = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "My History",
-    href: "/history",
-    icon: History,
-  },
-  {
-    title: "My Reimbursement",
-    href: "/reimbursement",
-    icon: Receipt,
-  },
-  {
-    title: "My Loan",
-    href: "/loan",
-    icon: CreditCard,
-  },
-  {
-    title: "My Overtime",
-    href: "/overtime",
-    icon: Clock,
-  },
-  {
-    title: "My Leave Request",
-    href: "/leave",
-    icon: CalendarDays,
-  },
-];
-
-export const adminMenu: MenuItem[] = [
+export const menuItems: MenuItem[] = [
   {
     title: "Attendance Recap",
     href: "/admin/recap",
     icon: FileSpreadsheet,
-  },
-  {
-    title: "Employees",
-    href: "/admin/employees",
-    icon: Users,
-  },
-  {
-    title: "Reimbursements",
-    href: "/reimbursement",
-    icon: Receipt,
-  },
-  {
-    title: "Loans",
-    href: "/loan",
-    icon: CreditCard,
-  },
-  {
-    title: "Overtimes",
-    href: "/overtime",
-    icon: Clock,
-  },
-  {
-    title: "Payrolls",
-    href: "/admin/payrolls",
-    icon: Calculator,
-  },
-  {
-    title: "Leave Requests",
-    href: "/leave",
-    icon: CalendarDays,
+    permission: PERMISSIONS.EXPORT_ATTENDANCE
   },
   {
     title: "Company Settings",
     href: "/admin/company-settings",
     icon: Settings,
+    permission: PERMISSIONS.VIEW_COMPANY
+  },
+  {
+    title: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+    permission: PERMISSIONS.VIEW_SELF_ATTENDANCE
+  },
+  {
+    title: "Employees",
+    href: "/admin/employees",
+    icon: Users,
+    permission: PERMISSIONS.VIEW_EMPLOYEE
+  },
+  {
+    title: "History Attendance",
+    href: "/history",
+    icon: History,
+    permission: [PERMISSIONS.VIEW_SELF_ATTENDANCE]
+  },
+  {
+    title: "Leave Request",
+    href: "/leave",
+    icon: CalendarDays,
+    permission: [PERMISSIONS.VIEW_LEAVE, PERMISSIONS.VIEW_SELF_LEAVE]
+  },
+  {
+    title: "Loan",
+    href: "/loan",
+    icon: CreditCard,
+    permission: [PERMISSIONS.VIEW_LOAN, PERMISSIONS.VIEW_SELF_LOAN]
+  },
+  {
+    title: "Overtime",
+    href: "/overtime",
+    icon: Clock,
+    permission: [PERMISSIONS.VIEW_OVERTIME, PERMISSIONS.VIEW_SELF_OVERTIME]
+  },
+  {
+    title: "Payrolls",
+    href: "/admin/payrolls",
+    icon: Calculator,
+    permission: PERMISSIONS.VIEW_PAYROLL
+  },
+  {
+    title: "Reimbursement",
+    href: "/reimbursement",
+    icon: Receipt,
+    permission: [PERMISSIONS.VIEW_REIMBURSEMENT, PERMISSIONS.VIEW_SELF_REIMBURSEMENT]
+  },
+  {
+    title: "Roles & Permissions",
+    href: "/admin/roles",
+    icon: ShieldAlert,
+    permission: PERMISSIONS.VIEW_ROLE
   },
 ];

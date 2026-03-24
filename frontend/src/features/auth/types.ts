@@ -14,5 +14,6 @@ export interface LoginResponse {
 export interface DecodedToken {
   user_id: number;
   role: string;
+  permissions: string[];
   exp: number;
 }

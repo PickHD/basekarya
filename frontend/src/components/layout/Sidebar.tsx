@@ -1,17 +1,17 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
-import { generalMenu, adminMenu } from "@/config/menu";
+import { menuItems } from "@/config/menu";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/features/user/hooks/useProfile";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { MenuItem } from "@/config/types";
 
 export function Sidebar({ className }: { className?: string }) {
   const location = useLocation();
   const { data: user, isLoading } = useProfile();
-
-  const isSuperAdmin = user?.role === "SUPERADMIN";
+  const { hasPermission, hasAnyPermission } = usePermissions();
 
   const renderMenuItems = (items: MenuItem[]) => (
     <div className="space-y-1">
@@ -54,22 +54,15 @@ export function Sidebar({ className }: { className?: string }) {
           {/* MENU */}
           {!isLoading && user && (
             <div className="mt-4">
-              {isSuperAdmin ? (
-                /* --- SUPERADMIN --- */
-                <>
-                  <h3 className="mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
-                    Management Center
-                  </h3>
-                  {renderMenuItems(adminMenu)}
-                </>
-              ) : (
-                /* --- EMPLOYEE --- */
-                <>
-                  <h3 className="mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
-                    My Workspace
-                  </h3>
-                  {renderMenuItems(generalMenu)}
-                </>
+              <h3 className="mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                My Workspace
+              </h3>
+              {renderMenuItems(
+                menuItems.filter((item) => {
+                  if (!item.permission) return true;
+                  if (Array.isArray(item.permission)) return hasAnyPermission(item.permission);
+                  return hasPermission(item.permission);
+                })
               )}
             </div>
           )}

@@ -21,7 +21,8 @@ import {
 } from "lucide-react";
 import { PaginationControls } from "@/components/shared/PaginationControls";
 import { format, isValid, parseISO } from "date-fns";
-import { useProfile } from "@/features/user/hooks/useProfile";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PERMISSIONS } from "@/config/permissions";
 import { useLeaves, useExportLeaves } from "@/features/leave/hooks/useLeave";
 import { LeaveStatusBadge } from "@/features/leave/components/LeaveStatusBadge";
 import { LeaveApplyDialog } from "@/features/leave/components/LeaveApplyDialog";
@@ -29,7 +30,7 @@ import { LeaveDetailDialog } from "@/features/leave/components/LeaveDetailDialog
 import { LeaveTypeBadge } from "@/features/leave/components/LeaveTypeBadge";
 
 export const LeaveList = () => {
-  const { data: user } = useProfile();
+  const { hasPermission } = usePermissions();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
 
@@ -75,7 +76,7 @@ export const LeaveList = () => {
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          {user?.role === "SUPERADMIN" && (
+          {hasPermission(PERMISSIONS.EXPORT_LEAVE) && (
             <Button
               onClick={handleExport}
               disabled={isExporting}
@@ -90,7 +91,7 @@ export const LeaveList = () => {
               )}
             </Button>
           )}
-          {user?.role !== "SUPERADMIN" && (
+          {hasPermission(PERMISSIONS.CREATE_LEAVE) && (
             <Button
               onClick={() => setIsCreateOpen(true)}
               className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"

@@ -22,8 +22,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
-import { useProfile } from "@/features/user/hooks/useProfile";
 import { useLoan, useLoanAction } from "@/features/loan/hooks/useLoan";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PERMISSIONS } from "@/config/permissions";
 
 interface LoanDetailDialogProps {
   open: boolean;
@@ -36,15 +37,15 @@ export function LoanDetailDialog({
   onOpenChange,
   loanId,
 }: LoanDetailDialogProps) {
-  const { data: userProfile } = useProfile();
   const { data, isLoading } = useLoan(loanId?.toString() || "");
   const { mutate: actionMutate, isPending } = useLoanAction();
+  const { hasPermission } = usePermissions();
 
   const [actionType, setActionType] = useState<"APPROVE" | "REJECT" | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const isSuperAdmin = userProfile?.role === "SUPERADMIN";
+  const canApprove = hasPermission(PERMISSIONS.APPROVAL_LOAN);
   const isPendingStatus = data?.status === "PENDING";
 
   const handleOpenChangeWrapper = (isOpen: boolean) => {
@@ -161,7 +162,7 @@ export function LoanDetailDialog({
             <div className="py-10 text-center text-slate-500">Data not found.</div>
           )}
 
-          {isSuperAdmin && isPendingStatus && (
+          {canApprove && isPendingStatus && (
             <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 variant="destructive"

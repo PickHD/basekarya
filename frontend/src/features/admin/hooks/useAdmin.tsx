@@ -16,10 +16,10 @@ import type { Meta } from "@/types/api";
 
 export const useAllEmployees = (page: number, search: string) => {
   return useQuery({
-    queryKey: ["admin-employees", page, search],
+    queryKey: ["employees", page, search],
     queryFn: async () => {
       const { data } = await api.get<{ data: Employee[]; meta: Meta }>(
-        `/admin/employees`,
+        `/employees`,
         {
           params: {
             page,
@@ -40,11 +40,11 @@ export const useAttendanceRecap = (
   search: string,
 ) => {
   return useInfiniteQuery({
-    queryKey: ["admin-recap", startDate, endDate, search],
+    queryKey: ["attendances-recap", startDate, endDate, search],
 
     queryFn: async ({ pageParam = "" }) => {
       const { data } = await api.get<{ data: AttendanceRecap[]; meta: Meta }>(
-        "/admin/attendances/recap",
+        "/attendances/recap",
         {
           params: {
             cursor: pageParam,
@@ -72,7 +72,7 @@ export const exportAttendanceExcel = async (
   search: string,
 ) => {
   try {
-    const response = await api.get("/admin/attendances/export", {
+    const response = await api.get("/attendances/export", {
       params: { start_date: startDate, end_date: endDate, search },
       responseType: "blob",
     });
@@ -98,14 +98,14 @@ export const useEmployeeMutations = () => {
 
   const invalidateEmployees = async () => {
     await queryClient.invalidateQueries({
-      queryKey: ["admin-employees"],
+      queryKey: ["employees"],
       type: "active",
     });
   };
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateEmployeePayload) => {
-      return await api.post("/admin/employees", data);
+      return await api.post("/employees", data);
     },
     onSuccess: async () => {
       toast.success("Employee created successfully");
@@ -147,7 +147,7 @@ export const useEmployeeMutations = () => {
       id: number;
       data: Partial<CreateEmployeePayload>;
     }) => {
-      return await api.put(`/admin/employees/${id}`, data);
+      return await api.put(`/employees/${id}`, data);
     },
     onSuccess: async () => {
       toast.success("Employee updated successfully");
@@ -183,7 +183,7 @@ export const useEmployeeMutations = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await api.delete(`/admin/employees/${id}`);
+      return await api.delete(`/employees/${id}`);
     },
     onSuccess: async () => {
       toast.success("Employee deleted");
@@ -199,10 +199,10 @@ export const useEmployeeMutations = () => {
 
 export const useDashboardStats = () => {
   return useQuery({
-    queryKey: ["admin-stats"],
+    queryKey: ["attendances-dashboard-stats"],
     queryFn: async () => {
       const { data } = await api.get<{ data: DashboardStats }>(
-        "/admin/dashboard/stats",
+        "/attendances/dashboard/stats",
       );
       return data.data;
     },
