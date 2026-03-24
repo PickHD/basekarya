@@ -1,9 +1,9 @@
 package infrastructure
 
 import (
+	"basekarya-backend/internal/config"
 	"errors"
 	"fmt"
-	"basekarya-backend/internal/config"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -24,17 +24,19 @@ func NewJWTProvider(cfg *config.JWTConfig) *JwtProvider {
 }
 
 type MyClaims struct {
-	UserID     uint   `json:"user_id"`
-	Role       string `json:"role"`
-	EmployeeID *uint  `json:"employee_id"`
+	UserID      uint     `json:"user_id"`
+	Role        string   `json:"role"`
+	EmployeeID  *uint    `json:"employee_id"`
+	Permissions []string `json:"permissions"`
 	jwt.RegisteredClaims
 }
 
-func (p *JwtProvider) GenerateToken(userID uint, role string, employeeID *uint) (string, error) {
+func (p *JwtProvider) GenerateToken(userID uint, role string, employeeID *uint, permissions []string) (string, error) {
 	claims := &MyClaims{
-		UserID:     userID,
-		Role:       role,
-		EmployeeID: employeeID,
+		UserID:      userID,
+		Role:        role,
+		EmployeeID:  employeeID,
+		Permissions: permissions,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(p.expireDuration)),
 			Issuer:    p.issuer,

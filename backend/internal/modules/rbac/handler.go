@@ -30,10 +30,11 @@ func (h *Handler) CreateRole(ctx echo.Context) error {
 
 	err := h.service.CreateRole(ctx.Request().Context(), &req)
 	if err != nil {
+		logger.Errorw("failed to create role: ", err)
 		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to create role", nil, err, nil)
 	}
 
-	return response.NewResponses[any](ctx, http.StatusOK, "Role created successfully", nil, nil, nil)
+	return response.NewResponses[any](ctx, http.StatusCreated, "Role created successfully", nil, nil, nil)
 }
 
 func (h *Handler) GetRolePermissions(ctx echo.Context) error {
@@ -73,4 +74,24 @@ func (h *Handler) AssignPermissions(ctx echo.Context) error {
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Permissions assigned successfully", nil, nil, nil)
+}
+
+func (h *Handler) GetAllPermissions(ctx echo.Context) error {
+	data, err := h.service.GetAllPermissions(ctx.Request().Context())
+	if err != nil {
+		logger.Errorw("failed to get all permissions: ", err)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to get all permissions", nil, err, nil)
+	}
+
+	return response.NewResponses[any](ctx, http.StatusOK, "Get All Permissions Successfully", data, nil, nil)
+}
+
+func (h *Handler) GetAllRoles(ctx echo.Context) error {
+	data, err := h.service.GetAllRoles(ctx.Request().Context())
+	if err != nil {
+		logger.Errorw("failed to get all roles: ", err)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to get all roles", nil, err, nil)
+	}
+
+	return response.NewResponses[any](ctx, http.StatusOK, "Get All Roles Successfully", data, nil, nil)
 }

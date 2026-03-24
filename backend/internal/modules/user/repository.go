@@ -1,11 +1,11 @@
 package user
 
 import (
-	"context"
 	"basekarya-backend/internal/modules/rbac"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/logger"
 	"basekarya-backend/pkg/utils"
+	"context"
 
 	"gorm.io/gorm"
 )
@@ -38,7 +38,7 @@ func (r *repository) FindByUsername(ctx context.Context, username string) (*User
 	db := utils.GetDBFromContext(ctx, r.db)
 	var user User
 
-	err := db.Preload("Employee").Preload("Role").Where("username = ?", username).First(&user).Error
+	err := db.Preload("Employee").Preload("Role.Permissions").Where("username = ?", username).First(&user).Error
 	if err != nil {
 		logger.Errorw("UserRepository.FindByUsername ERROR: ", err)
 

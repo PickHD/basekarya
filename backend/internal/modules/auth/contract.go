@@ -1,8 +1,8 @@
 package auth
 
 import (
-	"context"
 	"basekarya-backend/internal/modules/user"
+	"context"
 )
 
 type Hasher interface {
@@ -10,7 +10,7 @@ type Hasher interface {
 }
 
 type TokenProvider interface {
-	GenerateToken(userID uint, role string, employeeID *uint) (string, error)
+	GenerateToken(userID uint, role string, employeeID *uint, permissions []string) (string, error)
 }
 
 type UserProvider interface {

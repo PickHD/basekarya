@@ -55,13 +55,68 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 		}
 
 		initialPermissions := []string{
-			"manage_employees",
-			"manage_attendance",
-			"manage_payroll",
-			"manage_leaves",
-			"manage_loans",
-			"manage_overtimes",
-			"manage_company",
+			// permission
+			constants.VIEW_PERMISSION,
+
+			// role
+			constants.CREATE_ROLE,
+			constants.VIEW_ROLE,
+			constants.ASSIGN_ROLE,
+
+			// master
+			constants.VIEW_MASTER,
+
+			// employee
+			constants.VIEW_EMPLOYEE,
+			constants.CREATE_EMPLOYEE,
+			constants.UPDATE_EMPLOYEE,
+			constants.DELETE_EMPLOYEE,
+			constants.EXPORT_EMPLOYEE,
+
+			// attendance
+			constants.VIEW_ATTENDANCE,
+			constants.VIEW_SELF_ATTENDANCE,
+			constants.CREATE_ATTENDANCE,
+			constants.EXPORT_ATTENDANCE,
+
+			// payroll
+			constants.VIEW_PAYROLL,
+			constants.GENERATE_PAYROLL,
+			constants.DOWNLOAD_PAYSLIP,
+			constants.MARK_AS_PAID,
+			constants.SEND_PAYSLIP,
+
+			// leave
+			constants.VIEW_LEAVE,
+			constants.VIEW_SELF_LEAVE,
+			constants.CREATE_LEAVE,
+			constants.APPROVAL_LEAVE,
+			constants.EXPORT_LEAVE,
+
+			// loan
+			constants.VIEW_LOAN,
+			constants.VIEW_SELF_LOAN,
+			constants.CREATE_LOAN,
+			constants.APPROVAL_LOAN,
+			constants.EXPORT_LOAN,
+
+			// overtime
+			constants.VIEW_OVERTIME,
+			constants.VIEW_SELF_OVERTIME,
+			constants.CREATE_OVERTIME,
+			constants.APPROVAL_OVERTIME,
+			constants.EXPORT_OVERTIME,
+
+			// reimbursement
+			constants.VIEW_REIMBURSEMENT,
+			constants.VIEW_SELF_REIMBURSEMENT,
+			constants.CREATE_REIMBURSEMENT,
+			constants.APPROVAL_REIMBURSEMENT,
+			constants.EXPORT_REIMBURSEMENT,
+
+			// company
+			constants.VIEW_COMPANY,
+			constants.UPDATE_COMPANY,
 		}
 
 		var permissionIDs []uint
@@ -94,6 +149,8 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 		if err := tx.Where(master.LeaveType{Name: leaveTypeUnpaid.Name}).FirstOrCreate(&leaveTypeUnpaid).Error; err != nil {
 			return err
 		}
+
+		// TODO: remove seed company after feature multi tenant implemented
 
 		companyData := company.Company{Name: "PT. Pick", PhoneNumber: "08531432221023", Address: "Jl.Kejaksaan no.23 Jakarta Utara", Email: "admin@pick.com"}
 

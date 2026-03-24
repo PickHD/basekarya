@@ -13,6 +13,8 @@ type Repository interface {
 	FindRoleByName(ctx context.Context, name string) (*Role, error)
 	ReplacingRolePermissions(ctx context.Context, roleID uint, permissionIDs []uint) error
 	FindPermissionsByIDs(ctx context.Context, ids []uint) ([]Permission, error)
+	FindAllPermissions(ctx context.Context) ([]Permission, error)
+	FindAllRoles(ctx context.Context) ([]Role, error)
 }
 
 type repository struct {
@@ -89,4 +91,30 @@ func (r *repository) ReplacingRolePermissions(ctx context.Context, roleID uint, 
 
 		return nil
 	})
+}
+
+func (r *repository) FindAllPermissions(ctx context.Context) ([]Permission, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
+
+	var permissions []Permission
+
+	err := db.Find(&permissions).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return permissions, nil
+}
+
+func (r *repository) FindAllRoles(ctx context.Context) ([]Role, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
+
+	var roles []Role
+
+	err := db.Find(&roles).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return roles, nil
 }

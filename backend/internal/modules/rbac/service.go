@@ -10,6 +10,8 @@ type Service interface {
 	CreateRole(ctx context.Context, req *CreateRoleRequest) error
 	GetRolePermissions(ctx context.Context, roleID uint) (*RolePermissionsResponse, error)
 	AssignPermissions(ctx context.Context, roleID uint, req *AssignPermissionsRequest) error
+	GetAllPermissions(ctx context.Context) ([]PermissionResponse, error)
+	GetAllRoles(ctx context.Context) ([]RoleResponse, error)
 }
 
 type service struct {
@@ -73,4 +75,48 @@ func (s *service) AssignPermissions(ctx context.Context, roleID uint, req *Assig
 
 		return s.repo.ReplacingRolePermissions(ctx, roleID, req.PermissionIDs)
 	})
+}
+
+func (s *service) GetAllPermissions(ctx context.Context) ([]PermissionResponse, error) {
+	data, err := s.repo.FindAllPermissions(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(data) == 0 {
+		return []PermissionResponse{}, nil
+	}
+
+	permissions := make([]PermissionResponse, len(data))
+
+	for i, perm := range data {
+		permissions[i] = PermissionResponse{
+			ID:   perm.ID,
+			Name: perm.Name,
+		}
+	}
+
+	return permissions, nil
+}
+
+func (s *service) GetAllRoles(ctx context.Context) ([]RoleResponse, error) {
+	data, err := s.repo.FindAllRoles(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(data) == 0 {
+		return []RoleResponse{}, nil
+	}
+
+	roles := make([]RoleResponse, len(data))
+
+	for i, role := range data {
+		roles[i] = RoleResponse{
+			ID:   role.ID,
+			Name: role.Name,
+		}
+	}
+
+	return roles, nil
 }
