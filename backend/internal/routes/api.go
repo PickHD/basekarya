@@ -84,7 +84,6 @@ func (r *Router) setupRoutes() {
 		userOnly.GET("/loans/:id", r.container.LoanHandler.GetDetail)
 		userOnly.PUT("/loans/:id/action", r.container.LoanHandler.ProcessAction)
 
-		// Overtime
 		userOnly.GET("/overtimes", r.container.OvertimeHandler.GetAll)
 		userOnly.GET("/overtimes/export", r.container.OvertimeHandler.Export)
 		userOnly.POST("/overtimes", r.container.OvertimeHandler.Create)
@@ -118,6 +117,10 @@ func (r *Router) setupRoutes() {
 
 		adminOnly.GET("/company/profile", r.container.CompanyHandler.GetProfile)
 		adminOnly.PUT("/company/profile", r.container.CompanyHandler.UpdateProfile)
+
+		adminOnly.POST("/roles", r.container.RbacHandler.CreateRole)
+		adminOnly.GET("/roles/:id/permissions", r.container.RbacHandler.GetRolePermissions)
+		adminOnly.PUT("/roles/:id/permissions", r.container.RbacHandler.AssignPermissions)
 	}
 }
 

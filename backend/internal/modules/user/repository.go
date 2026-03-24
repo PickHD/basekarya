@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"basekarya-backend/internal/modules/rbac"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/logger"
 	"basekarya-backend/pkg/utils"
@@ -22,6 +23,7 @@ type Repository interface {
 	CountActiveEmployee(ctx context.Context) (int64, error)
 	FindAllEmployeeActive(ctx context.Context) ([]Employee, error)
 	FindAdminID(ctx context.Context) (uint, error)
+	FindRoleByName(ctx context.Context, name string) (*rbac.Role, error)
 }
 
 type repository struct {
@@ -36,7 +38,7 @@ func (r *repository) FindByUsername(ctx context.Context, username string) (*User
 	db := utils.GetDBFromContext(ctx, r.db)
 	var user User
 
-	err := db.Preload("Employee").Where("username = ?", username).First(&user).Error
+	err := db.Preload("Employee").Preload("Role").Where("username = ?", username).First(&user).Error
 	if err != nil {
 		logger.Errorw("UserRepository.FindByUsername ERROR: ", err)
 
@@ -50,7 +52,7 @@ func (r *repository) FindByID(ctx context.Context, id uint) (*User, error) {
 	db := utils.GetDBFromContext(ctx, r.db)
 	var user User
 
-	err := db.Preload("Employee.Department").Preload("Employee.Shift").First(&user, id).Error
+	err := db.Preload("Employee.Department").Preload("Employee.Shift").Preload("Role").First(&user, id).Error
 	if err != nil {
 		logger.Errorw("UserRepository.FindByID ERROR: ", err)
 
@@ -77,6 +79,7 @@ func (r *repository) FindAllEmployees(ctx context.Context, page, limit int, sear
 
 	query := db.Model(&User{}).
 		Joins("JOIN employees ON employees.user_id = users.id").
+		Preload("Role").
 		Preload("Employee").
 		Preload("Employee.Department").
 		Preload("Employee.Shift")
@@ -123,7 +126,8 @@ func (r *repository) CountActiveEmployee(ctx context.Context) (int64, error) {
 	db := utils.GetDBFromContext(ctx, r.db)
 	var totalActive int64
 	if err := db.Model(&User{}).
-		Where("is_active = ? AND role = ?", true, string(constants.UserRoleEmployee)).
+		Joins("JOIN roles on roles.id = users.role_id").
+		Where("users.is_active = ? AND roles.name = ?", true, string(constants.UserRoleEmployee)).
 		Count(&totalActive).Error; err != nil {
 		return 0, err
 	}
@@ -137,8 +141,10 @@ func (r *repository) FindAllEmployeeActive(ctx context.Context) ([]Employee, err
 
 	if err := db.Model(&Employee{}).
 		Joins("User").
-		Where("User.is_active = ? AND User.role = ?", true, string(constants.UserRoleEmployee)).
+		Joins("JOIN roles on roles.id = User.role_id").
+		Where("User.is_active = ? AND roles.name = ?", true, string(constants.UserRoleEmployee)).
 		Preload("User").
+		Preload("User.Role").
 		Preload("Department").
 		Preload("Shift").
 		Find(&employees).Error; err != nil {
@@ -152,8 +158,9 @@ func (r *repository) FindAdminID(ctx context.Context) (uint, error) {
 	db := utils.GetDBFromContext(ctx, r.db)
 	var id uint
 	err := db.Model(&User{}).
-		Select("id").
-		Where("role = ?", string(constants.UserRoleSuperadmin)).
+		Joins("JOIN roles ON roles.id = users.role_id").
+		Where("roles.name = ?", string(constants.UserRoleSuperadmin)).
+		Select("users.id").
 		Scan(&id).Error
 
 	if err != nil {
@@ -163,4 +170,14 @@ func (r *repository) FindAdminID(ctx context.Context) (uint, error) {
 	}
 
 	return id, nil
+}
+
+func (r *repository) FindRoleByName(ctx context.Context, name string) (*rbac.Role, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
+	var role rbac.Role
+	err := db.Where("name = ?", name).First(&role).Error
+	if err != nil {
+		return nil, err
+	}
+	return &role, nil
 }

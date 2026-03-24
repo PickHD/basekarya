@@ -4,6 +4,7 @@ import (
 	"basekarya-backend/internal/config"
 	"basekarya-backend/internal/modules/company"
 	"basekarya-backend/internal/modules/master"
+	"basekarya-backend/internal/modules/rbac"
 	"basekarya-backend/internal/modules/user"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/logger"
@@ -24,6 +25,16 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 			return err
 		}
 
+		roleSuperadmin := rbac.Role{Name: string(constants.UserRoleSuperadmin)}
+		if err := tx.Where(rbac.Role{Name: roleSuperadmin.Name}).FirstOrCreate(&roleSuperadmin).Error; err != nil {
+			return err
+		}
+
+		roleEmployee := rbac.Role{Name: string(constants.UserRoleEmployee)}
+		if err := tx.Where(rbac.Role{Name: roleEmployee.Name}).FirstOrCreate(&roleEmployee).Error; err != nil {
+			return err
+		}
+
 		newAdmin := user.User{
 			Username: cfg.CredentialConfig.SuperadminUsername,
 		}
@@ -35,12 +46,37 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 		if err := tx.Where(user.User{Username: newAdmin.Username}).
 			Attrs(user.User{
 				PasswordHash:       hashPass,
-				Role:               string(constants.UserRoleSuperadmin),
+				RoleID:             roleSuperadmin.ID,
 				MustChangePassword: false,
 				IsActive:           true,
 			}).
 			FirstOrCreate(&newAdmin).Error; err != nil {
 			return err
+		}
+
+		initialPermissions := []string{
+			"manage_employees",
+			"manage_attendance",
+			"manage_payroll",
+			"manage_leaves",
+			"manage_loans",
+			"manage_overtimes",
+			"manage_company",
+		}
+
+		var permissionIDs []uint
+		for _, permName := range initialPermissions {
+			var perm rbac.Permission
+			if err := tx.Where(rbac.Permission{Name: permName}).FirstOrCreate(&perm).Error; err != nil {
+				return err
+			}
+			permissionIDs = append(permissionIDs, perm.ID)
+		}
+
+		// Assign all permissions to superadmin role
+		for _, pid := range permissionIDs {
+			var rp rbac.RolePermission
+			tx.Where(rbac.RolePermission{RoleID: roleSuperadmin.ID, PermissionID: pid}).FirstOrCreate(&rp)
 		}
 
 		leaveTypeAnnual := master.LeaveType{Name: "Annual", DefaultQuota: 12, IsDeducted: true}

@@ -14,6 +14,7 @@ import (
 	"basekarya-backend/internal/modules/notification"
 	"basekarya-backend/internal/modules/overtime"
 	"basekarya-backend/internal/modules/payroll"
+	"basekarya-backend/internal/modules/rbac"
 	"basekarya-backend/internal/modules/reimbursement"
 	"basekarya-backend/internal/modules/user"
 )
@@ -42,6 +43,7 @@ type Container struct {
 	CompanyHandler       *company.Handler
 	LoanHandler          *loan.Handler
 	OvertimeHandler      *overtime.Handler
+	RbacHandler          *rbac.Handler
 
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
@@ -80,6 +82,7 @@ func NewContainer() (*Container, error) {
 	companyRepo := company.NewRepository(db.GetDB())
 	loanRepo := loan.NewRepository(db.GetDB())
 	overtimeRepo := overtime.NewRepository(db.GetDB())
+	rbacRepo := rbac.NewRepository(db.GetDB())
 
 	healthSvc := health.NewService(healthRepo)
 	notificationSvc := notification.NewService(wsHub, notificationRepo)
@@ -93,6 +96,7 @@ func NewContainer() (*Container, error) {
 	companySvc := company.NewService(companyRepo, storage)
 	loanSvc := loan.NewService(loanRepo, notificationSvc, userRepo, transactionManager, excel)
 	overtimeSvc := overtime.NewService(overtimeRepo, notificationSvc, userRepo, transactionManager, excel)
+	rbacSvc := rbac.NewService(rbacRepo, transactionManager)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)
@@ -106,6 +110,7 @@ func NewContainer() (*Container, error) {
 	companyHandler := company.NewHandler(companySvc)
 	loanHandler := loan.NewHandler(loanSvc)
 	overtimeHandler := overtime.NewHandler(overtimeSvc)
+	rbacHandler := rbac.NewHandler(rbacSvc)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 	rateLimiterMiddleware := middleware.NewRateLimiterMiddleware()
@@ -137,6 +142,7 @@ func NewContainer() (*Container, error) {
 		CompanyHandler:       companyHandler,
 		LoanHandler:          loanHandler,
 		OvertimeHandler:      overtimeHandler,
+		RbacHandler:          rbacHandler,
 
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,
