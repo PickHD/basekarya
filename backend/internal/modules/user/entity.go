@@ -2,20 +2,22 @@ package user
 
 import (
 	"basekarya-backend/internal/modules/master"
+	"basekarya-backend/internal/modules/rbac"
 	"time"
 )
 
 type User struct {
 	ID                 uint      `gorm:"primaryKey" json:"id"`
 	Username           string    `gorm:"unique;not null" json:"username"`
-	PasswordHash       string    `json:"-"`
-	Role               string    `gorm:"type:enum('SUPERADMIN','EMPLOYEE');default:'EMPLOYEE'" json:"role"`
-	MustChangePassword bool      `json:"must_change_password"`
-	IsActive           bool      `gorm:"default:true" json:"is_active"`
-	CreatedAt          time.Time `json:"created_at"`
-	UpdatedAt          time.Time `json:"updated_at"`
+	PasswordHash       string      `json:"-"`
+	RoleID             uint        `gorm:"not null" json:"role_id"`
+	MustChangePassword bool        `json:"must_change_password"`
+	IsActive           bool        `gorm:"default:true" json:"is_active"`
+	CreatedAt          time.Time   `json:"created_at"`
+	UpdatedAt          time.Time   `json:"updated_at"`
 
-	Employee *Employee `gorm:"foreignKey:UserID;references:ID" json:"employee,omitempty"`
+	Role     *rbac.Role `gorm:"foreignKey:RoleID" json:"role,omitempty"`
+	Employee *Employee  `gorm:"foreignKey:UserID;references:ID" json:"employee,omitempty"`
 }
 
 type Employee struct {

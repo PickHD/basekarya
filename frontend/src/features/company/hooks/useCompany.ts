@@ -8,7 +8,7 @@ export const useCompanyProfile = () => {
     queryKey: ["company-profile"],
     queryFn: async () => {
       const { data } = await api.get<{ data: CompanyProfile }>(
-        "/admin/company/profile",
+        "/companies/profile",
       );
 
       return data.data;
@@ -21,7 +21,7 @@ export const useUpdateCompanyProfile = () => {
 
   return useMutation({
     mutationFn: async (formData: FormData) => {
-      return await api.put("/admin/company/profile", formData);
+      return await api.put("/companies/profile", formData);
     },
     onSuccess: () => {
       toast.success("Company profile updated successfully");

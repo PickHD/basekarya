@@ -2,7 +2,6 @@ package routes
 
 import (
 	"basekarya-backend/internal/bootstrap"
-	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/utils"
 
 	"github.com/labstack/echo/v4"
@@ -39,86 +38,28 @@ func (r *Router) setupRoutes() {
 	r.app.GET("/health", r.container.HealthCheckHandler.HealthCheck, r.container.RateLimiterMiddleware.Init())
 
 	api := r.app.Group("/api/v1")
-	api.POST("/auth/login", r.container.AuthHandler.Login, r.container.RateLimiterMiddleware.Init())
+	r.SetupAuthRoutes(api.Group("/auth"))
 
 	// protected global
 	protected := api.Group("", r.container.AuthMiddleware.VerifyToken)
+
+	// setup websocket
 	protected.GET("/ws", r.container.NotificationHandler.HandleWebSocket)
 
-	// admin or employee can access
-	userOnly := protected.Group("",
-		r.container.AuthMiddleware.GrantRole(string(constants.UserRoleEmployee),
-			string(constants.UserRoleSuperadmin)))
-	{
-		userOnly.GET("/users/me", r.container.UserHandler.GetProfile)
-		userOnly.PUT("/users/profile", r.container.UserHandler.UpdateProfile)
-		userOnly.PUT("/users/change-password", r.container.UserHandler.ChangePassword)
-
-		userOnly.POST("/attendances/clock", r.container.AttendanceHandler.Clock)
-		userOnly.GET("/attendances/today", r.container.AttendanceHandler.GetTodayStatus)
-		userOnly.GET("/attendances/history", r.container.AttendanceHandler.GetHistory)
-
-		userOnly.GET("/reimbursements", r.container.ReimbursementHandler.GetAll)
-		userOnly.GET("/reimbursements/export", r.container.ReimbursementHandler.Export)
-		userOnly.POST("/reimbursements", r.container.ReimbursementHandler.Create)
-
-		userOnly.GET("/reimbursements/:id", r.container.ReimbursementHandler.GetDetail)
-		userOnly.PUT("/reimbursements/:id/action", r.container.ReimbursementHandler.ProcessAction)
-
-		userOnly.GET("/leaves/types", r.container.MasterHandler.GetLeaveTypes)
-		userOnly.GET("/leaves/export", r.container.LeaveHandler.Export)
-
-		userOnly.GET("/leaves", r.container.LeaveHandler.GetAll)
-		userOnly.POST("/leaves/apply", r.container.LeaveHandler.Apply)
-
-		userOnly.GET("/leaves/:id", r.container.LeaveHandler.GetDetail)
-		userOnly.PUT("/leaves/:id/action", r.container.LeaveHandler.RequestAction)
-
-		userOnly.GET("/notifications", r.container.NotificationHandler.GetAll)
-		userOnly.PUT("/notifications/:id/read", r.container.NotificationHandler.MarkAsRead)
-
-		userOnly.GET("/loans", r.container.LoanHandler.GetAll)
-		userOnly.GET("/loans/export", r.container.LoanHandler.Export)
-		userOnly.POST("/loans", r.container.LoanHandler.Create)
-
-		userOnly.GET("/loans/:id", r.container.LoanHandler.GetDetail)
-		userOnly.PUT("/loans/:id/action", r.container.LoanHandler.ProcessAction)
-
-		// Overtime
-		userOnly.GET("/overtimes", r.container.OvertimeHandler.GetAll)
-		userOnly.GET("/overtimes/export", r.container.OvertimeHandler.Export)
-		userOnly.POST("/overtimes", r.container.OvertimeHandler.Create)
-		userOnly.GET("/overtimes/:id", r.container.OvertimeHandler.GetDetail)
-		userOnly.PUT("/overtimes/:id/action", r.container.OvertimeHandler.ProcessAction)
-	}
-
-	// only admin can access
-	adminOnly := protected.Group("/admin",
-		r.container.AuthMiddleware.GrantRole(string(constants.UserRoleSuperadmin)))
-	{
-		adminOnly.GET("/employees", r.container.UserHandler.GetAllEmployees)
-		adminOnly.POST("/employees", r.container.UserHandler.CreateEmployee)
-		adminOnly.PUT("/employees/:id", r.container.UserHandler.UpdateEmployee)
-		adminOnly.DELETE("/employees/:id", r.container.UserHandler.DeleteEmployee)
-
-		adminOnly.GET("/attendances/recap", r.container.AttendanceHandler.GetAllAttendanceRecap)
-		adminOnly.GET("/attendances/export", r.container.AttendanceHandler.ExportAttendance)
-
-		adminOnly.GET("/departments", r.container.MasterHandler.GetDepartments)
-		adminOnly.GET("/shifts", r.container.MasterHandler.GetShifts)
-
-		adminOnly.GET("/dashboard/stats", r.container.AttendanceHandler.GetDashboardStats)
-
-		adminOnly.GET("/payrolls", r.container.PayrollHandler.GetList)
-		adminOnly.POST("/payrolls/generate", r.container.PayrollHandler.Generate)
-		adminOnly.GET("/payrolls/:id", r.container.PayrollHandler.GetDetail)
-		adminOnly.GET("/payrolls/:id/download", r.container.PayrollHandler.DownloadPayslipPDF)
-		adminOnly.PUT("/payrolls/:id/status", r.container.PayrollHandler.MarkAsPaid)
-		adminOnly.POST("/payrolls/:id/send-email", r.container.PayrollHandler.BlastPayslipEmail)
-
-		adminOnly.GET("/company/profile", r.container.CompanyHandler.GetProfile)
-		adminOnly.PUT("/company/profile", r.container.CompanyHandler.UpdateProfile)
-	}
+	// setup module routes
+	r.SetupAttendanceRoutes(protected.Group("/attendances"))
+	r.SetupCompanyRoutes(protected.Group("/companies"))
+	r.SetupEmployeeRoutes(protected.Group("/employees"))
+	r.SetupLeaveRoutes(protected.Group("/leaves"))
+	r.SetupLoanRoutes(protected.Group("/loans"))
+	r.SetupMasterRoutes(protected.Group("/masters"))
+	r.SetupNotificationRoutes(protected.Group("/notifications"))
+	r.SetupOvertimeRoutes(protected.Group("/overtimes"))
+	r.SetupPayrollRoutes(protected.Group("/payrolls"))
+	r.SetupReimbursementRoutes(protected.Group("/reimbursements"))
+	r.SetupRoleRoutes(protected.Group("/roles"))
+	r.SetupPermissionRoutes(protected.Group("/permissions"))
+	r.SetupUserRoutes(protected.Group("/users"))
 }
 
 func ServeHTTP(container *bootstrap.Container) *echo.Echo {

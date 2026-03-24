@@ -42,8 +42,11 @@ func (s *service) GetProfile(userID uint) (*UserProfileResponse, error) {
 	resp := &UserProfileResponse{
 		ID:                 user.ID,
 		Username:           user.Username,
-		Role:               user.Role,
 		MustChangePassword: user.MustChangePassword,
+	}
+	
+	if user.Role != nil {
+		resp.Role = user.Role.Name
 	}
 
 	if user.Employee != nil {
@@ -165,10 +168,16 @@ func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest
 
 		hashPass, _ := s.bcrypt.HashPassword(req.Username)
 
+		// Fetch EMPLOYEE role
+		role, err := s.repo.FindRoleByName(ctx, string(constants.UserRoleEmployee))
+		if err != nil {
+			return errors.New("employee role not found")
+		}
+
 		newUser := User{
 			Username:           req.Username,
 			PasswordHash:       hashPass,
-			Role:               string(constants.UserRoleEmployee),
+			RoleID:             role.ID,
 			MustChangePassword: true,
 		}
 

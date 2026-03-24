@@ -6,6 +6,7 @@ import (
 	"basekarya-backend/pkg/response"
 	"basekarya-backend/pkg/utils"
 	"net/http"
+	"slices"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
@@ -105,7 +106,7 @@ func (h *Handler) GetAll(ctx echo.Context) error {
 		Search: search,
 	}
 
-	if userContext.Role != string(constants.UserRoleSuperadmin) {
+	if !slices.Contains(userContext.Permissions, constants.VIEW_LEAVE) && slices.Contains(userContext.Permissions, constants.VIEW_SELF_LEAVE) {
 		filter.UserID = userContext.UserID
 	}
 
@@ -149,7 +150,7 @@ func (h *Handler) Export(ctx echo.Context) error {
 		Search: search,
 	}
 
-	if userContext.Role != string(constants.UserRoleSuperadmin) {
+	if !slices.Contains(userContext.Permissions, constants.VIEW_LEAVE) && slices.Contains(userContext.Permissions, constants.VIEW_SELF_LEAVE) {
 		filter.UserID = userContext.UserID
 	}
 

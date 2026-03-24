@@ -52,7 +52,7 @@ func (m *AuthMiddleware) VerifyToken(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func (m *AuthMiddleware) GrantRole(roles ...string) echo.MiddlewareFunc {
+func (m *AuthMiddleware) GrantPermission(permission string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			userContext, err := utils.GetUserContext(ctx)
@@ -60,7 +60,32 @@ func (m *AuthMiddleware) GrantRole(roles ...string) echo.MiddlewareFunc {
 				return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
 			}
 
-			if !slices.Contains(roles, userContext.Role) {
+			if !slices.Contains(userContext.Permissions, permission) {
+				return response.NewResponses[any](ctx, http.StatusForbidden, "You dont have access to this resource", nil, nil, nil)
+			}
+
+			return next(ctx)
+		}
+	}
+}
+
+func (m *AuthMiddleware) GrantAnyPermission(permissions ...string) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			userContext, err := utils.GetUserContext(ctx)
+			if err != nil {
+				return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+			}
+
+			hasPermission := false
+			for _, p := range permissions {
+				if slices.Contains(userContext.Permissions, p) {
+					hasPermission = true
+					break
+				}
+			}
+
+			if !hasPermission {
 				return response.NewResponses[any](ctx, http.StatusForbidden, "You dont have access to this resource", nil, nil, nil)
 			}
 

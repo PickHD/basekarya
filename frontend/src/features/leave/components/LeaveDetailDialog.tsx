@@ -20,7 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Calendar, FileText, Download } from "lucide-react";
-import { useProfile } from "@/features/user/hooks/useProfile";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PERMISSIONS } from "@/config/permissions";
 import {
   useLeaveDetail,
   useLeaveAction,
@@ -39,10 +40,9 @@ export function LeaveDetailDialog({
   onOpenChange,
   leaveId,
 }: LeaveDetailDialogProps) {
-  const { data: userProfile } = useProfile();
   const { data, isLoading } = useLeaveDetail(leaveId?.toString() || "");
-
   const { mutate: actionMutate, isPending } = useLeaveAction();
+  const { hasPermission } = usePermissions();
 
   const [actionType, setActionType] = useState<"APPROVE" | "REJECT" | null>(
     null,
@@ -50,7 +50,7 @@ export function LeaveDetailDialog({
   const [rejectionReason, setRejectionReason] = useState("");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const isSuperAdmin = userProfile?.role === "SUPERADMIN";
+  const canApprove = hasPermission(PERMISSIONS.APPROVAL_LEAVE);
   const isPendingStatus = data?.status === "PENDING";
 
   const handleOpenChangeWrapper = (isOpen: boolean) => {
@@ -223,7 +223,7 @@ export function LeaveDetailDialog({
             </div>
           )}
 
-          {isSuperAdmin && isPendingStatus && (
+          {canApprove && isPendingStatus && (
             <div className="flex flex-col-reverse sm:flex-row gap-2 justify-end pt-4 mt-4 border-t">
               <Button
                 variant="destructive"

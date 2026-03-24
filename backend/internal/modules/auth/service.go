@@ -35,11 +35,18 @@ func (s *service) Login(username, password string) (*LoginResponse, error) {
 	}
 
 	var employeeID *uint
-	if foundUser.Employee != nil && foundUser.Role != string(constants.UserRoleSuperadmin) {
+	if foundUser.Employee != nil && foundUser.Role != nil && foundUser.Role.Name != string(constants.UserRoleSuperadmin) {
 		employeeID = &foundUser.Employee.ID
 	}
 
-	tokenString, err := s.tokenProvider.GenerateToken(foundUser.ID, foundUser.Role, employeeID)
+	var permissions []string
+	if foundUser.Role != nil {
+		for _, permission := range foundUser.Role.Permissions {
+			permissions = append(permissions, permission.Name)
+		}
+	}
+
+	tokenString, err := s.tokenProvider.GenerateToken(foundUser.ID, foundUser.Role.Name, employeeID, permissions)
 	if err != nil {
 		return nil, err
 	}

@@ -9,7 +9,7 @@ export const usePayrolls = (filter: PayrollFilter) => {
     queryKey: ["payrolls", filter],
     queryFn: async () => {
       const { data } = await api.get<{ data: Payroll[]; meta: Meta }>(
-        "/admin/payrolls",
+        "/payrolls",
         { params: filter },
       );
 
@@ -24,7 +24,7 @@ export const usePayroll = (id: string | number | null) => {
     queryKey: ["payroll", id],
     queryFn: async () => {
       const { data } = await api.get<{ data: Payroll }>(
-        `/admin/payrolls/${id}`,
+        `/payrolls/${id}`,
       );
 
       return data.data;
@@ -38,7 +38,7 @@ export const useGeneratePayroll = () => {
 
   return useMutation({
     mutationFn: async (payload: GeneratePayrollPayload) => {
-      const { data } = await api.post("/admin/payrolls/generate", payload);
+      const { data } = await api.post("/payrolls/generate", payload);
       return data;
     },
     onSuccess: (data) => {
@@ -55,7 +55,7 @@ export const useGeneratePayroll = () => {
 
 export const downloadPayslip = async (id: number, filename: string) => {
   try {
-    const response = await api.get(`/admin/payrolls/${id}/download`, {
+    const response = await api.get(`/payrolls/${id}/download`, {
       responseType: "blob",
     });
 
@@ -80,7 +80,7 @@ export const useMarkAsPaid = () => {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data } = await api.put(`/admin/payrolls/${id}/status`, id);
+      const { data } = await api.put(`/payrolls/${id}/status`, id);
       return data;
     },
     onSuccess: () => {
@@ -97,7 +97,7 @@ export const useMarkAsPaid = () => {
 export const useSendPayslipEmail = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data } = await api.post(`/admin/payrolls/${id}/send-email`, id);
+      const { data } = await api.post(`/payrolls/${id}/send-email`, id);
       return data;
     },
     onSuccess: () => {

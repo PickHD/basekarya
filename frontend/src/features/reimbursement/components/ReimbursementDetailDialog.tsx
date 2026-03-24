@@ -22,7 +22,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, ExternalLink } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
-import { useProfile } from "@/features/user/hooks/useProfile";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PERMISSIONS } from "@/config/permissions";
 import {
   useReimbursement,
   useReimbursementAction,
@@ -39,11 +40,11 @@ export function ReimbursementDetailDialog({
   onOpenChange,
   reimbursementId,
 }: ReimbursementDetailDialogProps) {
-  const { data: userProfile } = useProfile();
   const { data, isLoading } = useReimbursement(
     reimbursementId?.toString() || "",
   );
   const { mutate: actionMutate, isPending } = useReimbursementAction();
+  const { hasPermission } = usePermissions();
 
   const [actionType, setActionType] = useState<"APPROVE" | "REJECT" | null>(
     null,
@@ -51,7 +52,7 @@ export function ReimbursementDetailDialog({
   const [rejectionReason, setRejectionReason] = useState("");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const isSuperAdmin = userProfile?.role === "SUPERADMIN";
+  const canApprove = hasPermission(PERMISSIONS.APPROVAL_REIMBURSEMENT);
   const isPendingStatus = data?.status === "PENDING";
 
   const handleOpenChangeWrapper = (isOpen: boolean) => {
@@ -201,7 +202,7 @@ export function ReimbursementDetailDialog({
             </div>
           )}
 
-          {isSuperAdmin && isPendingStatus && (
+          {canApprove && isPendingStatus && (
             <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 variant="destructive"

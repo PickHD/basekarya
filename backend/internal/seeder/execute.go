@@ -4,6 +4,7 @@ import (
 	"basekarya-backend/internal/config"
 	"basekarya-backend/internal/modules/company"
 	"basekarya-backend/internal/modules/master"
+	"basekarya-backend/internal/modules/rbac"
 	"basekarya-backend/internal/modules/user"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/logger"
@@ -24,6 +25,16 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 			return err
 		}
 
+		roleSuperadmin := rbac.Role{Name: string(constants.UserRoleSuperadmin)}
+		if err := tx.Where(rbac.Role{Name: roleSuperadmin.Name}).FirstOrCreate(&roleSuperadmin).Error; err != nil {
+			return err
+		}
+
+		roleEmployee := rbac.Role{Name: string(constants.UserRoleEmployee)}
+		if err := tx.Where(rbac.Role{Name: roleEmployee.Name}).FirstOrCreate(&roleEmployee).Error; err != nil {
+			return err
+		}
+
 		newAdmin := user.User{
 			Username: cfg.CredentialConfig.SuperadminUsername,
 		}
@@ -35,12 +46,92 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 		if err := tx.Where(user.User{Username: newAdmin.Username}).
 			Attrs(user.User{
 				PasswordHash:       hashPass,
-				Role:               string(constants.UserRoleSuperadmin),
+				RoleID:             roleSuperadmin.ID,
 				MustChangePassword: false,
 				IsActive:           true,
 			}).
 			FirstOrCreate(&newAdmin).Error; err != nil {
 			return err
+		}
+
+		initialPermissions := []string{
+			// permission
+			constants.VIEW_PERMISSION,
+
+			// role
+			constants.CREATE_ROLE,
+			constants.VIEW_ROLE,
+			constants.ASSIGN_ROLE,
+
+			// master
+			constants.VIEW_MASTER,
+
+			// employee
+			constants.VIEW_EMPLOYEE,
+			constants.CREATE_EMPLOYEE,
+			constants.UPDATE_EMPLOYEE,
+			constants.DELETE_EMPLOYEE,
+			constants.EXPORT_EMPLOYEE,
+
+			// attendance
+			constants.VIEW_ATTENDANCE,
+			constants.VIEW_SELF_ATTENDANCE,
+			constants.CREATE_ATTENDANCE,
+			constants.EXPORT_ATTENDANCE,
+
+			// payroll
+			constants.VIEW_PAYROLL,
+			constants.GENERATE_PAYROLL,
+			constants.DOWNLOAD_PAYSLIP,
+			constants.MARK_AS_PAID,
+			constants.SEND_PAYSLIP,
+
+			// leave
+			constants.VIEW_LEAVE,
+			constants.VIEW_SELF_LEAVE,
+			constants.CREATE_LEAVE,
+			constants.APPROVAL_LEAVE,
+			constants.EXPORT_LEAVE,
+
+			// loan
+			constants.VIEW_LOAN,
+			constants.VIEW_SELF_LOAN,
+			constants.CREATE_LOAN,
+			constants.APPROVAL_LOAN,
+			constants.EXPORT_LOAN,
+
+			// overtime
+			constants.VIEW_OVERTIME,
+			constants.VIEW_SELF_OVERTIME,
+			constants.CREATE_OVERTIME,
+			constants.APPROVAL_OVERTIME,
+			constants.EXPORT_OVERTIME,
+
+			// reimbursement
+			constants.VIEW_REIMBURSEMENT,
+			constants.VIEW_SELF_REIMBURSEMENT,
+			constants.CREATE_REIMBURSEMENT,
+			constants.APPROVAL_REIMBURSEMENT,
+			constants.EXPORT_REIMBURSEMENT,
+
+			// company
+			constants.VIEW_COMPANY,
+			constants.UPDATE_COMPANY,
+		}
+
+		var permissionIDs []uint
+		for _, permName := range initialPermissions {
+			var perm rbac.Permission
+			if err := tx.Where(rbac.Permission{Name: permName}).FirstOrCreate(&perm).Error; err != nil {
+				return err
+			}
+			permissionIDs = append(permissionIDs, perm.ID)
+		}
+
+		// Assign all permissions to superadmin role
+		for _, pid := range permissionIDs {
+			var rp rbac.RolePermission
+			tx.Where(rbac.RolePermission{RoleID: roleSuperadmin.ID, PermissionID: pid}).FirstOrCreate(&rp)
 		}
 
 		leaveTypeAnnual := master.LeaveType{Name: "Annual", DefaultQuota: 12, IsDeducted: true}
@@ -58,6 +149,8 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 		if err := tx.Where(master.LeaveType{Name: leaveTypeUnpaid.Name}).FirstOrCreate(&leaveTypeUnpaid).Error; err != nil {
 			return err
 		}
+
+		// TODO: remove seed company after feature multi tenant implemented
 
 		companyData := company.Company{Name: "PT. Pick", PhoneNumber: "08531432221023", Address: "Jl.Kejaksaan no.23 Jakarta Utara", Email: "admin@pick.com"}
 

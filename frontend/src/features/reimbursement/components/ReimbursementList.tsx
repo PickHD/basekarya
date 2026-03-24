@@ -25,10 +25,11 @@ import { useReimbursements, useExportReimbursements } from "../hooks/useReimburs
 import { format, isValid } from "date-fns";
 import { ReimbursementDetailDialog } from "./ReimbursementDetailDialog";
 import { ReimbursementFormDialog } from "./ReimbursementCreateDialog";
-import { useProfile } from "@/features/user/hooks/useProfile";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PERMISSIONS } from "@/config/permissions";
 
 export const ReimbursementList = () => {
-  const { data: user } = useProfile();
+  const { hasPermission } = usePermissions();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
 
@@ -80,7 +81,7 @@ export const ReimbursementList = () => {
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          {user?.role === "SUPERADMIN" && (
+          {hasPermission(PERMISSIONS.EXPORT_REIMBURSEMENT) && (
             <Button
               onClick={handleExport}
               disabled={isExporting}
@@ -95,7 +96,7 @@ export const ReimbursementList = () => {
               )}
             </Button>
           )}
-          {user?.role !== "SUPERADMIN" && (
+          {hasPermission(PERMISSIONS.CREATE_REIMBURSEMENT) && (
             <Button
               onClick={() => setIsCreateOpen(true)}
               className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"

@@ -22,13 +22,14 @@ import {
 import { StatusBadge } from "./StatusBadge";
 import { PaginationControls } from "@/components/shared/PaginationControls";
 import { format, isValid } from "date-fns";
-import { useProfile } from "@/features/user/hooks/useProfile";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PERMISSIONS } from "@/config/permissions";
 import { useOvertimes, useExportOvertimes } from "@/features/overtime/hooks/useOvertime";
 import { OvertimeDetailDialog } from "./OvertimeDetailDialog";
 import { OvertimeFormDialog } from "./OvertimeCreateDialog";
 
 export const OvertimeList = () => {
-  const { data: user } = useProfile();
+  const { hasPermission } = usePermissions();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
 
@@ -77,11 +78,11 @@ export const OvertimeList = () => {
             Overtime
           </h2>
           <p className="text-sm sm:text-base text-slate-500">
-            Kelola pengajuan lembur dan persetujuan.
+            Manage overtime and approvals.
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          {user?.role === "SUPERADMIN" && (
+          {hasPermission(PERMISSIONS.EXPORT_OVERTIME) && (
             <Button
               onClick={handleExport}
               disabled={isExporting}
@@ -96,7 +97,7 @@ export const OvertimeList = () => {
               )}
             </Button>
           )}
-          {user?.role !== "SUPERADMIN" && (
+          {hasPermission(PERMISSIONS.CREATE_OVERTIME) && (
             <Button
               onClick={() => setIsCreateOpen(true)}
               className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
