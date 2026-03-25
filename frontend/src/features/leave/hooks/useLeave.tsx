@@ -92,7 +92,7 @@ export const useLeaveTypes = () => {
   return useQuery({
     queryKey: ["leave-types"],
     queryFn: async () => {
-      const { data } = await api.get<{ data: LeaveType[] }>("/leaves/types");
+      const { data } = await api.get<{ data: LeaveType[] }>("/masters/leaves/types");
       return data.data;
     },
     staleTime: 1000 * 60 * 60,

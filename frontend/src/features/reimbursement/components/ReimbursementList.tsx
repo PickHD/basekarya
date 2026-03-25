@@ -111,7 +111,7 @@ export const ReimbursementList = () => {
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Receipt className="h-5 w-5" /> Request List
+              <Receipt className="h-5 w-5" /> Request History
             </CardTitle>
 
             <div className="flex gap-2 w-full md:w-auto">

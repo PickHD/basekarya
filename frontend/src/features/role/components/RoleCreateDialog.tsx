@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
-import { useCreateRole } from "../hooks/useRole";
+import { useCreateRole } from "@/features/role/hooks/useRole";
 
 interface RoleCreateDialogProps {
   open: boolean;

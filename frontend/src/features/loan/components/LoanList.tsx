@@ -74,10 +74,10 @@ export const LoanList = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Loans
+            Loan
           </h2>
           <p className="text-sm sm:text-base text-slate-500">
-            Manage financial loans and approvals.
+            Monitor employee loans and approvals.
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
@@ -111,7 +111,7 @@ export const LoanList = () => {
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <CreditCard className="h-5 w-5" /> Request List
+              <CreditCard className="h-5 w-5" /> Request History
             </CardTitle>
 
             <div className="flex gap-2 w-full md:w-auto">
@@ -204,7 +204,7 @@ export const LoanList = () => {
                         <TableCell className="font-medium">
                           {item.employee_name || "Karyawan"}
                           <div className="text-xs text-slate-400 font-normal">
-                            {formatDateSafe(item.created_at, "dd MMM yyyy")}
+                            Pengajuan: {formatDateSafe(item.created_at, "dd MMM yyyy")}
                           </div>
                         </TableCell>
                         <TableCell className="font-bold">
