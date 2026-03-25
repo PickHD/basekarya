@@ -126,7 +126,7 @@ export const OvertimeList = () => {
                     setPage(1);
                   }}
                 >
-                  <option value="">Semua Status</option>
+                  <option value="">All Status</option>
                   <option value="PENDING">Pending</option>
                   <option value="APPROVED">Approved</option>
                   <option value="PAID">Paid</option>
