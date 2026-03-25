@@ -115,19 +115,19 @@ func Load() *Config {
 			NominatimUrl: getEnv("NOMINATIM_URL", ""),
 		},
 		CredentialConfig: CredentialConfig{
-			SuperadminUsername: getEnv("SUPERADMIN_USERNAME", "superadmin"),
-			SuperadminPassword: getEnv("SUPERADMIN_PASSWORD", "12390182309812039812093801"),
+			SuperadminUsername: getEnv("SUPERADMIN_USERNAME", ""),
+			SuperadminPassword: getEnv("SUPERADMIN_PASSWORD", ""),
 		},
 		Redis: RedisConfig{
-			Addr:     getEnv("REDIS_ADDR", "localhost:6379"),
+			Addr:     getEnv("REDIS_ADDR", ""),
 			Password: getEnv("REDIS_PASSWORD", ""),
 		},
 		Email: EmailConfig{
-			Host:     getEnv("SMTP_HOST", "gmail.com"),
-			Port:     getEnvInt("SMTP_PORT", 567),
-			Username: getEnv("SMTP_USER", "user@gmail.com"),
-			Password: getEnv("SMTP_PASS", "pass"),
-			From:     getEnv("SMTP_FROM", "from"),
+			Host:     getEnv("SMTP_HOST", ""),
+			Port:     getEnvInt("SMTP_PORT", 0),
+			Username: getEnv("SMTP_USER", ""),
+			Password: getEnv("SMTP_PASS", ""),
+			From:     getEnv("SMTP_FROM", ""),
 		},
 	}
 

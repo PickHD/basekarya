@@ -112,7 +112,7 @@ export const OvertimeList = () => {
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Clock className="h-5 w-5" /> Daftar Lembur
+              <Clock className="h-5 w-5" /> Request History
             </CardTitle>
 
             <div className="flex gap-2 w-full md:w-auto">
@@ -193,9 +193,9 @@ export const OvertimeList = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Employee</TableHead>
-                      <TableHead>Tanggal</TableHead>
-                      <TableHead>Waktu</TableHead>
-                      <TableHead>Durasi</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Time</TableHead>
+                      <TableHead>Duration</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Action</TableHead>
                     </TableRow>

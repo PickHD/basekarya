@@ -51,7 +51,6 @@ function App() {
             </ProtectedRoute>
           }
         >
-          {/* EMPLOYEE ROUTES */}
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="profile" element={<ProfilePage />} />
 

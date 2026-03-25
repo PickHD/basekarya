@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { toast } from "sonner";
-import type { AssignPermissionsPayload, RolesResponse, Role, PermissionsResponse } from "../types";
+import type { AssignPermissionsPayload, RolesResponse, Role, PermissionsResponse } from "@/features/role/types";
 
 export function useRoles() {
   return useQuery({

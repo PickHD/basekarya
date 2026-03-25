@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useRoles, useRoleDetails } from "../hooks/useRole";
 import { Button } from "@/components/ui/button";
-import { RoleCreateDialog } from "./RoleCreateDialog";
-import { RolePermissionsDialog } from "./RolePermissionsDialog";
+import { RoleCreateDialog } from "@/features/role/components/RoleCreateDialog";
+import { RolePermissionsDialog } from "@/features/role/components/RolePermissionsDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Settings, Plus, Loader2 } from "lucide-react";
-import type { Role } from "../types";
+import type { Role } from "@/features/role/types";
 
 export function RoleList() {
   const { data: roles, isLoading: rolesLoading } = useRoles();
@@ -29,12 +29,6 @@ export function RoleList() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Roles Management</h2>
-          <p className="text-sm sm:text-base text-slate-500">
-            Configure system roles and define access permissions.
-          </p>
-        </div>
         <Button
           onClick={() => setIsCreateOpen(true)}
           className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
@@ -66,10 +60,6 @@ export function RoleList() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4 flex-1 flex flex-col">
-                <p className="text-sm text-slate-600 mb-6 flex-1">
-                  {role.description || "No description provided."}
-                </p>
-
                 <Button
                   className="w-full mt-auto bg-slate-100 hover:bg-slate-200 text-slate-900 border"
                   onClick={() => handleManagePermissions(role.id)}

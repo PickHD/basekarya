@@ -1,9 +1,10 @@
 package infrastructure
 
 import (
-	"context"
 	"basekarya-backend/internal/config"
 	"basekarya-backend/pkg/logger"
+	"context"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -35,4 +36,16 @@ func (r *RedisClientProvider) Close() error {
 
 func (r *RedisClientProvider) GetClient() *redis.Client {
 	return r.Client
+}
+
+func (r *RedisClientProvider) Set(ctx context.Context, key string, value any, expiration time.Duration) error {
+	return r.Client.Set(ctx, key, value, expiration).Err()
+}
+
+func (r *RedisClientProvider) Get(ctx context.Context, key string) (string, error) {
+	return r.Client.Get(ctx, key).Result()
+}
+
+func (r *RedisClientProvider) Del(ctx context.Context, key string) error {
+	return r.Client.Del(ctx, key).Err()
 }

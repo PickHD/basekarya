@@ -10,8 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, ShieldAlert } from "lucide-react";
-import { useAllPermissions, useAssignPermissions } from "../hooks/useRole";
-import type { Role, Permission } from "../types";
+import { useAllPermissions, useAssignPermissions } from "@/features/role/hooks/useRole";
+import type { Role, Permission } from "@/features/role/types";
 
 interface RolePermissionsDialogProps {
   open: boolean;

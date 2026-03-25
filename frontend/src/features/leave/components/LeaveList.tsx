@@ -65,11 +65,10 @@ export const LeaveList = () => {
 
   return (
     <div className="space-y-6">
-      {/* HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Leave Requests
+            Leave Request
           </h2>
           <p className="text-sm sm:text-base text-slate-500">
             Monitor employee leave and absence permissions.
@@ -135,14 +134,12 @@ export const LeaveList = () => {
             </div>
           ) : (
             <>
-              {/* --- MOBILE CARD VIEW --- */}
               <div className="grid grid-cols-1 gap-4 md:hidden">
                 {data?.data.map((item) => (
                   <div
                     key={item.id}
                     className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-3"
                   >
-                    {/* Header: Type & Status */}
                     <div className="flex justify-between items-start">
                       <div>
                         <h4 className="font-bold text-slate-800">
@@ -193,7 +190,6 @@ export const LeaveList = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Requested On</TableHead>
                       <TableHead>Employee</TableHead>
                       <TableHead>Leave Type</TableHead>
                       <TableHead>Duration</TableHead>
@@ -204,15 +200,12 @@ export const LeaveList = () => {
                   <TableBody>
                     {data?.data.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell className="text-slate-500">
-                          {formatDate(item.created_at)}
-                        </TableCell>
                         <TableCell>
-                          <div className="font-bold">
-                            {item.employee_name || "-"}
+                          <div className="font-medium">
+                            {item.employee_name || "Karyawan"}
                           </div>
-                          <div className="text-xs text-slate-500">
-                            {item.employee_nik}
+                          <div className="text-xs text-slate-400 font-normal">
+                            Pengajuan: {formatDate(item.created_at)}
                           </div>
                         </TableCell>
                         <TableCell>

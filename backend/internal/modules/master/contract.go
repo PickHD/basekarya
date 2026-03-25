@@ -1,14 +1,9 @@
-package company
+package master
 
 import (
 	"context"
-	"mime/multipart"
 	"time"
 )
-
-type StorageProvider interface {
-	UploadFileMultipart(ctx context.Context, file *multipart.FileHeader, objectName string) (string, error)
-}
 
 type CacheProvider interface {
 	Get(ctx context.Context, key string) (string, error)
