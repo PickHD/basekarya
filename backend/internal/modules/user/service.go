@@ -1,14 +1,17 @@
 package user
 
 import (
-	"context"
-	"errors"
-	"fmt"
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/response"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"mime/multipart"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type Service interface {
@@ -25,55 +28,81 @@ type service struct {
 	repo               Repository
 	bcrypt             Hasher
 	storage            StorageProvider
+	cache              CacheProvider
 	leaveGenerator     LeaveBalanceGenerator
 	transactionManager infrastructure.TransactionManager
 }
 
-func NewService(repo Repository, bcrypt Hasher, storage StorageProvider, leaveGenerator LeaveBalanceGenerator, transactionManager infrastructure.TransactionManager) Service {
-	return &service{repo, bcrypt, storage, leaveGenerator, transactionManager}
+func NewService(repo Repository, bcrypt Hasher, storage StorageProvider, cache CacheProvider, leaveGenerator LeaveBalanceGenerator, transactionManager infrastructure.TransactionManager) Service {
+	return &service{repo, bcrypt, storage, cache, leaveGenerator, transactionManager}
 }
 
 func (s *service) GetProfile(userID uint) (*UserProfileResponse, error) {
-	user, err := s.repo.FindByID(context.Background(), userID)
+	cacheKey := fmt.Sprintf(constants.USER_CACHE_KEY, userID)
+
+	cacheData, err := s.cache.Get(context.Background(), cacheKey)
+	if err == redis.Nil {
+		user, err := s.repo.FindByID(context.Background(), userID)
+		if err != nil {
+			return nil, err
+		}
+
+		resp := &UserProfileResponse{
+			ID:                 user.ID,
+			Username:           user.Username,
+			MustChangePassword: user.MustChangePassword,
+		}
+
+		if user.Role != nil {
+			resp.Role = user.Role.Name
+		}
+
+		if user.Employee != nil {
+			resp.FullName = user.Employee.FullName
+			resp.NIK = user.Employee.NIK
+			resp.PhoneNumber = user.Employee.PhoneNumber
+			resp.ProfilePictureUrl = user.Employee.ProfilePictureUrl
+			resp.BankName = user.Employee.BankName
+			resp.BaseSalary = user.Employee.BaseSalary
+			resp.BankAccountNumber = user.Employee.BankAccountNumber
+			resp.BankAccountHolder = user.Employee.BankAccountHolder
+			resp.NPWP = user.Employee.NPWP
+			resp.Email = user.Employee.Email
+
+			if user.Employee.Department != nil {
+				resp.DepartmentName = user.Employee.Department.Name
+			}
+			if user.Employee.Shift != nil {
+				resp.ShiftName = user.Employee.Shift.Name
+				resp.ShiftStartTime = user.Employee.Shift.StartTime
+				resp.ShiftEndTime = user.Employee.Shift.EndTime
+			}
+		} else {
+			resp.FullName = "Super Administrator"
+		}
+
+		parsedData, err := json.Marshal(resp)
+		if err != nil {
+			return nil, err
+		}
+
+		err = s.cache.Set(context.Background(), cacheKey, parsedData, 24*time.Hour)
+		if err != nil {
+			return nil, err
+		}
+
+		return resp, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	var resp UserProfileResponse
+	err = json.Unmarshal([]byte(cacheData), &resp)
 	if err != nil {
 		return nil, err
 	}
 
-	resp := &UserProfileResponse{
-		ID:                 user.ID,
-		Username:           user.Username,
-		MustChangePassword: user.MustChangePassword,
-	}
-	
-	if user.Role != nil {
-		resp.Role = user.Role.Name
-	}
-
-	if user.Employee != nil {
-		resp.FullName = user.Employee.FullName
-		resp.NIK = user.Employee.NIK
-		resp.PhoneNumber = user.Employee.PhoneNumber
-		resp.ProfilePictureUrl = user.Employee.ProfilePictureUrl
-		resp.BankName = user.Employee.BankName
-		resp.BaseSalary = user.Employee.BaseSalary
-		resp.BankAccountNumber = user.Employee.BankAccountNumber
-		resp.BankAccountHolder = user.Employee.BankAccountHolder
-		resp.NPWP = user.Employee.NPWP
-		resp.Email = user.Employee.Email
-
-		if user.Employee.Department != nil {
-			resp.DepartmentName = user.Employee.Department.Name
-		}
-		if user.Employee.Shift != nil {
-			resp.ShiftName = user.Employee.Shift.Name
-			resp.ShiftStartTime = user.Employee.Shift.StartTime
-			resp.ShiftEndTime = user.Employee.Shift.EndTime
-		}
-	} else {
-		resp.FullName = "Super Administrator"
-	}
-
-	return resp, nil
+	return &resp, nil
 }
 
 func (s *service) UpdateProfile(ctx context.Context, userID uint, req *UpdateProfileRequest, file *multipart.FileHeader) error {
@@ -91,7 +120,17 @@ func (s *service) UpdateProfile(ctx context.Context, userID uint, req *UpdatePro
 		return err
 	}
 
-	return s.repo.UpdateEmployee(ctx, user.Employee)
+	err = s.repo.UpdateEmployee(ctx, user.Employee)
+	if err != nil {
+		return err
+	}
+
+	err = s.cache.Del(ctx, fmt.Sprintf(constants.USER_CACHE_KEY, userID))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *service) ChangePassword(ctx context.Context, userID uint, req *ChangePasswordRequest) error {
@@ -112,7 +151,17 @@ func (s *service) ChangePassword(ctx context.Context, userID uint, req *ChangePa
 	user.PasswordHash = hashedPassword
 	user.MustChangePassword = false
 
-	return s.repo.UpdateUser(ctx, user)
+	err = s.repo.UpdateUser(ctx, user)
+	if err != nil {
+		return err
+	}
+
+	err = s.cache.Del(ctx, fmt.Sprintf(constants.USER_CACHE_KEY, userID))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *service) GetAllEmployees(ctx context.Context, page, limit int, search string) ([]EmployeeListResponse, *response.Meta, error) {

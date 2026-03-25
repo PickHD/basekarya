@@ -1,6 +1,7 @@
 package rbac
 
 import (
+	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/utils"
 	"context"
 
@@ -98,7 +99,7 @@ func (r *repository) FindAllPermissions(ctx context.Context) ([]Permission, erro
 
 	var permissions []Permission
 
-	err := db.Find(&permissions).Error
+	err := db.Where("name != ?", constants.VIEW_PERMISSION).Find(&permissions).Error
 	if err != nil {
 		return nil, err
 	}

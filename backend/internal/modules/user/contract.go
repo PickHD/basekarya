@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"mime/multipart"
+	"time"
 )
 
 type Hasher interface {
@@ -16,4 +17,10 @@ type StorageProvider interface {
 
 type LeaveBalanceGenerator interface {
 	GenerateInitialBalance(ctx context.Context, employeeID uint) error
+}
+
+type CacheProvider interface {
+	Get(ctx context.Context, key string) (string, error)
+	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
+	Del(ctx context.Context, key string) error
 }
