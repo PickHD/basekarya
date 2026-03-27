@@ -1,9 +1,9 @@
 package notification
 
 import (
+	"basekarya-backend/internal/infrastructure"
 	"context"
 	"encoding/json"
-	"basekarya-backend/internal/infrastructure"
 )
 
 type Service interface {
@@ -14,6 +14,10 @@ type Service interface {
 	GetList(ctx context.Context, userID uint) ([]NotificationListResponse, error)
 	MarkAsRead(ctx context.Context, id uint) error
 	DeleteReadOlderThan(days int) error
+	BlastNotification(userIDs []uint,
+		Type string,
+		Title string,
+		Message string, relatedID uint) error
 }
 
 type service struct {
@@ -107,4 +111,57 @@ func (s *service) MarkAsRead(ctx context.Context, id uint) error {
 
 func (s *service) DeleteReadOlderThan(days int) error {
 	return s.repo.DeleteReadOlderThan(days)
+}
+
+func (s *service) BlastNotification(userIDs []uint,
+	notifType string,
+	title string,
+	message string,
+	relatedID uint) error {
+
+	if len(userIDs) == 0 {
+		return nil
+	}
+
+	var notifications []*Notification
+	for _, userID := range userIDs {
+		notifications = append(notifications, &Notification{
+			UserID:    userID,
+			Type:      notifType,
+			Title:     title,
+			Message:   message,
+			RelatedID: relatedID,
+			IsRead:    false,
+		})
+	}
+
+	err := s.repo.CreateBatch(context.Background(), notifications)
+	if err != nil {
+		return err
+	}
+
+	// Construct messages for pipelined WebSocket broadcast
+	var wsMessages []infrastructure.Message
+	for _, notification := range notifications {
+		payload := NotificationRequest{
+			ID:        notification.ID,
+			UserID:    notification.UserID,
+			Type:      notifType,
+			Title:     title,
+			Message:   message,
+			RelatedID: relatedID,
+		}
+
+		data, err := json.Marshal(&payload)
+		if err == nil {
+			wsMessages = append(wsMessages, infrastructure.Message{
+				TargetUserID: payload.UserID,
+				Data:         data,
+			})
+		}
+	}
+
+	s.wsHub.BroadcastPipelined(wsMessages)
+
+	return nil
 }

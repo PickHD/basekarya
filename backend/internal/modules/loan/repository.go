@@ -54,6 +54,7 @@ func (r *repository) FindActiveLoanByUserID(ctx context.Context, userID uint) (*
 		Where("user_id = ?", userID).
 		Where("remaining_amount > 0").
 		Where("status != ?", string(constants.LoanStatusPaidOff)).
+		Where("status != ?", string(constants.LoanStatusRejected)).
 		First(&loan).Error
 	if err != nil {
 		return nil, err

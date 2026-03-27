@@ -73,14 +73,14 @@ func (s *service) Create(ctx context.Context, req *OvertimeRequest) error {
 			return err
 		}
 
-		adminID, err := s.user.FindAdminID(ctx)
+		approvalUserIDs, err := s.user.FindApprovalUsers(ctx, string(constants.APPROVAL_OVERTIME))
 		if err != nil {
 			return err
 		}
 
 		go func() {
-			_ = s.notification.SendNotification(
-				adminID,
+			_ = s.notification.BlastNotification(
+				approvalUserIDs,
 				string(constants.NotificationTypeOvertimeApprovalReq),
 				"Pengajuan Lembur Baru",
 				fmt.Sprintf("Karyawan mengajukan lembur selama %d menit", durationMinutes),

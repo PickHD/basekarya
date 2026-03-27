@@ -19,6 +19,7 @@ type UserProfileResponse struct {
 	NPWP               string  `json:"npwp"`
 	Email              string  `json:"email"`
 	BaseSalary         float64 `json:"base_salary"`
+	Position           string  `json:"position"`
 }
 
 type UpdateProfileRequest struct {
@@ -44,8 +45,10 @@ type EmployeeListResponse struct {
 	Username       string  `json:"username"`
 	DepartmentName string  `json:"department_name"`
 	ShiftName      string  `json:"shift_name"`
+	RoleID         uint    `json:"role_id"`
 	BaseSalary     float64 `json:"base_salary"`
 	Email          string  `json:"email"`
+	Position       string  `json:"position"`
 }
 
 type CreateEmployeeRequest struct {
@@ -54,8 +57,10 @@ type CreateEmployeeRequest struct {
 	NIK          string  `json:"nik" validate:"required"`
 	DepartmentID uint    `json:"department_id" validate:"required"`
 	ShiftID      uint    `json:"shift_id" validate:"required"`
+	RoleID       uint    `json:"role_id" validate:"required"`
 	BaseSalary   float64 `json:"base_salary" validate:"required"`
 	Email        string  `json:"email" validate:"required"`
+	Position     string  `json:"position" validate:"required,min=3,max=100"`
 }
 
 type UpdateEmployeeRequest struct {
@@ -63,6 +68,8 @@ type UpdateEmployeeRequest struct {
 	NIK          string  `json:"nik"`
 	DepartmentID uint    `json:"department_id"`
 	ShiftID      uint    `json:"shift_id"`
+	RoleID       uint    `json:"role_id"`
 	BaseSalary   float64 `json:"base_salary"`
 	Email        string  `json:"email"`
+	Position     string  `json:"position"`
 }

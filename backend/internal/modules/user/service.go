@@ -68,6 +68,7 @@ func (s *service) GetProfile(userID uint) (*UserProfileResponse, error) {
 			resp.BankAccountHolder = user.Employee.BankAccountHolder
 			resp.NPWP = user.Employee.NPWP
 			resp.Email = user.Employee.Email
+			resp.Position = user.Employee.Position
 
 			if user.Employee.Department != nil {
 				resp.DepartmentName = user.Employee.Department.Name
@@ -198,8 +199,10 @@ func (s *service) GetAllEmployees(ctx context.Context, page, limit int, search s
 				Username:       u.Username,
 				DepartmentName: deptName,
 				ShiftName:      shiftName,
+				RoleID:         u.Role.ID,
 				BaseSalary:     baseSalary,
 				Email:          u.Employee.Email,
+				Position:       u.Employee.Position,
 			})
 		}
 	}
@@ -217,10 +220,9 @@ func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest
 
 		hashPass, _ := s.bcrypt.HashPassword(req.Username)
 
-		// Fetch EMPLOYEE role
-		role, err := s.repo.FindRoleByName(ctx, string(constants.UserRoleEmployee))
+		role, err := s.repo.FindRoleByID(ctx, req.RoleID)
 		if err != nil {
-			return errors.New("employee role not found")
+			return errors.New("role not found")
 		}
 
 		newUser := User{
@@ -242,6 +244,7 @@ func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest
 			ShiftID:      req.ShiftID,
 			BaseSalary:   req.BaseSalary,
 			Email:        req.Email,
+			Position:     req.Position,
 		}
 
 		if err := s.repo.CreateEmployee(ctx, &newEmp); err != nil {
@@ -280,6 +283,9 @@ func (s *service) UpdateEmployee(ctx context.Context, id uint, req *UpdateEmploy
 	}
 	if req.Email != "" {
 		emp.Email = req.Email
+	}
+	if req.Position != "" {
+		emp.Position = req.Position
 	}
 
 	return s.repo.UpdateEmployee(ctx, emp)
