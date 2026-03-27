@@ -132,6 +132,7 @@ export default function EmployeeListPage() {
                       <TableHead>Name</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Shift</TableHead>
+                      <TableHead>Position</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -145,6 +146,7 @@ export default function EmployeeListPage() {
                         </TableCell>
                         <TableCell>{emp.department_name}</TableCell>
                         <TableCell>{emp.shift_name}</TableCell>
+                        <TableCell>{emp.position}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button

@@ -9,12 +9,12 @@ import (
 type User struct {
 	ID                 uint      `gorm:"primaryKey" json:"id"`
 	Username           string    `gorm:"unique;not null" json:"username"`
-	PasswordHash       string      `json:"-"`
-	RoleID             uint        `gorm:"not null" json:"role_id"`
-	MustChangePassword bool        `json:"must_change_password"`
-	IsActive           bool        `gorm:"default:true" json:"is_active"`
-	CreatedAt          time.Time   `json:"created_at"`
-	UpdatedAt          time.Time   `json:"updated_at"`
+	PasswordHash       string    `json:"-"`
+	RoleID             uint      `gorm:"not null" json:"role_id"`
+	MustChangePassword bool      `json:"must_change_password"`
+	IsActive           bool      `gorm:"default:true" json:"is_active"`
+	CreatedAt          time.Time `json:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at"`
 
 	Role     *rbac.Role `gorm:"foreignKey:RoleID" json:"role,omitempty"`
 	Employee *Employee  `gorm:"foreignKey:UserID;references:ID" json:"employee,omitempty"`
@@ -29,6 +29,7 @@ type Employee struct {
 	FullName          string `json:"full_name"`
 	PhoneNumber       string `json:"phone_number"`
 	ProfilePictureUrl string `json:"profile_picture_url"`
+	Position          string `json:"position"`
 
 	BaseSalary float64 `gorm:"type:decimal(15,2);default:0" json:"base_salary"`
 

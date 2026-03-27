@@ -32,6 +32,7 @@ import {
   useDepartments,
   useShifts,
 } from "@/features/admin/hooks/useMasterData";
+import { useRoles } from "@/features/role/hooks/useRole";
 
 const formSchema = z.object({
   username: z.string().min(3, "Username minimal atleast 3 characters"),
@@ -46,6 +47,8 @@ const formSchema = z.object({
   department_id: z.string().min(1, "Select Dept."),
 
   shift_id: z.string().min(1, "Select shift."),
+
+  role_id: z.string().min(1, "Select Role."),
 
   base_salary: z.preprocess(
     (val) => {
@@ -67,6 +70,8 @@ const formSchema = z.object({
       /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
       "Invalid email format",
     ),
+
+  position: z.string().min(1, "Position is required"),
 });
 
 interface EmployeeFormDialogProps {
@@ -88,6 +93,7 @@ export function EmployeeFormDialog({
 
   const { data: departments, isLoading: deptLoading } = useDepartments();
   const { data: shifts, isLoading: shiftLoading } = useShifts();
+  const { data: roles, isLoading: roleLoading } = useRoles();
 
   const form = useForm<any>({
     resolver: zodResolver(formSchema),
@@ -97,8 +103,10 @@ export function EmployeeFormDialog({
       nik: "",
       department_id: "",
       shift_id: "",
+      role_id: "",
       base_salary: 0,
       email: "",
+      position:""
     },
   });
 
@@ -110,9 +118,11 @@ export function EmployeeFormDialog({
           full_name: employeeToEdit.full_name,
           nik: employeeToEdit.nik,
           department_id: employeeToEdit.department_name === "Umum" ? "1" : "2",
+          role_id: employeeToEdit.role_id,
           shift_id: "1",
           base_salary: employeeToEdit.base_salary,
           email: employeeToEdit.email,
+          position: employeeToEdit.position,
         });
       } else {
         form.reset({
@@ -121,8 +131,10 @@ export function EmployeeFormDialog({
           nik: "",
           department_id: "",
           shift_id: "",
+          role_id:"",
           base_salary: 0,
           email: "",
+          position:""
         });
       }
     }
@@ -136,7 +148,7 @@ export function EmployeeFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto rounded-lg p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? "Edit Employee" : "Add New Employee"}
@@ -152,8 +164,10 @@ export function EmployeeFormDialog({
                 nik: values.nik,
                 department_id: Number(values.department_id),
                 shift_id: Number(values.shift_id),
+                role_id: Number(values.role_id),
                 base_salary: Number(values.base_salary),
                 email: values.email,
+                position: values.position
               };
               onSubmit(payload);
             })}
@@ -277,6 +291,41 @@ export function EmployeeFormDialog({
 
             <FormField
               control={form.control}
+              name="role_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={
+                      field.value ? String(field.value) : undefined
+                    }
+                    value={field.value ? String(field.value) : undefined}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            roleLoading ? "Loading..." : "Select Role"
+                          }
+                        />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {roles?.data?.map((role) => (
+                        <SelectItem key={role.id} value={String(role.id)}>
+                          {role.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
               name="base_salary"
               render={({ field }) => (
                 <FormItem>
@@ -308,6 +357,20 @@ export function EmployeeFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="position"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Position</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>

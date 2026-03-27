@@ -10,6 +10,7 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, notification *Notification) error
+	CreateBatch(ctx context.Context, notifications []*Notification) error
 	FindByID(id uint) (*Notification, error)
 	FindAllByUserID(userID uint) ([]Notification, error)
 	MarkAsRead(id uint) error
@@ -27,6 +28,11 @@ func NewRepository(db *gorm.DB) Repository {
 func (r *repository) Create(ctx context.Context, notification *Notification) error {
 	db := utils.GetDBFromContext(ctx, r.db)
 	return db.Create(notification).Error
+}
+
+func (r *repository) CreateBatch(ctx context.Context, notifications []*Notification) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	return db.Create(&notifications).Error
 }
 
 func (r *repository) FindByID(id uint) (*Notification, error) {

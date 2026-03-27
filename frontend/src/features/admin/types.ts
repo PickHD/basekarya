@@ -5,8 +5,10 @@ export interface Employee {
   username: string;
   department_name: string;
   shift_name: string;
+  role_id: string;
   base_salary: number;
   email: string;
+  position: string;
 }
 
 export interface AttendanceRecap {
@@ -28,8 +30,10 @@ export interface CreateEmployeePayload {
   nik: string;
   department_id: number;
   shift_id: number;
+  role_id: number;
   base_salary: number;
   email: string;
+  position: string;
 }
 
 export interface LookupItem {

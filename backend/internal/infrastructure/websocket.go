@@ -119,6 +119,29 @@ func (h *Hub) SendToUser(userID uint, payload []byte) {
 	h.RedisClient.Publish(context.Background(), constants.RedisBroadcastChannel, data)
 }
 
+func (h *Hub) BroadcastPipelined(messages []Message) {
+	if len(messages) == 0 {
+		return
+	}
+
+	ctx := context.Background()
+	pipe := h.RedisClient.Pipeline()
+
+	for _, msg := range messages {
+		data, err := json.Marshal(msg)
+		if err != nil {
+			logger.Errorw("[WS] Pipelined: Failed to marshal message", err)
+			continue
+		}
+		pipe.Publish(ctx, constants.RedisBroadcastChannel, data)
+	}
+
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		logger.Errorw("[WS] Failed to execute redis pipeline", err)
+	}
+}
+
 func (c *Client) WritePump() {
 	ticker := time.NewTicker(constants.PingPeriod)
 	defer func() {

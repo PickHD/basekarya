@@ -1,0 +1,2 @@
+ALTER TABLE employees
+ADD COLUMN position VARCHAR(255) NULL;

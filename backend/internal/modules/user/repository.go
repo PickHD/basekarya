@@ -22,8 +22,8 @@ type Repository interface {
 	FindEmployeeByID(ctx context.Context, id uint) (*Employee, error)
 	CountActiveEmployee(ctx context.Context) (int64, error)
 	FindAllEmployeeActive(ctx context.Context) ([]Employee, error)
-	FindAdminID(ctx context.Context) (uint, error)
-	FindRoleByName(ctx context.Context, name string) (*rbac.Role, error)
+	FindApprovalUsers(ctx context.Context, permissionApprovalName string) ([]uint, error)
+	FindRoleByID(ctx context.Context, id uint) (*rbac.Role, error)
 }
 
 type repository struct {
@@ -154,28 +154,30 @@ func (r *repository) FindAllEmployeeActive(ctx context.Context) ([]Employee, err
 	return employees, nil
 }
 
-func (r *repository) FindAdminID(ctx context.Context) (uint, error) {
+func (r *repository) FindApprovalUsers(ctx context.Context, permissionApprovalName string) ([]uint, error) {
 	db := utils.GetDBFromContext(ctx, r.db)
-	var id uint
+	var ids []uint
 	err := db.Model(&User{}).
 		Joins("JOIN roles ON roles.id = users.role_id").
-		Where("roles.name = ?", string(constants.UserRoleSuperadmin)).
+		Joins("JOIN role_permissions ON role_permissions.role_id = roles.id").
+		Joins("JOIN permissions ON permissions.id = role_permissions.permission_id").
+		Where("permissions.name = ?", permissionApprovalName).
 		Select("users.id").
-		Scan(&id).Error
+		Scan(&ids).Error
 
 	if err != nil {
-		logger.Errorw("UserRepository.FindAdminID ERROR: ", err)
+		logger.Errorw("UserRepository.FindApprovalUsers ERROR: ", err)
 
-		return 0, err
+		return nil, err
 	}
 
-	return id, nil
+	return ids, nil
 }
 
-func (r *repository) FindRoleByName(ctx context.Context, name string) (*rbac.Role, error) {
+func (r *repository) FindRoleByID(ctx context.Context, id uint) (*rbac.Role, error) {
 	db := utils.GetDBFromContext(ctx, r.db)
 	var role rbac.Role
-	err := db.Where("name = ?", name).First(&role).Error
+	err := db.First(&role, id).Error
 	if err != nil {
 		return nil, err
 	}

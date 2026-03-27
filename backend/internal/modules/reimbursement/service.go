@@ -70,15 +70,14 @@ func (s *service) Create(ctx context.Context, req *ReimbursementRequest) error {
 			return err
 		}
 
-		adminID, err := s.user.FindAdminID(ctx)
+		approvalUserIDs, err := s.user.FindApprovalUsers(ctx, string(constants.APPROVAL_REIMBURSEMENT))
 		if err != nil {
 			return err
 		}
 
-		// send notification to admin
 		go func() {
-			_ = s.notification.SendNotification(
-				adminID,
+			_ = s.notification.BlastNotification(
+				approvalUserIDs,
 				string(constants.NotificationTypeReimburseApprovalReq),
 				"Pengajuan Reimbursement Baru",
 				fmt.Sprintf("Karyawan mengajukan reimburse pada tanggal %s", req.Date),

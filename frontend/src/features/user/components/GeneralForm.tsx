@@ -57,6 +57,7 @@ const generalSchema = z.object({
       /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
       "Invalid email format",
     ),
+  position: z.string().min(3, "Position minimum at least 3 characters"),
 });
 
 interface GeneralFormProps {
@@ -78,6 +79,7 @@ export function GeneralForm({ user }: GeneralFormProps) {
       bank_account_holder: user.bank_account_holder || "",
       npwp: user.npwp || "",
       email: user.email || "",
+      position: user.position || "",
     },
   });
 
@@ -233,6 +235,19 @@ export function GeneralForm({ user }: GeneralFormProps) {
                 <Input placeholder="test@gmail.." {...field} />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="position"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Position</FormLabel>
+              <FormControl>
+                <Input placeholder="Position" disabled={true} {...field} />
+              </FormControl>
             </FormItem>
           )}
         />

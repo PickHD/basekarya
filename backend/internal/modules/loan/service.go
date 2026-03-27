@@ -65,14 +65,14 @@ func (s *service) Create(ctx context.Context, req *LoanRequest) error {
 			return err
 		}
 
-		adminID, err := s.user.FindAdminID(ctx)
+		approvalUserIDs, err := s.user.FindApprovalUsers(ctx, string(constants.APPROVAL_LOAN))
 		if err != nil {
 			return err
 		}
 
 		go func() {
-			_ = s.notification.SendNotification(
-				adminID,
+			_ = s.notification.BlastNotification(
+				approvalUserIDs,
 				string(constants.NotificationTypeLoanApprovalReq),
 				"Pengajuan Kasbon Baru",
 				fmt.Sprintf("Karyawan mengajukan kasbon dengan total Rp.%2.f", req.TotalAmount),

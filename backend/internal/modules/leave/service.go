@@ -104,15 +104,14 @@ func (s *service) Apply(ctx context.Context, req *ApplyRequest) error {
 			return err
 		}
 
-		adminID, err := s.user.FindAdminID(ctx)
+		approvalUserIDs, err := s.user.FindApprovalUsers(ctx, string(constants.APPROVAL_LEAVE))
 		if err != nil {
 			return err
 		}
 
-		// send notification to admin
 		go func() {
-			_ = s.notification.SendNotification(
-				adminID,
+			_ = s.notification.BlastNotification(
+				approvalUserIDs,
 				string(constants.NotificationTypeLeaveApprovalReq),
 				"Pengajuan Cuti Baru",
 				fmt.Sprintf("Karyawan mengajukan cuti pada tanggal %s s.d %s", req.StartDate, req.EndDate),
