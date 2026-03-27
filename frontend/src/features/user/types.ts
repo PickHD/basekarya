@@ -16,6 +16,7 @@ export interface UserProfile {
   bank_account_holder: string;
   npwp: string;
   email: string;
+  position: string;
 }
 
 export interface PasswordPayload {
