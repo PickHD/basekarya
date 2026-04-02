@@ -2,7 +2,7 @@ package constants
 
 const (
 	// permission
-	VIEW_PERMISSION   = "VIEW_PERMISSION"
+	VIEW_PERMISSION = "VIEW_PERMISSION"
 
 	// role
 	CREATE_ROLE = "CREATE_ROLE"
@@ -63,4 +63,7 @@ const (
 	// company
 	VIEW_COMPANY   = "VIEW_COMPANY"
 	UPDATE_COMPANY = "UPDATE_COMPANY"
+
+	// event
+	CREATE_ANNOUNCEMENT = "CREATE_ANNOUNCEMENT"
 )

@@ -10,11 +10,18 @@ import {
   CreditCard,
   Clock,
   ShieldAlert,
+  Megaphone,
 } from "lucide-react";
 import type { MenuItem } from "./types";
 import { PERMISSIONS } from "./permissions";
 
 export const menuItems: MenuItem[] = [
+  {
+    title: "Announcements",
+    href: "/admin/announcements",
+    icon: Megaphone,
+    permission: PERMISSIONS.CREATE_ANNOUNCEMENT
+  },
   {
     title: "Attendance Recap",
     href: "/admin/recap",

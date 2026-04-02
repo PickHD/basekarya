@@ -129,6 +129,7 @@ export const LoanList = () => {
                   <option value="PENDING">Pending</option>
                   <option value="APPROVED">Approved</option>
                   <option value="REJECTED">Rejected</option>
+                  <option value="PAID_OFF">Paid Off</option>
                 </select>
               </div>
             </div>

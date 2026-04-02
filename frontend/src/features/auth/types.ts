@@ -17,3 +17,23 @@ export interface DecodedToken {
   permissions: string[];
   exp: number;
 }
+
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface VerifyOTPPayload {
+  code: string;
+}
+
+export interface VerifyOTPResponse {
+  message: string;
+  data: {
+    is_valid: boolean;
+  };
+}
+
+export interface ResetPasswordPayload {
+  code: string;
+  password: string;
+}

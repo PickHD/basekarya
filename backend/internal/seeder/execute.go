@@ -117,6 +117,9 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 			// company
 			constants.VIEW_COMPANY,
 			constants.UPDATE_COMPANY,
+
+			// announcement
+			constants.CREATE_ANNOUNCEMENT,
 		}
 
 		var permissionIDs []uint

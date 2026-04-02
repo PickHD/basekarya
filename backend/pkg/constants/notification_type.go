@@ -11,4 +11,5 @@ const (
 	NotificationTypePayrollPaid          NotificationType = "PAYROLL_PAID"
 	NotificationTypeLoanApprovalReq      NotificationType = "LOAN_APPROVAL_REQ"
 	NotificationTypeOvertimeApprovalReq  NotificationType = "OVERTIME_APPROVAL_REQ"
+	NotificationTypeAnnouncement         NotificationType = "ANNOUNCEMENT"
 )

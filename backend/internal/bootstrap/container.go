@@ -4,6 +4,7 @@ import (
 	"basekarya-backend/internal/config"
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/internal/middleware"
+	"basekarya-backend/internal/modules/announcement"
 	"basekarya-backend/internal/modules/attendance"
 	"basekarya-backend/internal/modules/auth"
 	"basekarya-backend/internal/modules/company"
@@ -44,6 +45,7 @@ type Container struct {
 	LoanHandler          *loan.Handler
 	OvertimeHandler      *overtime.Handler
 	RbacHandler          *rbac.Handler
+	AnnouncementHandler  *announcement.Handler
 
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
@@ -86,7 +88,7 @@ func NewContainer() (*Container, error) {
 
 	healthSvc := health.NewService(healthRepo)
 	notificationSvc := notification.NewService(wsHub, notificationRepo)
-	authSvc := auth.NewService(userRepo, bcrypt, jwt)
+	authSvc := auth.NewService(userRepo, bcrypt, jwt, redis, email)
 	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeWorker, transactionManager, excel)
 	masterSvc := master.NewService(masterRepo, redis)
 	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo, notificationSvc, transactionManager, httpClient.GetClient(), email, loanRepo, overtimeRepo)
@@ -97,6 +99,7 @@ func NewContainer() (*Container, error) {
 	loanSvc := loan.NewService(loanRepo, notificationSvc, userRepo, transactionManager, excel)
 	overtimeSvc := overtime.NewService(overtimeRepo, notificationSvc, userRepo, transactionManager, excel)
 	rbacSvc := rbac.NewService(rbacRepo, redis, transactionManager)
+	announcementSvc := announcement.NewService(userRepo, notificationSvc)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)
@@ -111,6 +114,7 @@ func NewContainer() (*Container, error) {
 	loanHandler := loan.NewHandler(loanSvc)
 	overtimeHandler := overtime.NewHandler(overtimeSvc)
 	rbacHandler := rbac.NewHandler(rbacSvc)
+	announcementHandler := announcement.NewHandler(announcementSvc)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 	rateLimiterMiddleware := middleware.NewRateLimiterMiddleware()
@@ -143,6 +147,7 @@ func NewContainer() (*Container, error) {
 		LoanHandler:          loanHandler,
 		OvertimeHandler:      overtimeHandler,
 		RbacHandler:          rbacHandler,
+		AnnouncementHandler:  announcementHandler,
 
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,

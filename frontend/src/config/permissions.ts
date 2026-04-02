@@ -59,6 +59,9 @@ export const PERMISSIONS = {
   // company
   VIEW_COMPANY: "VIEW_COMPANY",
   UPDATE_COMPANY: "UPDATE_COMPANY",
+
+  // announcement
+  CREATE_ANNOUNCEMENT: "CREATE_ANNOUNCEMENT",
 } as const;
 
 export type Permission = keyof typeof PERMISSIONS;
