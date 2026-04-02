@@ -1,8 +1,7 @@
 import { Building2 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { LoginForm } from "@/features/auth/components/LoginForm";
+import { VerifyOTPForm } from "@/features/auth/components/VerifyOTPForm";
 
-export default function LoginPage() {
+export default function VerifyOTPPage() {
   return (
     <div className="min-h-screen w-full flex bg-white">
       <div className="hidden md:flex w-1/2 bg-slate-950 relative overflow-hidden items-center justify-center p-12">
@@ -29,23 +28,7 @@ export default function LoginPage() {
 
       <div className="flex w-full md:w-1/2 flex-col items-center justify-center p-8 lg:p-24 bg-white">
         <div className="w-full max-w-md space-y-8 flex flex-col justify-center h-full">
-          <div className="flex flex-col space-y-2 text-left">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-950">
-              Login
-            </h2>
-            <p className="text-sm text-slate-500">
-              Silahkan masukkan kredensial Anda untuk mengakses dashboard.
-            </p>
-          </div>
-
-          <div className="mt-8">
-            <LoginForm />
-            <div className="mt-6 text-center text-sm">
-              <Link to="/forgot-password" className="text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200">
-                Lupa Kata Sandi?
-              </Link>
-            </div>
-          </div>
+          <VerifyOTPForm />
 
           <p className="px-8 text-center text-sm text-slate-500 w-full mt-auto">
             BaseKarya v2.8 &copy; 2026.

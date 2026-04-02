@@ -2,7 +2,14 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { toast } from "sonner";
-import type { LoginPayload, LoginResponse } from "@/features/auth/types";
+import type {
+  LoginPayload,
+  LoginResponse,
+  ForgotPasswordPayload,
+  VerifyOTPPayload,
+  VerifyOTPResponse,
+  ResetPasswordPayload,
+} from "@/features/auth/types";
 
 export const useLogin = () => {
   return useMutation({
@@ -68,4 +75,79 @@ export const useLogout = () => {
   };
 
   return { logout };
+};
+
+export const useForgotPassword = () => {
+  return useMutation({
+    mutationFn: async (payload: ForgotPasswordPayload) => {
+      const { data } = await api.post("/auth/forgot-password", payload);
+      return data;
+    },
+    onError: (error: any) => {
+      const responseData = error.response?.data;
+      let description = responseData?.message || "Gagal mengirim OTP";
+
+      if (responseData?.error) {
+         if (responseData.error.message) {
+          description = responseData.error.message;
+        } else if (typeof responseData.error === "string") {
+          description = responseData.error;
+        }
+      }
+
+      toast.error("Gagal", {
+        description: description,
+      });
+    },
+  });
+};
+
+export const useVerifyOTP = () => {
+  return useMutation({
+    mutationFn: async (payload: VerifyOTPPayload) => {
+      const { data } = await api.post<VerifyOTPResponse>("/auth/verify-otp", payload);
+      return data;
+    },
+    onError: (error: any) => {
+      const responseData = error.response?.data;
+      let description = responseData?.message || "Gagal verifikasi OTP";
+
+      if (responseData?.error) {
+         if (responseData.error.message) {
+          description = responseData.error.message;
+        } else if (typeof responseData.error === "string") {
+          description = responseData.error;
+        }
+      }
+
+      toast.error("Gagal", {
+        description: description,
+      });
+    },
+  });
+};
+
+export const useResetPassword = () => {
+  return useMutation({
+    mutationFn: async (payload: ResetPasswordPayload) => {
+      const { data } = await api.post("/auth/reset-password", payload);
+      return data;
+    },
+    onError: (error: any) => {
+      const responseData = error.response?.data;
+      let description = responseData?.message || "Gagal mereset kata sandi";
+
+      if (responseData?.error) {
+         if (responseData.error.message) {
+          description = responseData.error.message;
+        } else if (typeof responseData.error === "string") {
+          description = responseData.error;
+        }
+      }
+
+      toast.error("Gagal", {
+        description: description,
+      });
+    },
+  });
 };
