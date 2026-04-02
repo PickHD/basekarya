@@ -26,6 +26,7 @@ type Repository interface {
 	FindAllEmployeeActive(ctx context.Context) ([]Employee, error)
 	FindApprovalUsers(ctx context.Context, permissionApprovalName string) ([]uint, error)
 	FindRoleByID(ctx context.Context, id uint) (*rbac.Role, error)
+	FindAllUserIDs(ctx context.Context) ([]uint, error)
 }
 
 type repository struct {
@@ -201,4 +202,17 @@ func (r *repository) FindRoleByID(ctx context.Context, id uint) (*rbac.Role, err
 		return nil, err
 	}
 	return &role, nil
+}
+
+func (r *repository) FindAllUserIDs(ctx context.Context) ([]uint, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
+	var ids []uint
+	err := db.Model(&User{}).
+		Select("id").
+		Scan(&ids).Error
+	if err != nil {
+		logger.Errorw("UserRepository.FindAllUserIDs ERROR: ", err)
+		return nil, err
+	}
+	return ids, nil
 }
