@@ -1,10 +1,10 @@
 package infrastructure
 
 import (
-	"encoding/json"
-	"fmt"
 	"basekarya-backend/internal/config"
 	"basekarya-backend/pkg/logger"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -42,7 +42,7 @@ func (n *NominatimFetcher) GetAddressFromCoords(lat, long float64) string {
 			return fmt.Sprintf("%f, %f", lat, long)
 		}
 
-		req.Header.Set("User-Agent", "HRIS-App-Backend/2.5.1 (taufik@januar35@gmail.com)")
+		req.Header.Set("User-Agent", "HRIS-App-Backend/2.8.2 (taufik@januar35@gmail.com)")
 
 		resp, err := n.client.Do(req)
 		if err != nil {

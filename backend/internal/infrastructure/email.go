@@ -1,8 +1,8 @@
 package infrastructure
 
 import (
-	"fmt"
 	"basekarya-backend/internal/config"
+	"fmt"
 	"io"
 
 	"gopkg.in/gomail.v2"
@@ -32,6 +32,16 @@ func (e *EmailProvider) SendWithAttachment(to, subject, htmlBody, fileName strin
 		_, err := w.Write(attachmentBytes)
 		return err
 	}))
+
+	return e.dialer.DialAndSend(m)
+}
+
+func (e *EmailProvider) Send(to, subject, htmlBody string) error {
+	m := gomail.NewMessage()
+	m.SetHeader("From", fmt.Sprintf("HRIS System <%s>", e.from))
+	m.SetHeader("To", to)
+	m.SetHeader("Subject", subject)
+	m.SetBody("text/html", htmlBody)
 
 	return e.dialer.DialAndSend(m)
 }

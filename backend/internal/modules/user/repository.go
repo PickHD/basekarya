@@ -20,6 +20,8 @@ type Repository interface {
 	CreateEmployee(ctx context.Context, emp *Employee) error
 	DeleteUser(ctx context.Context, id uint) error
 	FindEmployeeByID(ctx context.Context, id uint) (*Employee, error)
+	FindEmployeeByEmail(ctx context.Context, email string) (*Employee, error)
+	UpdatePasswordByEmail(ctx context.Context, email string, password string) error
 	CountActiveEmployee(ctx context.Context) (int64, error)
 	FindAllEmployeeActive(ctx context.Context) ([]Employee, error)
 	FindApprovalUsers(ctx context.Context, permissionApprovalName string) ([]uint, error)
@@ -120,6 +122,23 @@ func (r *repository) FindEmployeeByID(ctx context.Context, id uint) (*Employee, 
 	var emp Employee
 	err := db.Preload("User").First(&emp, id).Error
 	return &emp, err
+}
+
+func (r *repository) FindEmployeeByEmail(ctx context.Context, email string) (*Employee, error) {
+	db := utils.GetDBFromContext(ctx, r.db)
+	var emp Employee
+	err := db.Preload("User").Where("email = ?", email).First(&emp).Error
+	return &emp, err
+}
+
+func (r *repository) UpdatePasswordByEmail(ctx context.Context, email string, password string) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	var emp Employee
+	err := db.Preload("User").Where("email = ?", email).First(&emp).Error
+	if err != nil {
+		return err
+	}
+	return db.Model(&User{}).Where("id = ?", emp.User.ID).Update("password_hash", password).Error
 }
 
 func (r *repository) CountActiveEmployee(ctx context.Context) (int64, error) {

@@ -86,7 +86,7 @@ func NewContainer() (*Container, error) {
 
 	healthSvc := health.NewService(healthRepo)
 	notificationSvc := notification.NewService(wsHub, notificationRepo)
-	authSvc := auth.NewService(userRepo, bcrypt, jwt)
+	authSvc := auth.NewService(userRepo, bcrypt, jwt, redis, email)
 	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeWorker, transactionManager, excel)
 	masterSvc := master.NewService(masterRepo, redis)
 	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo, notificationSvc, transactionManager, httpClient.GetClient(), email, loanRepo, overtimeRepo)
