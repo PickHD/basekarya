@@ -102,6 +102,9 @@ export const useWebSocket = () => {
             case "REIMBURSE_APPROVAL_REQ":
               toast.info(title, { description: message, duration: 3000 });
               break;
+            case "ANNOUNCEMENT":
+              toast.info(title, { description: message, duration: 3000 });
+              break;
             default:
               toast(title, { description: message });
               break;

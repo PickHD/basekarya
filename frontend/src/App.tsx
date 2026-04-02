@@ -22,6 +22,7 @@ import OvertimeListPage from "@/pages/overtime/OvertimeListPage";
 // Pages - Admin
 import EmployeeListPage from "@/pages/admin/EmployeeListPage";
 import AttendanceRecapPage from "@/pages/admin/AttendanceRecapPage";
+import AnnouncementPage from "@/pages/admin/AnnouncementPage";
 import PayrollListPage from "@/pages/payroll/PayrollListPage";
 import LeaveListPage from "@/pages/leave/LeaveListPage";
 import CompanySettingsPage from "@/pages/admin/CompanySettingsPage";
@@ -116,12 +117,14 @@ function App() {
               PERMISSIONS.VIEW_ATTENDANCE,
               PERMISSIONS.VIEW_PAYROLL,
               PERMISSIONS.VIEW_COMPANY,
-              PERMISSIONS.VIEW_ROLE
+              PERMISSIONS.VIEW_ROLE,
+              PERMISSIONS.CREATE_ANNOUNCEMENT
             ]} />}
           >
             <Route path="admin/employees" element={<EmployeeListPage />} />
             <Route path="admin/roles" element={<RoleListPage />} />
             <Route path="admin/recap" element={<AttendanceRecapPage />} />
+            <Route path="admin/announcements" element={<AnnouncementPage />} />
             <Route path="admin/payrolls" element={<PayrollListPage />} />
             <Route
               path="admin/company-settings"
@@ -137,7 +140,7 @@ function App() {
         </Route>
       </Routes>
 
-      <Toaster position="top-right" richColors />
+      <Toaster position="top-center" richColors />
     </BrowserRouter>
   );
 }
