@@ -15,7 +15,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 
 import { usePublishAnnouncement } from "@/features/announcement/hooks/useAnnouncement";
 
@@ -68,11 +70,15 @@ export function CreateAnnouncementForm() {
             <FormItem>
               <FormLabel className="font-semibold text-slate-900">Announcement Body</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="Enter announcement body..." 
-                  className="min-h-[200px] resize-y border-slate-300 focus-visible:ring-blue-600 leading-relaxed" 
-                  {...field} 
-                />
+                <div className="bg-white rounded-md overflow-hidden border border-slate-300 focus-within:ring-1 focus-within:ring-blue-600 [&_.ql-container]:min-h-[200px] [&_.ql-container]:text-base [&_.ql-editor]:min-h-[200px] [&_.ql-toolbar]:border-x-0 [&_.ql-toolbar]:border-t-0 [&_.ql-container]:border-none">
+                  <ReactQuill 
+                    theme="snow"
+                    placeholder="Enter announcement body..." 
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -86,7 +92,7 @@ export function CreateAnnouncementForm() {
                 Publishing...
               </>
             ) : (
-              "Publish Announcement"
+              "Publish"
             )}
           </Button>
         </div>

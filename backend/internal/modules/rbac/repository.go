@@ -99,7 +99,7 @@ func (r *repository) FindAllPermissions(ctx context.Context) ([]Permission, erro
 
 	var permissions []Permission
 
-	err := db.Where("name != ?", constants.VIEW_PERMISSION).Find(&permissions).Error
+	err := db.Preload("PermissionGroup").Where("name != ?", constants.VIEW_PERMISSION).Find(&permissions).Error
 	if err != nil {
 		return nil, err
 	}

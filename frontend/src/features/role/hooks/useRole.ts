@@ -17,7 +17,7 @@ export function useCreateRole() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: { name: string; description?: string }) => {
+    mutationFn: async (payload: { name: string }) => {
       const res = await api.post("/roles", payload);
       return res.data;
     },

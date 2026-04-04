@@ -90,23 +90,33 @@ export const useWebSocket = () => {
           const title = payload.title || payload.title || "Notification";
           const message = payload.message || payload.message || "";
 
+          const toastMessage = (
+            <div className="flex flex-col w-full">
+              <span className="font-semibold">{title}</span>
+              <div 
+                className="text-muted-foreground mt-1 text-sm prose prose-sm dark:prose-invert line-clamp-3 prose-p:my-0 md:prose-p:my-0" 
+                dangerouslySetInnerHTML={{ __html: message }} 
+              />
+            </div>
+          );
+
           switch (payload.type) {
             case "PAYROLL_PAID":
             case "APPROVED":
-              toast.success(title, { description: message, duration: 3000 });
+              toast.success(toastMessage, { duration: 3000 });
               break;
             case "REJECTED":
-              toast.error(title, { description: message, duration: 3000 });
+              toast.error(toastMessage, { duration: 3000 });
               break;
             case "LEAVE_APPROVAL_REQ":
             case "REIMBURSE_APPROVAL_REQ":
-              toast.info(title, { description: message, duration: 3000 });
+              toast.info(toastMessage, { duration: 3000 });
               break;
             case "ANNOUNCEMENT":
-              toast.info(title, { description: message, duration: 3000 });
+              toast.info(toastMessage, { duration: 3000 });
               break;
             default:
-              toast(title, { description: message });
+              toast(toastMessage);
               break;
           }
         } catch (err) {

@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useCreateRole } from "@/features/role/hooks/useRole";
 
@@ -21,7 +20,6 @@ interface RoleCreateDialogProps {
 
 export function RoleCreateDialog({ open, onOpenChange }: RoleCreateDialogProps) {
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
   const { mutate: createRole, isPending } = useCreateRole();
 
   const handleOpenChangeWrapper = (isOpen: boolean) => {
@@ -29,7 +27,6 @@ export function RoleCreateDialog({ open, onOpenChange }: RoleCreateDialogProps) 
     if (!isOpen) {
       setTimeout(() => {
         setName("");
-        setDescription("");
       }, 300);
     }
   };
@@ -39,7 +36,7 @@ export function RoleCreateDialog({ open, onOpenChange }: RoleCreateDialogProps) 
     if (!name.trim()) return;
 
     createRole(
-      { name: name.trim().toUpperCase(), description: description.trim() },
+      { name: name.trim().toUpperCase() },
       {
         onSuccess: () => {
           handleOpenChangeWrapper(false);
@@ -67,16 +64,6 @@ export function RoleCreateDialog({ open, onOpenChange }: RoleCreateDialogProps) 
               onChange={(e) => setName(e.target.value)}
               required
               className="uppercase"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">Description <span className="text-slate-400 font-normal">(Optional)</span></Label>
-            <Textarea
-              id="description"
-              placeholder="Briefly describe the purpose of this role"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
             />
           </div>
           <DialogFooter className="pt-4">

@@ -15,12 +15,20 @@ type AssignPermissionsRequest struct {
 }
 
 type PermissionResponse struct {
-	ID   uint   `json:"id"`
-	Name string `json:"name"`
+	Group       PermissionGroupResponse    `json:"group"`
+	Permissions []PermissionDetailResponse `json:"permissions"`
 }
 
-type CreatePermissionRequest struct {
-	Name string `json:"name" validate:"required"`
+type PermissionDetailResponse struct {
+	ID          uint   `json:"id"`
+	Name        string `json:"name"`
+	DisplayName string `json:"display_name"`
+	Description string `json:"description"`
+}
+
+type PermissionGroupResponse struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
 }
 
 type RoleResponse struct {
