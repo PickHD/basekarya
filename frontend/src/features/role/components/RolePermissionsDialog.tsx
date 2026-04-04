@@ -62,14 +62,7 @@ export function RolePermissionsDialog({
     );
   };
 
-  const groupedPermissions = allPermissions?.reduce((acc: Record<string, Permission[]>, curr: Permission) => {
-    const moduleName = curr.module || "General";
-    if (!acc[moduleName]) {
-      acc[moduleName] = [];
-    }
-    acc[moduleName].push(curr);
-    return acc;
-  }, {} as Record<string, Permission[]>);
+  const groupedPermissions = allPermissions || [];
 
   if (!role) return null;
 
@@ -92,8 +85,10 @@ export function RolePermissionsDialog({
               <div className="flex justify-center py-10">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
               </div>
-            ) : groupedPermissions ? (
-              Object.entries(groupedPermissions).map(([module, permissions]) => {
+            ) : groupedPermissions.length > 0 ? (
+              groupedPermissions.map((groupData) => {
+                const module = groupData.group.name;
+                const permissions = groupData.permissions;
                 const moduleIds = permissions.map((p) => p.id);
                 const allSelected = moduleIds.every((id) => selectedIds.includes(id));
                 const someSelected = moduleIds.some((id) => selectedIds.includes(id)) && !allSelected;
@@ -124,7 +119,7 @@ export function RolePermissionsDialog({
                               htmlFor={`perm-${perm.id}`}
                               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                             >
-                              {perm.name}
+                              {perm.display_name || perm.name}
                             </label>
                             {perm.description && (
                               <p className="text-xs text-muted-foreground">

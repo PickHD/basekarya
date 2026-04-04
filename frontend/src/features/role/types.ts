@@ -1,8 +1,18 @@
+export interface PermissionGroup {
+  id: number;
+  name: string;
+}
+
 export interface Permission {
   id: number;
   name: string;
+  display_name?: string;
   description: string | null;
-  module: string | null;
+}
+
+export interface PermissionsGroupedResponse {
+  group: PermissionGroup;
+  permissions: Permission[];
 }
 
 export interface Role {
@@ -27,5 +37,5 @@ export interface RoleResponse {
 }
 
 export interface PermissionsResponse {
-  data: Permission[];
+  data: PermissionsGroupedResponse[];
 }
