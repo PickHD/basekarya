@@ -2,10 +2,21 @@ import * as Popover from "@radix-ui/react-popover";
 import { BellIcon } from "@radix-ui/react-icons";
 import { clsx } from "clsx";
 import { useWebSocket } from "@/features/notification/hooks/useWebSocket";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import type { NotificationPayload } from "@/features/notification/types";
 
 export const NotificationBell = () => {
   const { isConnected, notifications, unreadCount, markAsRead } =
     useWebSocket();
+
+  const [selectedNotif, setSelectedNotif] = useState<NotificationPayload | null>(null);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "";
@@ -18,8 +29,9 @@ export const NotificationBell = () => {
   };
 
   return (
-    <Popover.Root>
-      <Popover.Trigger asChild>
+    <>
+      <Popover.Root>
+        <Popover.Trigger asChild>
         <button
           className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label="Notifications"
@@ -85,6 +97,7 @@ export const NotificationBell = () => {
                       key={notif.id}
                       onClick={() => {
                         if (!isRead) markAsRead(notif.id);
+                        setSelectedNotif(notif);
                       }}
                       className={clsx(
                         "p-4 transition-colors cursor-pointer group relative",
@@ -112,16 +125,15 @@ export const NotificationBell = () => {
                           >
                             {title}
                           </p>
-                          <p
+                          <div
                             className={clsx(
-                              "text-xs leading-relaxed line-clamp-2",
+                              "text-xs leading-relaxed line-clamp-2 prose prose-sm dark:prose-invert prose-p:my-0 md:prose-p:my-0",
                               isRead
                                 ? "text-gray-500 dark:text-gray-500"
                                 : "text-gray-600 dark:text-gray-400",
                             )}
-                          >
-                            {message}
-                          </p>
+                            dangerouslySetInnerHTML={{ __html: message }}
+                          />
 
                           {notif.created_at && (
                             <p className="text-[10px] text-gray-400 pt-1">
@@ -140,5 +152,24 @@ export const NotificationBell = () => {
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
+
+      <Dialog
+        open={!!selectedNotif}
+        onOpenChange={(open) => !open && setSelectedNotif(null)}
+      >
+        <DialogContent className="w-[95vw] sm:w-full sm:max-w-3xl lg:max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl md:text-2xl">{selectedNotif?.title}</DialogTitle>
+            <DialogDescription>
+              {selectedNotif?.created_at && formatDate(selectedNotif.created_at)}
+            </DialogDescription>
+          </DialogHeader>
+          <div 
+            className="py-4 whitespace-pre-wrap text-base text-gray-700 dark:text-gray-300 prose prose-sm sm:prose-base dark:prose-invert max-w-none break-words"
+            dangerouslySetInnerHTML={{ __html: selectedNotif?.message || "" }}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
