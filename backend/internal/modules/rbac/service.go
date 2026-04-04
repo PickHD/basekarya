@@ -146,13 +146,38 @@ func (s *service) GetAllPermissions(ctx context.Context) ([]PermissionResponse, 
 			return []PermissionResponse{}, nil
 		}
 
-		permissions := make([]PermissionResponse, len(data))
+		permissionMap := make(map[uint]PermissionResponse)
 
-		for i, perm := range data {
-			permissions[i] = PermissionResponse{
-				ID:   perm.ID,
-				Name: perm.Name,
+		for _, perm := range data {
+			if existing, ok := permissionMap[perm.PermissionGroup.ID]; ok {
+				existing.Permissions = append(existing.Permissions, PermissionDetailResponse{
+					ID:          perm.ID,
+					Name:        perm.Name,
+					DisplayName: perm.DisplayName,
+					Description: perm.Description,
+				})
+				permissionMap[perm.PermissionGroup.ID] = existing
+			} else {
+				permissionMap[perm.PermissionGroup.ID] = PermissionResponse{
+					Group: PermissionGroupResponse{
+						ID:   perm.PermissionGroup.ID,
+						Name: perm.PermissionGroup.Name,
+					},
+					Permissions: []PermissionDetailResponse{
+						{
+							ID:          perm.ID,
+							Name:        perm.Name,
+							DisplayName: perm.DisplayName,
+							Description: perm.Description,
+						},
+					},
+				}
 			}
+		}
+
+		var permissions []PermissionResponse
+		for _, v := range permissionMap {
+			permissions = append(permissions, v)
 		}
 
 		parsedData, err := json.Marshal(permissions)
