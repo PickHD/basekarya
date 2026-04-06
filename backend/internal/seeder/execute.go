@@ -121,6 +121,7 @@ func seedPermissions(tx *gorm.DB, roleSuperadmin *rbac.Role) error {
 		{"Reimbursement", []string{constants.VIEW_REIMBURSEMENT, constants.VIEW_SELF_REIMBURSEMENT, constants.CREATE_REIMBURSEMENT, constants.APPROVAL_REIMBURSEMENT, constants.EXPORT_REIMBURSEMENT}},
 		{"Company", []string{constants.VIEW_COMPANY, constants.UPDATE_COMPANY}},
 		{"Announcement", []string{constants.CREATE_ANNOUNCEMENT}},
+		{"Contract", []string{constants.VIEW_CONTRACT, constants.CREATE_CONTRACT, constants.UPDATE_CONTRACT, constants.EXPORT_CONTRACT}},
 	}
 
 	var permissionIDs []uint
