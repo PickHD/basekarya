@@ -27,6 +27,7 @@ import PayrollListPage from "@/pages/payroll/PayrollListPage";
 import LeaveListPage from "@/pages/leave/LeaveListPage";
 import CompanySettingsPage from "@/pages/admin/CompanySettingsPage";
 import RoleListPage from "@/pages/admin/RoleListPage";
+import ContractListPage from "@/pages/admin/ContractListPage";
 
 import { PERMISSIONS } from "@/config/permissions";
 
@@ -118,10 +119,12 @@ function App() {
               PERMISSIONS.VIEW_PAYROLL,
               PERMISSIONS.VIEW_COMPANY,
               PERMISSIONS.VIEW_ROLE,
-              PERMISSIONS.CREATE_ANNOUNCEMENT
+              PERMISSIONS.CREATE_ANNOUNCEMENT,
+              PERMISSIONS.VIEW_CONTRACT
             ]} />}
           >
             <Route path="admin/employees" element={<EmployeeListPage />} />
+            <Route path="admin/contracts" element={<ContractListPage />} />
             <Route path="admin/roles" element={<RoleListPage />} />
             <Route path="admin/recap" element={<AttendanceRecapPage />} />
             <Route path="admin/announcements" element={<AnnouncementPage />} />

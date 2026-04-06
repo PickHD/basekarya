@@ -62,6 +62,12 @@ export const PERMISSIONS = {
 
   // announcement
   CREATE_ANNOUNCEMENT: "CREATE_ANNOUNCEMENT",
+
+  // contract
+  VIEW_CONTRACT: "VIEW_CONTRACT",
+  CREATE_CONTRACT: "CREATE_CONTRACT",
+  UPDATE_CONTRACT: "UPDATE_CONTRACT",
+  EXPORT_CONTRACT: "EXPORT_CONTRACT",
 } as const;
 
 export type Permission = keyof typeof PERMISSIONS;
