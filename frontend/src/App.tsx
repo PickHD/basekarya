@@ -28,6 +28,8 @@ import LeaveListPage from "@/pages/leave/LeaveListPage";
 import CompanySettingsPage from "@/pages/admin/CompanySettingsPage";
 import RoleListPage from "@/pages/admin/RoleListPage";
 import ContractListPage from "@/pages/admin/ContractListPage";
+import RequisitionListPage from "@/pages/admin/RequisitionListPage";
+import ApplicantBoardPage from "@/pages/admin/ApplicantBoardPage";
 
 import { PERMISSIONS } from "@/config/permissions";
 
@@ -120,7 +122,8 @@ function App() {
               PERMISSIONS.VIEW_COMPANY,
               PERMISSIONS.VIEW_ROLE,
               PERMISSIONS.CREATE_ANNOUNCEMENT,
-              PERMISSIONS.VIEW_CONTRACT
+              PERMISSIONS.VIEW_CONTRACT,
+              PERMISSIONS.VIEW_REQUISITION,
             ]} />}
           >
             <Route path="admin/employees" element={<EmployeeListPage />} />
@@ -129,10 +132,9 @@ function App() {
             <Route path="admin/recap" element={<AttendanceRecapPage />} />
             <Route path="admin/announcements" element={<AnnouncementPage />} />
             <Route path="admin/payrolls" element={<PayrollListPage />} />
-            <Route
-              path="admin/company-settings"
-              element={<CompanySettingsPage />}
-            />
+            <Route path="admin/company-settings" element={<CompanySettingsPage />} />
+            <Route path="admin/requisitions" element={<RequisitionListPage />} />
+            <Route path="admin/requisitions/:id/applicants" element={<ApplicantBoardPage />} />
 
             {/* 404 Inside Layout */}
             <Route

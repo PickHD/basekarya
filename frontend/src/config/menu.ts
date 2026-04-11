@@ -12,6 +12,7 @@ import {
   ShieldAlert,
   Megaphone,
   FileText,
+  Briefcase,
 } from "lucide-react";
 import type { MenuItem } from "./types";
 import { PERMISSIONS } from "./permissions";
@@ -40,6 +41,12 @@ export const menuItems: MenuItem[] = [
     href: "/admin/contracts",
     icon: FileText,
     permission: PERMISSIONS.VIEW_CONTRACT
+  },
+  {
+    title: "Recruitment",
+    href: "/admin/requisitions",
+    icon: Briefcase,
+    permission: PERMISSIONS.VIEW_REQUISITION,
   },
   {
     title: "Dashboard",
