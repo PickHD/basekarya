@@ -73,3 +73,29 @@ export const useDeleteContract = () => {
     },
   });
 };
+
+export const useExportContract = () => {
+  return useMutation({
+    mutationFn: async (params: { expiring_within_days?: string; contract_type?: string; search?: string }) => {
+      const response = await api.get("/contracts/export", {
+        params,
+        responseType: "blob",
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      const url = window.URL.createObjectURL(new Blob([data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "contracts.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    },
+    onError: () => {
+      toast.error("Gagal mengunduh data");
+    },
+  });
+};
+    
+      

@@ -239,7 +239,7 @@ export const LeaveList = () => {
                     {data?.data.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={6}
+                          colSpan={5}
                           className="text-center py-8 text-slate-500"
                         >
                           No leave requests found.
@@ -251,18 +251,16 @@ export const LeaveList = () => {
               </div>
 
               {data?.meta && (
-                <div className="mt-4">
-                  <PaginationControls
-                    meta={{
-                      limit: 10,
-                      page: data.meta.page,
-                      total_page: data.meta.total_page,
-                      total_data: data.meta.total_data,
-                    }}
-                    onPageChange={setPage}
-                    isLoading={isLoading}
-                  />
-                </div>
+                <PaginationControls
+                  meta={{
+                    limit: 10,
+                    page: data.meta.page,
+                    total_page: data.meta.total_page,
+                    total_data: data.meta.total_data,
+                  }}
+                  onPageChange={setPage}
+                  isLoading={isLoading}
+                />
               )}
             </>
           )}

@@ -115,6 +115,9 @@ export const useWebSocket = () => {
             case "ANNOUNCEMENT":
               toast.info(toastMessage, { duration: 3000 });
               break;
+            case "CONTRACT_EXPIRING":
+              toast.info(toastMessage, { duration: 3000 });
+              break;
             default:
               toast(toastMessage);
               break;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Download, Search } from "lucide-react";
+import { Plus, Download, Search, Loader2, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,21 +9,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ContractList } from "@/features/contract/components/ContractList";
 import { ContractFormDialog } from "@/features/contract/components/ContractFormDialog";
 import { ContractDetailDialog } from "@/features/contract/components/ContractDetailDialog";
-import { useContracts } from "@/features/contract/hooks/useContract";
+import { useContracts, useExportContract } from "@/features/contract/hooks/useContract";
 import type { Contract } from "@/features/contract/types";
 import { usePermissions } from "@/hooks/usePermissions";
 import { PERMISSIONS } from "@/config/permissions";
-import { api } from "@/lib/axios";
-import { toast } from "sonner";
 import { useDebounce } from "@/hooks/useDebounce";
+import { PaginationControls } from "@/components/shared/PaginationControls";
 
 export default function ContractListPage() {
   const { hasPermission } = usePermissions();
 
-  const [page] = useState(1);
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
   const [typeFilter, setTypeFilter] = useState("ALL");
@@ -42,26 +42,10 @@ export default function ContractListPage() {
     expiring_within_days: expiringFilter === "30" ? 30 : undefined,
   });
 
-  const handleExport = async () => {
-    try {
-      const resp = await api.get("/contracts/export", {
-        responseType: "blob",
-        params: {
-          search: debouncedSearch,
-          contract_type: typeFilter !== "ALL" ? typeFilter : undefined,
-          expiring_within_days: expiringFilter === "30" ? 30 : undefined,
-        },
-      });
-      const url = window.URL.createObjectURL(new Blob([resp.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `contracts-${new Date().getTime()}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      toast.error("Failed to download contract data");
-    }
+  const { mutateAsync: exportContractExcel, isPending: isExporting } = useExportContract();
+
+  const handleExport = () => {
+    exportContractExcel({ expiring_within_days: expiringFilter === "ALL" ? "" : expiringFilter, contract_type: typeFilter === "ALL" ? "" : typeFilter, search: debouncedSearch });
   };
 
   const handleCreate = () => {
@@ -88,68 +72,96 @@ export default function ContractListPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-800">
-            Contract Management
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Manage employee contract data PKWT and PKWTT
+          <h2 className="text-3xl font-bold tracking-tight">Contract Management</h2>
+          <p className="text-slate-500 mt-1">
+            Manage all registered contracts.
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           {hasPermission(PERMISSIONS.EXPORT_CONTRACT) && (
-            <Button variant="outline" onClick={handleExport} className="w-full sm:w-auto">
-              <Download className="mr-2 h-4 w-4" /> Export
+            <Button
+              onClick={handleExport}
+              disabled={isExporting}
+              className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto"
+            >
+              {isExporting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel
+                </>
+              )}
             </Button>
           )}
           {hasPermission(PERMISSIONS.CREATE_CONTRACT) && (
-            <Button onClick={handleCreate} className="w-full sm:w-auto">
+            <Button onClick={handleCreate} className="bg-blue-600 hover:bg-blue-700">
               <Plus className="mr-2 h-4 w-4" /> Add Contract
             </Button>
           )}
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-lg border shadow-sm">
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input
-            placeholder="Search name / NIK..."
-            className="pl-9 bg-slate-50"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <CardTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5" /> Contract List
+            </CardTitle>
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Search name / NIK..."
+                  className="pl-9"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Contract Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Types</SelectItem>
+                  <SelectItem value="PKWT">PKWT</SelectItem>
+                  <SelectItem value="PKWTT">PKWTT</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={expiringFilter} onValueChange={setExpiringFilter}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Status</SelectItem>
+                  <SelectItem value="30">Expiring in 30 Days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ContractList
+            data={data?.data || []}
+            isLoading={isLoading}
+            onView={handleView}
+            onEdit={handleEdit}
           />
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-full sm:w-40 bg-slate-50">
-              <SelectValue placeholder="Contract Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Types</SelectItem>
-              <SelectItem value="PKWT">PKWT</SelectItem>
-              <SelectItem value="PKWTT">PKWTT</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={expiringFilter} onValueChange={setExpiringFilter}>
-            <SelectTrigger className="w-full sm:w-48 bg-slate-50">
-              <SelectValue placeholder="Status Expired" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Status</SelectItem>
-              <SelectItem value="30">Expires in 30 Days</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <ContractList
-        data={data?.data || []}
-        isLoading={isLoading}
-        onView={handleView}
-        onEdit={handleEdit}
-      />
+          {data?.meta && (
+            <PaginationControls
+              meta={{
+                limit: 10,
+                page: data.meta.page,
+                total_page: data.meta.total_page,
+                total_data: data.meta.total_data,
+              }}
+              onPageChange={setPage}
+              isLoading={isLoading}
+            />
+          )}
+        </CardContent>
+      </Card>
 
       <ContractFormDialog
         open={isFormOpen}
