@@ -194,7 +194,7 @@ func (s *service) Export(ctx context.Context, filter *ContractFilter) ([]byte, e
 			empName = req.Employee.FullName
 			empNik = req.Employee.NIK
 		}
-		
+
 		endDate := "-"
 		if req.EndDate != nil {
 			endDate = req.EndDate.Format(constants.DefaultTimeFormat)
@@ -224,7 +224,7 @@ func (s *service) CheckExpiringContracts(ctx context.Context) error {
 		return nil
 	}
 
-	approvalUserIDs, err := s.user.FindApprovalUsers(ctx, "VIEW_CONTRACT")
+	approvalUserIDs, err := s.user.FindApprovalUsers(ctx, string(constants.VIEW_CONTRACT))
 	if err != nil || len(approvalUserIDs) == 0 {
 		logger.Warn("CheckExpiringContracts: No users found with VIEW_CONTRACT permission")
 		return nil
@@ -232,13 +232,6 @@ func (s *service) CheckExpiringContracts(ctx context.Context) error {
 
 	var notifiedIDs []uint
 	for _, c := range contracts {
-		if c.Employee == nil {
-			contractWithEmp, err := s.repo.FindByID(ctx, c.ID)
-			if err == nil {
-				c = *contractWithEmp
-			}
-		}
-
 		empName := ""
 		if c.Employee != nil {
 			empName = c.Employee.FullName
@@ -248,7 +241,7 @@ func (s *service) CheckExpiringContracts(ctx context.Context) error {
 
 		_ = s.notification.BlastNotification(
 			approvalUserIDs,
-			"CONTRACT_EXPIRING",
+			string(constants.NotificationTypeContractExpiring),
 			"Kontrak Segera Berakhir",
 			message,
 			c.ID,

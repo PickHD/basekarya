@@ -12,4 +12,5 @@ const (
 	NotificationTypeLoanApprovalReq      NotificationType = "LOAN_APPROVAL_REQ"
 	NotificationTypeOvertimeApprovalReq  NotificationType = "OVERTIME_APPROVAL_REQ"
 	NotificationTypeAnnouncement         NotificationType = "ANNOUNCEMENT"
+	NotificationTypeContractExpiring     NotificationType = "CONTRACT_EXPIRING"
 )

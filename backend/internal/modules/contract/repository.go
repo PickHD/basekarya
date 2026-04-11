@@ -90,6 +90,7 @@ func (r *repository) FindAll(ctx context.Context, filter *ContractFilter) ([]Con
 func (r *repository) FindExpiringContracts(ctx context.Context, withinDays int) ([]Contract, error) {
 	var contracts []Contract
 	err := r.db.WithContext(ctx).
+		Preload("Employee").
 		Where("contract_type = ? AND end_date <= DATE_ADD(NOW(), INTERVAL ? DAY) AND end_date >= CURDATE() AND alerted_at IS NULL", "PKWT", withinDays).
 		Find(&contracts).Error
 	return contracts, err
