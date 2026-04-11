@@ -1,10 +1,10 @@
 package utils
 
 import (
-	"context"
-	"errors"
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/pkg/constants"
+	"context"
+	"errors"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -18,7 +18,6 @@ func GetUserContext(ctx echo.Context) (*infrastructure.MyClaims, error) {
 	return nil, errors.New("failed to get user from context")
 }
 
-// Helper function for Repositories to get the correct DB (TX or Standard)
 func GetDBFromContext(ctx context.Context, defaultDB *gorm.DB) *gorm.DB {
 	if tx, ok := ctx.Value(constants.TxContextKey).(*gorm.DB); ok {
 		return tx
