@@ -31,8 +31,6 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db: db}
 }
 
-// ── Requisition ───────────────────────────────────────────────────────────────
-
 func (r *repository) CreateRequisition(ctx context.Context, req *JobRequisition) error {
 	db := utils.GetDBFromContext(ctx, r.db)
 	return db.Create(req).Error
@@ -42,8 +40,8 @@ func (r *repository) FindRequisitionByID(ctx context.Context, id uint) (*JobRequ
 	db := utils.GetDBFromContext(ctx, r.db)
 	var req JobRequisition
 	err := db.
-		Preload("Requester").
-		Preload("Approver").
+		Preload("Requester.Employee").
+		Preload("Approver.Employee").
 		Preload("Department").
 		First(&req, id).Error
 	if err != nil {
@@ -78,8 +76,10 @@ func (r *repository) FindAllRequisitions(ctx context.Context, filter *Requisitio
 
 	offset := (filter.Page - 1) * filter.Limit
 	err := q.
-		Preload("Requester").
+		Preload("Requester.Employee").
 		Preload("Department").
+		Joins("LEFT JOIN users u ON u.id = job_requisitions.requester_id").
+		Joins("LEFT JOIN ref_departments d ON d.id = job_requisitions.department_id").
 		Order("created_at DESC").
 		Limit(filter.Limit).
 		Offset(offset).
@@ -102,8 +102,6 @@ func (r *repository) SoftDeleteRequisition(ctx context.Context, id uint) error {
 	db := utils.GetDBFromContext(ctx, r.db)
 	return db.Delete(&JobRequisition{}, id).Error
 }
-
-// ── Applicant ─────────────────────────────────────────────────────────────────
 
 func (r *repository) CreateApplicant(ctx context.Context, applicant *Applicant) error {
 	db := utils.GetDBFromContext(ctx, r.db)

@@ -66,10 +66,10 @@ type RequisitionDetailResponse struct {
 // ── Applicant DTOs ────────────────────────────────────────────────────────────
 
 type CreateApplicantRequest struct {
-	FullName        string `json:"full_name" validate:"required,max=100"`
-	Email           string `json:"email" validate:"required,email"`
-	PhoneNumber     string `json:"phone_number"`
-	ResumeBase64    string `json:"resume_base64"`
+	FullName     string `json:"full_name" validate:"required,max=100"`
+	Email        string `json:"email" validate:"required,email"`
+	PhoneNumber  string `json:"phone_number"`
+	ResumeBase64 string `json:"resume_base64"`
 }
 
 type UpdateApplicantStageRequest struct {
@@ -99,17 +99,17 @@ type ApplicantListResponse struct {
 }
 
 type ApplicantDetailResponse struct {
-	ID               uint                      `json:"id"`
-	JobRequisitionID uint                      `json:"job_requisition_id"`
-	FullName         string                    `json:"full_name"`
-	Email            string                    `json:"email"`
-	PhoneNumber      string                    `json:"phone_number"`
-	ResumeURL        string                    `json:"resume_url"`
-	Stage            string                    `json:"stage"`
-	Notes            string                    `json:"notes"`
-	RejectionReason  string                    `json:"rejection_reason"`
-	CreatedAt        time.Time                 `json:"created_at"`
-	StageHistories   []StageHistoryResponse    `json:"stage_histories"`
+	ID               uint                   `json:"id"`
+	JobRequisitionID uint                   `json:"job_requisition_id"`
+	FullName         string                 `json:"full_name"`
+	Email            string                 `json:"email"`
+	PhoneNumber      string                 `json:"phone_number"`
+	ResumeURL        string                 `json:"resume_url"`
+	Stage            string                 `json:"stage"`
+	Notes            string                 `json:"notes"`
+	RejectionReason  string                 `json:"rejection_reason"`
+	CreatedAt        time.Time              `json:"created_at"`
+	StageHistories   []StageHistoryResponse `json:"stage_histories"`
 }
 
 type StageHistoryResponse struct {

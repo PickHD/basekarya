@@ -238,14 +238,7 @@ export function RequisitionFormDialog({ open, onOpenChange }: Props) {
             />
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isPending} className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create Requisition
               </Button>

@@ -11,10 +11,10 @@ import (
 
 // JobRequisition represents a job opening request.
 type JobRequisition struct {
-	ID          uint           `gorm:"primaryKey" json:"id"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
 	RequesterID    uint   `gorm:"not null" json:"requester_id"`
 	DepartmentID   uint   `gorm:"not null" json:"department_id"`
@@ -25,15 +25,15 @@ type JobRequisition struct {
 	Priority       string `gorm:"type:varchar(10);default:'MEDIUM'" json:"priority"`
 	Status         string `gorm:"type:varchar(10);default:'DRAFT'" json:"status"`
 
-	ApprovedBy      *uint  `json:"approved_by"`
-	RejectionReason string `gorm:"type:text" json:"rejection_reason"`
+	ApprovedBy      *uint      `json:"approved_by"`
+	RejectionReason string     `gorm:"type:text" json:"rejection_reason"`
 	TargetDate      *time.Time `gorm:"type:date" json:"target_date"`
 
 	// Relations
-	Requester  *user.User        `gorm:"foreignKey:RequesterID" json:"requester,omitempty"`
-	Approver   *user.User        `gorm:"foreignKey:ApprovedBy" json:"approver,omitempty"`
-	Department *master.Department `gorm:"foreignKey:DepartmentID" json:"department,omitempty"`
-	Applicants []Applicant       `gorm:"foreignKey:JobRequisitionID" json:"applicants,omitempty"`
+	Requester  *user.User         `gorm:"foreignKey:RequesterID;references:ID" json:"requester,omitempty"`
+	Approver   *user.User         `gorm:"foreignKey:ApprovedBy;references:ID" json:"approver,omitempty"`
+	Department *master.Department `gorm:"foreignKey:DepartmentID;references:ID" json:"department,omitempty"`
+	Applicants []Applicant        `gorm:"foreignKey:JobRequisitionID;references:ID" json:"applicants,omitempty"`
 }
 
 func (JobRequisition) TableName() string {
@@ -42,10 +42,10 @@ func (JobRequisition) TableName() string {
 
 // Applicant represents a candidate for a job requisition.
 type Applicant struct {
-	ID               uint           `gorm:"primaryKey" json:"id"`
-	CreatedAt        time.Time      `json:"created_at"`
-	UpdatedAt        time.Time      `json:"updated_at"`
-	DeletedAt        gorm.DeletedAt `gorm:"index" json:"-"`
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
 	JobRequisitionID uint   `gorm:"not null" json:"job_requisition_id"`
 	FullName         string `gorm:"type:varchar(100);not null" json:"full_name"`
@@ -60,7 +60,7 @@ type Applicant struct {
 	RejectionReason string `gorm:"type:text" json:"rejection_reason"`
 
 	// Relations
-	JobRequisition *JobRequisition      `gorm:"foreignKey:JobRequisitionID" json:"job_requisition,omitempty"`
+	JobRequisition *JobRequisition         `gorm:"foreignKey:JobRequisitionID" json:"job_requisition,omitempty"`
 	StageHistories []ApplicantStageHistory `gorm:"foreignKey:ApplicantID" json:"stage_histories,omitempty"`
 }
 
@@ -70,8 +70,8 @@ func (Applicant) TableName() string {
 
 // ApplicantStageHistory records stage transitions for audit trail.
 type ApplicantStageHistory struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	CreatedAt time.Time `json:"created_at"`
 
 	ApplicantID uint   `gorm:"not null" json:"applicant_id"`
 	FromStage   string `gorm:"type:varchar(15)" json:"from_stage"`

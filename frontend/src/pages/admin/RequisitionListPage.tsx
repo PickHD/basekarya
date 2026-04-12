@@ -18,7 +18,6 @@ import { useRequisitions } from "@/features/recruitment/hooks/useRequisition";
 import { usePermissions } from "@/hooks/usePermissions";
 import { PERMISSIONS } from "@/config/permissions";
 import { useDebounce } from "@/hooks/useDebounce";
-import type { JobRequisition } from "@/features/recruitment/types";
 
 export default function RequisitionListPage() {
   const { hasPermission } = usePermissions();
@@ -29,7 +28,7 @@ export default function RequisitionListPage() {
   const [priorityFilter, setPriorityFilter] = useState("ALL");
 
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedRequisition, setSelectedRequisition] = useState<JobRequisition | null>(null);
+  const [selectedRequisitionId, setSelectedRequisitionId] = useState<number | null>(null);
 
   const { data, isLoading } = useRequisitions({
     page,
@@ -110,7 +109,7 @@ export default function RequisitionListPage() {
           <RequisitionList
             data={data?.data || []}
             isLoading={isLoading}
-            onView={setSelectedRequisition}
+            onView={(req) => setSelectedRequisitionId(req.id)}
           />
           {data?.meta && (
             <PaginationControls
@@ -125,9 +124,9 @@ export default function RequisitionListPage() {
       {/* Dialogs */}
       <RequisitionFormDialog open={isFormOpen} onOpenChange={setIsFormOpen} />
       <RequisitionDetailDialog
-        open={!!selectedRequisition}
-        onOpenChange={(open) => !open && setSelectedRequisition(null)}
-        requisition={selectedRequisition}
+        open={!!selectedRequisitionId}
+        onOpenChange={(open) => !open && setSelectedRequisitionId(null)}
+        requisitionId={selectedRequisitionId}
       />
     </div>
   );

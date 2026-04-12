@@ -114,7 +114,6 @@ export function ApplicantKanbanBoard({ requisitionId }: Props) {
     const applicantId = Number(active.id);
     let targetStage: ApplicantStage | undefined;
 
-    // The `over.id` could be a stage key (droppable col) or another applicant id (sortable item)
     if (STAGES.some((s) => s.key === over.id)) {
       targetStage = over.id as ApplicantStage;
     } else {
@@ -152,18 +151,22 @@ export function ApplicantKanbanBoard({ requisitionId }: Props) {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 overflow-x-auto">
+        <div className="flex gap-4 overflow-x-auto pb-4 w-full snap-x">
           {STAGES.map((stage) => {
             const applicants = kanban[stage.key] ?? [];
             return (
-              <KanbanColumn
+              <div
                 key={stage.key}
-                stage={stage}
-                applicants={applicants}
-                canUpdate={canUpdate}
-                onSelectApplicant={setSelectedApplicant}
-                onUpdateStage={(id, stage) => updateStage({ id, payload: { stage } })}
-              />
+                className="shrink-0 w-[85vw] sm:w-[320px] xl:min-w-0 xl:flex-1 snap-center sm:snap-none"
+              >
+                <KanbanColumn
+                  stage={stage}
+                  applicants={applicants}
+                  canUpdate={canUpdate}
+                  onSelectApplicant={setSelectedApplicant}
+                  onUpdateStage={(id, stage) => updateStage({ id, payload: { stage } })}
+                />
+              </div>
             );
           })}
         </div>

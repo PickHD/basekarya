@@ -38,7 +38,6 @@ interface Props {
 
 export function ApplicantFormDialog({ open, onOpenChange, requisitionId }: Props) {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
-  const [resumeBase64, setResumeBase64] = useState("");
   const { mutateAsync: addApplicant, isPending } = useAddApplicant(requisitionId);
 
   const form = useForm<FormValues>({
@@ -47,28 +46,36 @@ export function ApplicantFormDialog({ open, onOpenChange, requisitionId }: Props
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setResumeFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64 = (reader.result as string).split(",")[1];
-      setResumeBase64(base64);
-    };
-    reader.readAsDataURL(file);
+    if (e.target.files && e.target.files[0]) {
+      setResumeFile(e.target.files[0]);
+    }
   };
 
   const onSubmit = async (values: FormValues) => {
-    await addApplicant({
-      full_name: values.full_name,
-      email: values.email,
-      phone_number: values.phone_number,
-      resume_base64: resumeBase64 || undefined,
-    });
-    form.reset();
-    setResumeFile(null);
-    setResumeBase64("");
-    onOpenChange(false);
+    let base64 = "";
+    if (resumeFile) {
+      const reader = new FileReader();
+      const readAsDataURL = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+      });
+      reader.readAsDataURL(resumeFile);
+      base64 = await readAsDataURL;
+    }
+
+    try {
+      await addApplicant({
+        full_name: values.full_name,
+        email: values.email,
+        phone_number: values.phone_number,
+        resume_base64: base64,
+      });
+      form.reset();
+      setResumeFile(null);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Failed to add applicant", error);
+    }
   };
 
   return (
@@ -141,7 +148,7 @@ export function ApplicantFormDialog({ open, onOpenChange, requisitionId }: Props
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending} className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Add Applicant
               </Button>

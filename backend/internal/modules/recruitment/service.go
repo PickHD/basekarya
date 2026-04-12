@@ -44,8 +44,6 @@ func NewService(repo Repository, storage StorageProvider, notification Notificat
 	return &service{repo, storage, notification, user, transactionManager}
 }
 
-// ── Requisition ───────────────────────────────────────────────────────────────
-
 func (s *service) CreateRequisition(ctx context.Context, requesterID uint, req *CreateRequisitionRequest) error {
 	return s.transactionManager.RunInTransaction(ctx, func(ctx context.Context) error {
 		jr := &JobRequisition{
@@ -272,8 +270,6 @@ func (s *service) DeleteRequisition(ctx context.Context, id uint) error {
 		return nil
 	})
 }
-
-// ── Applicant ─────────────────────────────────────────────────────────────────
 
 func (s *service) AddApplicant(ctx context.Context, requisitionID uint, req *CreateApplicantRequest) error {
 	return s.transactionManager.RunInTransaction(ctx, func(ctx context.Context) error {
