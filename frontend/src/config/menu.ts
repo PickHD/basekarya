@@ -13,6 +13,7 @@ import {
   Megaphone,
   FileText,
   Briefcase,
+  GraduationCap,
 } from "lucide-react";
 import type { MenuItem } from "./types";
 import { PERMISSIONS } from "./permissions";
@@ -47,6 +48,18 @@ export const menuItems: MenuItem[] = [
     href: "/admin/requisitions",
     icon: Briefcase,
     permission: PERMISSIONS.VIEW_REQUISITION,
+  },
+  {
+    title: "Onboarding",
+    href: "/admin/onboarding",
+    icon: GraduationCap,
+    permission: PERMISSIONS.VIEW_ONBOARDING,
+  },
+  {
+    title: "Onboarding Templates",
+    href: "/admin/onboarding/templates",
+    icon: GraduationCap,
+    permission: PERMISSIONS.MANAGE_ONBOARDING_TEMPLATE,
   },
   {
     title: "Dashboard",

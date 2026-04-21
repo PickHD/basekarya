@@ -30,6 +30,8 @@ import RoleListPage from "@/pages/admin/RoleListPage";
 import ContractListPage from "@/pages/admin/ContractListPage";
 import RequisitionListPage from "@/pages/admin/RequisitionListPage";
 import ApplicantBoardPage from "@/pages/admin/ApplicantBoardPage";
+import OnboardingListPage from "@/pages/admin/OnboardingListPage";
+import OnboardingTemplatePage from "@/pages/admin/OnboardingTemplatePage";
 
 import { PERMISSIONS } from "@/config/permissions";
 
@@ -124,6 +126,8 @@ function App() {
               PERMISSIONS.CREATE_ANNOUNCEMENT,
               PERMISSIONS.VIEW_CONTRACT,
               PERMISSIONS.VIEW_REQUISITION,
+              PERMISSIONS.VIEW_ONBOARDING,
+              PERMISSIONS.MANAGE_ONBOARDING_TEMPLATE,
             ]} />}
           >
             <Route path="admin/employees" element={<EmployeeListPage />} />
@@ -135,6 +139,8 @@ function App() {
             <Route path="admin/company-settings" element={<CompanySettingsPage />} />
             <Route path="admin/requisitions" element={<RequisitionListPage />} />
             <Route path="admin/requisitions/:id/applicants" element={<ApplicantBoardPage />} />
+            <Route path="admin/onboarding" element={<OnboardingListPage />} />
+            <Route path="admin/onboarding/templates" element={<OnboardingTemplatePage />} />
 
             {/* 404 Inside Layout */}
             <Route
