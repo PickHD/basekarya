@@ -8,14 +8,17 @@ import (
 	"basekarya-backend/internal/modules/attendance"
 	"basekarya-backend/internal/modules/auth"
 	"basekarya-backend/internal/modules/company"
+	"basekarya-backend/internal/modules/contract"
 	"basekarya-backend/internal/modules/health"
 	"basekarya-backend/internal/modules/leave"
 	"basekarya-backend/internal/modules/loan"
 	"basekarya-backend/internal/modules/master"
 	"basekarya-backend/internal/modules/notification"
+	"basekarya-backend/internal/modules/onboarding"
 	"basekarya-backend/internal/modules/overtime"
 	"basekarya-backend/internal/modules/payroll"
 	"basekarya-backend/internal/modules/rbac"
+	"basekarya-backend/internal/modules/recruitment"
 	"basekarya-backend/internal/modules/reimbursement"
 	"basekarya-backend/internal/modules/user"
 )
@@ -46,6 +49,9 @@ type Container struct {
 	OvertimeHandler      *overtime.Handler
 	RbacHandler          *rbac.Handler
 	AnnouncementHandler  *announcement.Handler
+	ContractHandler      *contract.Handler
+	RecruitmentHandler   *recruitment.Handler
+	OnboardingHandler    *onboarding.Handler
 
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
@@ -53,6 +59,7 @@ type Container struct {
 	GeocodeWorker         attendance.GeocodeWorker
 	LeaveScheduler        leave.Scheduler
 	NotificationScheduler notification.Scheduler
+	ContractScheduler     contract.Scheduler
 }
 
 func NewContainer() (*Container, error) {
@@ -85,6 +92,9 @@ func NewContainer() (*Container, error) {
 	loanRepo := loan.NewRepository(db.GetDB())
 	overtimeRepo := overtime.NewRepository(db.GetDB())
 	rbacRepo := rbac.NewRepository(db.GetDB())
+	contractRepo := contract.NewRepository(db.GetDB())
+	recruitmentRepo := recruitment.NewRepository(db.GetDB())
+	onboardingRepo := onboarding.NewRepository(db.GetDB())
 
 	healthSvc := health.NewService(healthRepo)
 	notificationSvc := notification.NewService(wsHub, notificationRepo)
@@ -100,6 +110,9 @@ func NewContainer() (*Container, error) {
 	overtimeSvc := overtime.NewService(overtimeRepo, notificationSvc, userRepo, transactionManager, excel)
 	rbacSvc := rbac.NewService(rbacRepo, redis, transactionManager)
 	announcementSvc := announcement.NewService(userRepo, notificationSvc)
+	contractSvc := contract.NewService(contractRepo, storage, notificationSvc, userRepo, excel)
+	onboardingSvc := onboarding.NewService(onboardingRepo, notificationSvc, userSvc, email, companyRepo, rbacRepo, masterRepo, transactionManager)
+	recruitmentSvc := recruitment.NewService(recruitmentRepo, storage, notificationSvc, userRepo, onboardingSvc, transactionManager)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)
@@ -115,12 +128,16 @@ func NewContainer() (*Container, error) {
 	overtimeHandler := overtime.NewHandler(overtimeSvc)
 	rbacHandler := rbac.NewHandler(rbacSvc)
 	announcementHandler := announcement.NewHandler(announcementSvc)
+	contractHandler := contract.NewHandler(contractSvc)
+	recruitmentHandler := recruitment.NewHandler(recruitmentSvc)
+	onboardingHandler := onboarding.NewHandler(onboardingSvc)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 	rateLimiterMiddleware := middleware.NewRateLimiterMiddleware()
 
 	leaveScheduler := leave.NewScheduler(cronScheduler, leaveSvc)
 	notificationScheduler := notification.NewScheduler(cronScheduler, notificationSvc)
+	contractScheduler := contract.NewScheduler(cronScheduler, contractSvc)
 
 	return &Container{
 		Config:       cfg,
@@ -148,6 +165,9 @@ func NewContainer() (*Container, error) {
 		OvertimeHandler:      overtimeHandler,
 		RbacHandler:          rbacHandler,
 		AnnouncementHandler:  announcementHandler,
+		ContractHandler:      contractHandler,
+		RecruitmentHandler:   recruitmentHandler,
+		OnboardingHandler:    onboardingHandler,
 
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,
@@ -155,6 +175,7 @@ func NewContainer() (*Container, error) {
 		GeocodeWorker:         geocodeWorker,
 		LeaveScheduler:        leaveScheduler,
 		NotificationScheduler: notificationScheduler,
+		ContractScheduler:     contractScheduler,
 	}, nil
 }
 
@@ -174,6 +195,10 @@ func (c *Container) Close() error {
 
 	if c.NotificationScheduler != nil {
 		c.NotificationScheduler.Stop()
+	}
+
+	if c.ContractScheduler != nil {
+		c.ContractScheduler.Stop()
 	}
 
 	if c.Redis != nil {

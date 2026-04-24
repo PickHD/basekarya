@@ -61,6 +61,9 @@ func (r *Router) setupRoutes() {
 	r.SetupPermissionRoutes(protected.Group("/permissions"))
 	r.SetupUserRoutes(protected.Group("/users"))
 	r.SetupAnnouncementRoutes(protected.Group("/announcements"))
+	r.SetupContractRoutes(protected.Group("/contracts"))
+	r.SetupRecruitmentRoutes(protected.Group("/recruitments"))
+	r.SetupOnboardingRoutes(protected.Group("/onboarding"))
 }
 
 func ServeHTTP(container *bootstrap.Container) *echo.Echo {

@@ -1,11 +1,17 @@
 package master
 
-import "gorm.io/gorm"
+import (
+	"context"
+
+	"gorm.io/gorm"
+)
 
 type Repository interface {
 	FindAllDepartments() ([]Department, error)
 	FindAllShifts() ([]Shift, error)
 	FindAllLeaveTypes() ([]LeaveType, error)
+	FindDepartmentByName(ctx context.Context, name string) (*Department, error)
+	FindShiftByName(ctx context.Context, name string) (*Shift, error)
 }
 type repository struct {
 	db *gorm.DB
@@ -40,4 +46,22 @@ func (r *repository) FindAllLeaveTypes() ([]LeaveType, error) {
 	}
 
 	return leaveTypes, nil
+}
+
+func (r *repository) FindDepartmentByName(ctx context.Context, name string) (*Department, error) {
+	var department Department
+	if err := r.db.Model(&Department{}).Where("name = ?", name).First(&department).Error; err != nil {
+		return nil, err
+	}
+
+	return &department, nil
+}
+
+func (r *repository) FindShiftByName(ctx context.Context, name string) (*Shift, error) {
+	var shift Shift
+	if err := r.db.Model(&Shift{}).Where("name = ?", name).First(&shift).Error; err != nil {
+		return nil, err
+	}
+
+	return &shift, nil
 }

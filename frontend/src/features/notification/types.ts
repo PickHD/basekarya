@@ -7,7 +7,8 @@ export interface NotificationPayload {
     | "LEAVE_APPROVAL_REQ"
     | "REIMBURSE_APPROVAL_REQ"
     | "PAYROLL_PAID"
-    | "ANNOUNCEMENT";
+    | "ANNOUNCEMENT"
+    | "CONTRACT_EXPIRING";
   title: string;
   message: string;
   related_id: number;

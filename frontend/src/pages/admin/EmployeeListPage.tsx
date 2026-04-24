@@ -133,6 +133,7 @@ export default function EmployeeListPage() {
                       <TableHead>Department</TableHead>
                       <TableHead>Shift</TableHead>
                       <TableHead>Position</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

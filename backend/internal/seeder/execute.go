@@ -6,6 +6,7 @@ import (
 	"basekarya-backend/internal/config"
 	"basekarya-backend/internal/modules/company"
 	"basekarya-backend/internal/modules/master"
+	"basekarya-backend/internal/modules/onboarding"
 	"basekarya-backend/internal/modules/rbac"
 	"basekarya-backend/internal/modules/user"
 	"basekarya-backend/pkg/constants"
@@ -30,6 +31,10 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 		}
 
 		if err := seedCompanyData(tx); err != nil {
+			return err
+		}
+
+		if err := seedOnboardingTemplates(tx); err != nil {
 			return err
 		}
 
@@ -121,6 +126,9 @@ func seedPermissions(tx *gorm.DB, roleSuperadmin *rbac.Role) error {
 		{"Reimbursement", []string{constants.VIEW_REIMBURSEMENT, constants.VIEW_SELF_REIMBURSEMENT, constants.CREATE_REIMBURSEMENT, constants.APPROVAL_REIMBURSEMENT, constants.EXPORT_REIMBURSEMENT}},
 		{"Company", []string{constants.VIEW_COMPANY, constants.UPDATE_COMPANY}},
 		{"Announcement", []string{constants.CREATE_ANNOUNCEMENT}},
+		{"Contract", []string{constants.VIEW_CONTRACT, constants.CREATE_CONTRACT, constants.UPDATE_CONTRACT, constants.EXPORT_CONTRACT}},
+		{"Recruitment", []string{constants.VIEW_REQUISITION, constants.CREATE_REQUISITION, constants.APPROVAL_REQUISITION, constants.VIEW_APPLICANT, constants.CREATE_APPLICANT, constants.UPDATE_APPLICANT}},
+		{"Onboarding", []string{constants.VIEW_ONBOARDING, constants.MANAGE_ONBOARDING_TEMPLATE, constants.UPDATE_ONBOARDING_TASK}},
 	}
 
 	var permissionIDs []uint
@@ -175,4 +183,62 @@ func formatDisplayName(name string) string {
 		}
 	}
 	return strings.Join(words, " ")
+}
+
+func seedOnboardingTemplates(tx *gorm.DB) error {
+	type templateDef struct {
+		Name       string
+		Department string
+		Tasks      []struct{ Name, Description string; Order int }
+	}
+
+	templates := []templateDef{
+		{
+			Name:       "IT Setup",
+			Department: "IT",
+			Tasks: []struct{ Name, Description string; Order int }{
+				{"Buat akun email perusahaan", "Buat akun email @company.com untuk karyawan baru", 1},
+				{"Setup laptop/PC", "Siapkan laptop atau PC beserta perangkat yang dibutuhkan", 2},
+				{"Berikan akses ke sistem internal", "Berikan akses ke aplikasi HR, project management, dan sistem internal lainnya", 3},
+				{"Instalasi software wajib", "Install software wajib sesuai kebutuhan divisi", 4},
+			},
+		},
+		{
+			Name:       "HR Document Collection",
+			Department: "HR",
+			Tasks: []struct{ Name, Description string; Order int }{
+				{"Kumpulkan KTP", "Minta dan simpan salinan KTP karyawan baru", 1},
+				{"Kumpulkan Kartu Keluarga (KK)", "Minta dan simpan salinan Kartu Keluarga", 2},
+				{"Kumpulkan NPWP", "Minta dan simpan salinan NPWP", 3},
+				{"Kumpulkan BPJS Kesehatan & Ketenagakerjaan", "Minta dan simpan kartu BPJS atau nomor kepesertaan", 4},
+				{"Upload foto pas 3x4", "Minta foto resmi berukuran 3x4 untuk identitas karyawan", 5},
+				{"Tanda tangan kontrak kerja", "Proses penandatanganan kontrak kerja", 6},
+			},
+		},
+	}
+
+	for _, def := range templates {
+		var existing onboarding.OnboardingTemplate
+		result := tx.Where("name = ? AND department = ?", def.Name, def.Department).First(&existing)
+		if result.Error == nil {
+			continue // already seeded
+		}
+
+		tmpl := onboarding.OnboardingTemplate{
+			Name:       def.Name,
+			Department: def.Department,
+		}
+		for _, task := range def.Tasks {
+			tmpl.Items = append(tmpl.Items, onboarding.OnboardingTemplateItem{
+				TaskName:    task.Name,
+				Description: task.Description,
+				SortOrder:   task.Order,
+			})
+		}
+		if err := tx.Create(&tmpl).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

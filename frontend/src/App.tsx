@@ -27,6 +27,11 @@ import PayrollListPage from "@/pages/payroll/PayrollListPage";
 import LeaveListPage from "@/pages/leave/LeaveListPage";
 import CompanySettingsPage from "@/pages/admin/CompanySettingsPage";
 import RoleListPage from "@/pages/admin/RoleListPage";
+import ContractListPage from "@/pages/admin/ContractListPage";
+import RequisitionListPage from "@/pages/admin/RequisitionListPage";
+import ApplicantBoardPage from "@/pages/admin/ApplicantBoardPage";
+import OnboardingListPage from "@/pages/admin/OnboardingListPage";
+import OnboardingTemplatePage from "@/pages/admin/OnboardingTemplatePage";
 
 import { PERMISSIONS } from "@/config/permissions";
 
@@ -118,18 +123,24 @@ function App() {
               PERMISSIONS.VIEW_PAYROLL,
               PERMISSIONS.VIEW_COMPANY,
               PERMISSIONS.VIEW_ROLE,
-              PERMISSIONS.CREATE_ANNOUNCEMENT
+              PERMISSIONS.CREATE_ANNOUNCEMENT,
+              PERMISSIONS.VIEW_CONTRACT,
+              PERMISSIONS.VIEW_REQUISITION,
+              PERMISSIONS.VIEW_ONBOARDING,
+              PERMISSIONS.MANAGE_ONBOARDING_TEMPLATE,
             ]} />}
           >
             <Route path="admin/employees" element={<EmployeeListPage />} />
+            <Route path="admin/contracts" element={<ContractListPage />} />
             <Route path="admin/roles" element={<RoleListPage />} />
             <Route path="admin/recap" element={<AttendanceRecapPage />} />
             <Route path="admin/announcements" element={<AnnouncementPage />} />
             <Route path="admin/payrolls" element={<PayrollListPage />} />
-            <Route
-              path="admin/company-settings"
-              element={<CompanySettingsPage />}
-            />
+            <Route path="admin/company-settings" element={<CompanySettingsPage />} />
+            <Route path="admin/requisitions" element={<RequisitionListPage />} />
+            <Route path="admin/requisitions/:id/applicants" element={<ApplicantBoardPage />} />
+            <Route path="admin/onboarding" element={<OnboardingListPage />} />
+            <Route path="admin/onboarding/templates" element={<OnboardingTemplatePage />} />
 
             {/* 404 Inside Layout */}
             <Route

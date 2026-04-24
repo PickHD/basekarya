@@ -48,23 +48,32 @@ func (m *MinioStorageProvider) UploadFileMultipart(ctx context.Context, file *mu
 	}
 	defer src.Close()
 
+	var uploadReader io.Reader = src
+	var uploadSize int64 = file.Size
+	contentType := file.Header.Get("Content-Type")
+
 	// Before upload, resize image & turn down the quality image till 75%
-	img, err := imaging.Decode(src)
-	if err != nil {
-		return "", err
-	}
+	if strings.HasPrefix(contentType, "image/") {
+		img, err := imaging.Decode(src)
+		if err != nil {
+			return "", err
+		}
 
-	dstImage := imaging.Resize(img, 800, 0, imaging.Lanczos)
+		dstImage := imaging.Resize(img, 800, 0, imaging.Lanczos)
 
-	var buf bytes.Buffer
-	err = imaging.Encode(&buf, dstImage, imaging.JPEG, imaging.JPEGQuality(75))
-	if err != nil {
-		return "", err
+		var buf bytes.Buffer
+		err = imaging.Encode(&buf, dstImage, imaging.JPEG, imaging.JPEGQuality(75))
+		if err != nil {
+			return "", err
+		}
+
+		uploadReader = &buf
+		uploadSize = int64(buf.Len())
 	}
 
 	// Upload the file
-	info, err := m.client.PutObject(ctx, m.bucketName, objectName, &buf, int64(buf.Len()), minio.PutObjectOptions{
-		ContentType: file.Header.Get("Content-Type"),
+	info, err := m.client.PutObject(ctx, m.bucketName, objectName, uploadReader, uploadSize, minio.PutObjectOptions{
+		ContentType: contentType,
 	})
 	if err != nil {
 		return "", err
@@ -74,22 +83,30 @@ func (m *MinioStorageProvider) UploadFileMultipart(ctx context.Context, file *mu
 }
 
 func (m *MinioStorageProvider) UploadFileByte(ctx context.Context, objectName string, reader io.Reader, size int64, contentType string) (string, error) {
+	var uploadReader io.Reader = reader
+	var uploadSize int64 = size
+
 	// Before upload, resize image & turn down the quality image till 75%
-	img, err := imaging.Decode(reader)
-	if err != nil {
-		return "", err
-	}
+	if strings.HasPrefix(contentType, "image/") {
+		img, err := imaging.Decode(reader)
+		if err != nil {
+			return "", err
+		}
 
-	dstImage := imaging.Resize(img, 800, 0, imaging.Lanczos)
+		dstImage := imaging.Resize(img, 800, 0, imaging.Lanczos)
 
-	var buf bytes.Buffer
-	err = imaging.Encode(&buf, dstImage, imaging.JPEG, imaging.JPEGQuality(75))
-	if err != nil {
-		return "", err
+		var buf bytes.Buffer
+		err = imaging.Encode(&buf, dstImage, imaging.JPEG, imaging.JPEGQuality(75))
+		if err != nil {
+			return "", err
+		}
+
+		uploadReader = &buf
+		uploadSize = int64(buf.Len())
 	}
 
 	// Upload the file
-	info, err := m.client.PutObject(ctx, m.bucketName, objectName, &buf, int64(buf.Len()), minio.PutObjectOptions{
+	info, err := m.client.PutObject(ctx, m.bucketName, objectName, uploadReader, uploadSize, minio.PutObjectOptions{
 		ContentType: contentType,
 	})
 	if err != nil {

@@ -232,32 +232,28 @@ export const LoanList = () => {
                         </TableCell>
                       </TableRow>
                     ))}
+                    {data?.data.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                          No loan requests found.
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </div>
 
-              {data?.data.length === 0 && (
-                <div className="text-center py-10 text-slate-500 border rounded-md mt-4 md:mt-0">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <Receipt className="h-10 w-10 text-slate-300" />
-                    <p>No loan requests found.</p>
-                  </div>
-                </div>
-              )}
-
               {data?.meta && (
-                <div className="mt-4">
-                  <PaginationControls
-                    meta={{
-                      limit: 10,
-                      page: data.meta.page,
-                      total_page: data.meta.total_page,
-                      total_data: data.meta.total_data,
-                    }}
-                    onPageChange={setPage}
-                    isLoading={isLoading}
-                  />
-                </div>
+                <PaginationControls
+                  meta={{
+                    limit: 10,
+                    page: data.meta.page,
+                    total_page: data.meta.total_page,
+                    total_data: data.meta.total_data,
+                  }}
+                  onPageChange={setPage}
+                  isLoading={isLoading}
+                />
               )}
             </>
           )}

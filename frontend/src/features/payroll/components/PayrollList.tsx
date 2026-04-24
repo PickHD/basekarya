@@ -402,8 +402,7 @@ export default function PayrollList() {
               onPageChange={setPage}
               isLoading={isLoading}
             />
-          )}
-        </CardContent>
+          )}</CardContent>
       </Card>
 
       <PayrollDetailDialog
