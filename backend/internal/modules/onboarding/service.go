@@ -5,9 +5,11 @@ import (
 	"context"
 	"errors"
 	"html/template"
+	"strings"
 	"time"
 
 	"basekarya-backend/internal/infrastructure"
+	"basekarya-backend/internal/modules/user"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/logger"
 	"basekarya-backend/pkg/response"
@@ -36,6 +38,8 @@ type service struct {
 	user         UserProvider
 	email        EmailProvider
 	company      CompanyProvider
+	role         RoleProvider
+	master       MasterProvider
 	transaction  infrastructure.TransactionManager
 }
 
@@ -45,9 +49,11 @@ func NewService(
 	user UserProvider,
 	email EmailProvider,
 	company CompanyProvider,
+	role RoleProvider,
+	master MasterProvider,
 	transaction infrastructure.TransactionManager,
 ) Service {
-	return &service{repo, notification, user, email, company, transaction}
+	return &service{repo, notification, user, email, company, role, master, transaction}
 }
 
 // ── Templates ─────────────────────────────────────────────────────────────────
@@ -156,7 +162,7 @@ func (s *service) CreateWorkflow(ctx context.Context, req *CreateWorkflowRequest
 		}
 
 		if req.StartDate != "" {
-			t, err := time.Parse("2006-01-02", req.StartDate)
+			t, err := time.Parse(constants.DefaultTimeFormat, req.StartDate)
 			if err == nil {
 				workflow.StartDate = &t
 			}
@@ -332,6 +338,45 @@ func (s *service) CompleteTask(ctx context.Context, taskID uint, completedByID u
 			errMark := s.repo.MarkWorkflowCompleted(ctx, task.OnboardingWorkflowID)
 			if errMark != nil {
 				return errMark
+			}
+
+			w, err := s.repo.FindWorkflowByID(ctx, task.OnboardingWorkflowID)
+			if err != nil {
+				return err
+			}
+
+			role, err := s.role.FindRoleByName(ctx, "EMPLOYEE")
+			if err != nil {
+				return err
+			}
+
+			department, err := s.master.FindDepartmentByName(ctx, "Umum")
+			if err != nil {
+				return err
+			}
+
+			shift, err := s.master.FindShiftByName(ctx, "Regular")
+			if err != nil {
+				return err
+			}
+
+			// create username from full name
+			username := strings.ReplaceAll(strings.ToLower(w.NewHireName), " ", "")
+
+			req := &user.CreateEmployeeRequest{
+				Username:     username,
+				NIK:          username,
+				FullName:     w.NewHireName,
+				Email:        w.NewHireEmail,
+				Position:     w.Position,
+				BaseSalary:   0.0,
+				RoleID:       role.ID,
+				DepartmentID: department.ID,
+				ShiftID:      shift.ID,
+			}
+
+			if err := s.user.CreateEmployee(ctx, req); err != nil {
+				return err
 			}
 		}
 

@@ -22,6 +22,8 @@ type Service interface {
 	CreateEmployee(ctx context.Context, req *CreateEmployeeRequest) error
 	UpdateEmployee(ctx context.Context, id uint, req *UpdateEmployeeRequest) error
 	DeleteEmployee(ctx context.Context, id uint) error
+
+	FindApprovalUsers(ctx context.Context, permissionApprovalName string) ([]uint, error)
 }
 
 type service struct {
@@ -340,4 +342,8 @@ func (s *service) buildEmployeeData(ctx context.Context, user *User, req *Update
 	}
 
 	return user, nil
+}
+
+func (s *service) FindApprovalUsers(ctx context.Context, permissionApprovalName string) ([]uint, error) {
+	return s.repo.FindApprovalUsers(ctx, permissionApprovalName)
 }

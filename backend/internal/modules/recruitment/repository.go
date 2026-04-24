@@ -113,6 +113,7 @@ func (r *repository) FindApplicantByID(ctx context.Context, id uint) (*Applicant
 	var applicant Applicant
 	err := db.
 		Preload("JobRequisition").
+		Preload("JobRequisition.Department").
 		Preload("StageHistories").
 		Preload("StageHistories.ChangedByUser").
 		First(&applicant, id).Error

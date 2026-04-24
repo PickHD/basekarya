@@ -1,6 +1,7 @@
 package recruitment
 
 import (
+	"basekarya-backend/internal/modules/onboarding"
 	"context"
 	"io"
 )
@@ -16,4 +17,8 @@ type UserProvider interface {
 
 type StorageProvider interface {
 	UploadFileByte(ctx context.Context, objectName string, reader io.Reader, size int64, contentType string) (string, error)
+}
+
+type OnboardingProvider interface {
+	CreateWorkflow(ctx context.Context, req *onboarding.CreateWorkflowRequest) error
 }

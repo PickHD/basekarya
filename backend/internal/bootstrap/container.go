@@ -111,8 +111,8 @@ func NewContainer() (*Container, error) {
 	rbacSvc := rbac.NewService(rbacRepo, redis, transactionManager)
 	announcementSvc := announcement.NewService(userRepo, notificationSvc)
 	contractSvc := contract.NewService(contractRepo, storage, notificationSvc, userRepo, excel)
-	recruitmentSvc := recruitment.NewService(recruitmentRepo, storage, notificationSvc, userRepo, transactionManager)
-	onboardingSvc := onboarding.NewService(onboardingRepo, notificationSvc, userRepo, email, companyRepo, transactionManager)
+	onboardingSvc := onboarding.NewService(onboardingRepo, notificationSvc, userSvc, email, companyRepo, rbacRepo, masterRepo, transactionManager)
+	recruitmentSvc := recruitment.NewService(recruitmentRepo, storage, notificationSvc, userRepo, onboardingSvc, transactionManager)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)

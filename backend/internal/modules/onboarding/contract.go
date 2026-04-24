@@ -2,6 +2,9 @@ package onboarding
 
 import (
 	"basekarya-backend/internal/modules/company"
+	"basekarya-backend/internal/modules/master"
+	"basekarya-backend/internal/modules/rbac"
+	"basekarya-backend/internal/modules/user"
 	"context"
 	"io"
 )
@@ -13,6 +16,7 @@ type NotificationProvider interface {
 
 type UserProvider interface {
 	FindApprovalUsers(ctx context.Context, permissionApprovalName string) ([]uint, error)
+	CreateEmployee(ctx context.Context, req *user.CreateEmployeeRequest) error
 }
 
 type EmailProvider interface {
@@ -25,4 +29,13 @@ type StorageProvider interface {
 
 type CompanyProvider interface {
 	FindByID(ctx context.Context, id uint) (*company.Company, error)
+}
+
+type RoleProvider interface {
+	FindRoleByName(ctx context.Context, name string) (*rbac.Role, error)
+}
+
+type MasterProvider interface {
+	FindDepartmentByName(ctx context.Context, name string) (*master.Department, error)
+	FindShiftByName(ctx context.Context, name string) (*master.Shift, error)
 }

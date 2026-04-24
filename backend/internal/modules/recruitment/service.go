@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"basekarya-backend/internal/infrastructure"
+	"basekarya-backend/internal/modules/onboarding"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/logger"
 	"basekarya-backend/pkg/response"
@@ -37,11 +38,12 @@ type service struct {
 	storage            StorageProvider
 	notification       NotificationProvider
 	user               UserProvider
+	onboarding         OnboardingProvider
 	transactionManager infrastructure.TransactionManager
 }
 
-func NewService(repo Repository, storage StorageProvider, notification NotificationProvider, user UserProvider, transactionManager infrastructure.TransactionManager) Service {
-	return &service{repo, storage, notification, user, transactionManager}
+func NewService(repo Repository, storage StorageProvider, notification NotificationProvider, user UserProvider, onboarding OnboardingProvider, transactionManager infrastructure.TransactionManager) Service {
+	return &service{repo, storage, notification, user, onboarding, transactionManager}
 }
 
 func (s *service) CreateRequisition(ctx context.Context, requesterID uint, req *CreateRequisitionRequest) error {
@@ -330,6 +332,22 @@ func (s *service) UpdateStage(ctx context.Context, id uint, changedByID uint, re
 
 		if err := s.repo.UpdateApplicantStage(ctx, id, req.Stage, int(count), req.Notes, req.RejectionReason); err != nil {
 			return err
+		}
+
+		if req.Stage == constants.ApplicantStageHired {
+			if _, err := s.repo.FindRequisitionByID(ctx, applicant.JobRequisitionID); err != nil {
+				return errors.New("requisition not found")
+			}
+			if err := s.onboarding.CreateWorkflow(ctx, &onboarding.CreateWorkflowRequest{
+				ApplicantID:  &applicant.ID,
+				NewHireName:  applicant.FullName,
+				NewHireEmail: applicant.Email,
+				Position:     applicant.JobRequisition.Title,
+				Department:   applicant.JobRequisition.Department.Name,
+				StartDate:    applicant.JobRequisition.TargetDate.Format(constants.DefaultTimeFormat),
+			}); err != nil {
+				return err
+			}
 		}
 
 		history := &ApplicantStageHistory{
