@@ -1,7 +1,7 @@
 package auth
 
 type LoginRequest struct {
-	Username string `json:"username" validate:"required,min=3,max=50,alphanum"`
+	Username string `json:"username" validate:"required,min=3,max=50"`
 	Password string `json:"password" validate:"required"`
 }
 
@@ -25,4 +25,17 @@ type VerifyOTPResponse struct {
 type ResetPasswordRequest struct {
 	Code     string `json:"code" validate:"required,len=6"`
 	Password string `json:"password" validate:"required"`
+}
+
+type RegisterCompanyRequest struct {
+	CompanyName string `json:"company_name" validate:"required,min=2,max=255"`
+	AdminName   string `json:"admin_name" validate:"required,min=2,max=100"`
+	AdminEmail  string `json:"admin_email" validate:"required,email"`
+	Password    string `json:"password" validate:"required,min=6"`
+	PhoneNumber string `json:"phone_number" validate:"required"`
+	PlanSlug    string `json:"plan_slug" validate:"required,oneof=free basic pro"`
+}
+
+type RegisterCompanyResponse struct {
+	Username string `json:"username"`
 }

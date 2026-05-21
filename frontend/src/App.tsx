@@ -11,6 +11,8 @@ import LoginPage from "@/pages/auth/LoginPage";
 import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
 import VerifyOTPPage from "@/pages/auth/VerifyOTPPage";
 import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
+import RegisterPage from "@/pages/auth/RegisterPage";
+import LandingPage from "@/pages/LandingPage";
 import DashboardPage from "@/pages/dashboard/DashboardPage";
 import ProfilePage from "@/pages/profile/ProfilePage";
 import AttendanceHistoryPage from "@/pages/dashboard/AttendanceHistoryPage";
@@ -34,6 +36,10 @@ import RequisitionListPage from "@/pages/admin/RequisitionListPage";
 import ApplicantBoardPage from "@/pages/admin/ApplicantBoardPage";
 import OnboardingListPage from "@/pages/admin/OnboardingListPage";
 import OnboardingTemplatePage from "@/pages/admin/OnboardingTemplatePage";
+import SubscriptionAdminPage from "@/pages/admin/SubscriptionAdminPage";
+import PlatformAdminDashboard from "@/pages/admin/PlatformAdminDashboard";
+import CompaniesPage from "@/pages/admin/CompaniesPage";
+import SubscriptionHistoryPage from "@/pages/admin/SubscriptionHistoryPage";
 
 import { PERMISSIONS } from "@/config/permissions";
 
@@ -74,9 +80,17 @@ function App() {
             </PublicRoute>
           }
         />
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <RegisterPage />
+            </PublicRoute>
+          }
+        />
 
         {/* Root redirect to login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<LandingPage />} />
 
         {/* === PROTECTED ROUTES (Global) === */}
         <Route
@@ -155,6 +169,10 @@ function App() {
             <Route path="admin/requisitions/:id/applicants" element={<ApplicantBoardPage />} />
             <Route path="admin/onboarding" element={<OnboardingListPage />} />
             <Route path="admin/onboarding/templates" element={<OnboardingTemplatePage />} />
+            <Route path="admin/subscriptions" element={<SubscriptionAdminPage />} />
+            <Route path="admin/platform-dashboard" element={<PlatformAdminDashboard />} />
+            <Route path="admin/companies" element={<CompaniesPage />} />
+            <Route path="admin/subscription-history" element={<SubscriptionHistoryPage />} />
 
             {/* 404 Inside Layout */}
             <Route

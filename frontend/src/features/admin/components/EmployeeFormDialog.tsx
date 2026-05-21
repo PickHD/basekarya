@@ -35,8 +35,6 @@ import {
 import { useRoles } from "@/features/role/hooks/useRole";
 
 const formSchema = z.object({
-  username: z.string().min(3, "Username minimal atleast 3 characters"),
-
   full_name: z.string().min(1, "full_name required").trim(),
 
   nik: z
@@ -98,7 +96,6 @@ export function EmployeeFormDialog({
   const form = useForm<any>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
       full_name: "",
       nik: "",
       department_id: "",
@@ -114,7 +111,6 @@ export function EmployeeFormDialog({
     if (open) {
       if (employeeToEdit) {
         form.reset({
-          username: employeeToEdit.username,
           full_name: employeeToEdit.full_name,
           nik: employeeToEdit.nik,
           department_id: employeeToEdit.department_name === "Umum" ? "1" : "2",
@@ -126,7 +122,6 @@ export function EmployeeFormDialog({
         });
       } else {
         form.reset({
-          username: "",
           full_name: "",
           nik: "",
           department_id: "",
@@ -159,7 +154,6 @@ export function EmployeeFormDialog({
           <form
             onSubmit={form.handleSubmit((values) => {
               const payload: CreateEmployeePayload = {
-                username: values.username,
                 full_name: values.full_name,
                 nik: values.nik,
                 department_id: Number(values.department_id),
@@ -173,22 +167,6 @@ export function EmployeeFormDialog({
             })}
             className="space-y-4"
           >
-            {!isEdit && (
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
             <FormField
               control={form.control}
               name="full_name"

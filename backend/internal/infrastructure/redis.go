@@ -49,3 +49,7 @@ func (r *RedisClientProvider) Get(ctx context.Context, key string) (string, erro
 func (r *RedisClientProvider) Del(ctx context.Context, key string) error {
 	return r.Client.Del(ctx, key).Err()
 }
+
+func (r *RedisClientProvider) FlushDB(ctx context.Context) error {
+	return r.Client.FlushDB(ctx).Err()
+}

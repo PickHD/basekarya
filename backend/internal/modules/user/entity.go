@@ -8,9 +8,11 @@ import (
 
 type User struct {
 	ID                 uint      `gorm:"primaryKey" json:"id"`
-	Username           string    `gorm:"unique;not null" json:"username"`
+	Username           string    `gorm:"uniqueIndex:idx_users_username_company_id;not null" json:"username"`
 	PasswordHash       string    `json:"-"`
 	RoleID             uint      `gorm:"not null" json:"role_id"`
+	CompanyID          uint      `gorm:"index;not null" json:"company_id"`
+	IsPlatformAdmin    bool      `gorm:"default:false" json:"is_platform_admin"`
 	MustChangePassword bool      `json:"must_change_password"`
 	IsActive           bool      `gorm:"default:true" json:"is_active"`
 	CreatedAt          time.Time `json:"created_at"`
@@ -23,6 +25,7 @@ type User struct {
 type Employee struct {
 	ID                uint   `gorm:"primaryKey" json:"id"`
 	UserID            uint   `gorm:"unique;not null" json:"user_id"`
+	CompanyID         uint   `gorm:"index;not null" json:"company_id"`
 	DepartmentID      uint   `json:"department_id"`
 	ShiftID           uint   `json:"shift_id"`
 	NIK               string `gorm:"unique;not null" json:"nik"`

@@ -5,6 +5,11 @@ import {
   Phone,
   Loader2,
   FileText,
+  CreditCard,
+  Users,
+  CheckCircle2,
+  Crown,
+  ArrowUpRight,
 } from "lucide-react";
 
 import {
@@ -16,11 +21,17 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useCompanyProfile } from "@/features/company/hooks/useCompany";
 import { CompanyProfileForm } from "@/features/company/components/CompanyProfileForm";
+import { useSubscriptionPlans } from "@/features/auth/hooks/useAuth";
+import { useRequestUpgrade } from "@/features/subscription/hooks/useSubscription";
+import { cn } from "@/lib/utils";
 
 export default function CompanySettingsPage() {
   const { data: company, isLoading, isError } = useCompanyProfile();
+  const { data: plansData } = useSubscriptionPlans();
+  const { mutate: requestUpgrade, isPending: isUpgrading } = useRequestUpgrade();
 
   if (isLoading) {
     return (
@@ -37,6 +48,17 @@ export default function CompanySettingsPage() {
       </div>
     );
   }
+
+  const plans = plansData?.data || [];
+  const currentFeatures: string[] = company.plan_modules
+    ? (() => {
+        try {
+          return JSON.parse(company.plan_modules).modules || [];
+        } catch {
+          return [];
+        }
+      })()
+    : [];
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-10">
@@ -112,9 +134,81 @@ export default function CompanySettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          <Card className="border-t-4 border-t-emerald-600 shadow-sm">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-emerald-600" />
+                <CardTitle className="text-base">Langganan</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Paket</span>
+                <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+                  <Crown className="w-3 h-3 mr-1" />
+                  {company.subscription_plan_name || "Free"}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Status</span>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "capitalize",
+                    company.subscription_status === "ACTIVE"
+                      ? "text-emerald-600"
+                      : "text-amber-600"
+                  )}
+                >
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  {company.subscription_status === "PENDING_PAYMENT"
+                    ? "Menunggu Pembayaran"
+                    : company.subscription_status}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Karyawan</span>
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4 text-slate-400" />
+                  <span className="font-medium">
+                    {company.max_employees === 0
+                      ? "Unlimited"
+                      : `Max ${company.max_employees}`}
+                  </span>
+                </div>
+              </div>
+              {company.subscription_expires_at && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Berlaku hingga</span>
+                  <span className="font-medium">
+                    {new Date(
+                      company.subscription_expires_at
+                    ).toLocaleDateString("id-ID")}
+                  </span>
+                </div>
+              )}
+              {currentFeatures.length > 0 && (
+                <div className="pt-2 border-t">
+                  <p className="text-slate-500 mb-2">Fitur aktif:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {currentFeatures.map((f) => (
+                      <Badge
+                        key={f}
+                        variant="secondary"
+                        className="text-xs capitalize"
+                      >
+                        {f}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="md:col-span-8">
+        <div className="md:col-span-8 space-y-6">
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -128,6 +222,92 @@ export default function CompanySettingsPage() {
             </CardHeader>
             <CardContent>
               <CompanyProfileForm initialData={company} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Crown className="w-5 h-5 text-slate-500" />
+                <CardTitle>Upgrade Paket</CardTitle>
+              </div>
+              <CardDescription>
+                Tingkatkan paket Anda untuk membuka lebih banyak fitur dan
+                karyawan.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {plans.map((plan: any) => {
+                  const isCurrentPlan =
+                    plan.name.toLowerCase() ===
+                    company.subscription_plan_name?.toLowerCase();
+                  const isHigher =
+                    plan.price_monthly >
+                    (plans.find(
+                      (p: any) =>
+                        p.name.toLowerCase() ===
+                        company.subscription_plan_name?.toLowerCase()
+                    )?.price_monthly || 0);
+
+                  return (
+                    <div
+                      key={plan.id}
+                      className={cn(
+                        "rounded-lg border-2 p-4 transition-all",
+                        isCurrentPlan
+                          ? "border-blue-600 bg-blue-50"
+                          : "border-slate-200"
+                      )}
+                    >
+                      <h3 className="font-bold text-slate-900">{plan.name}</h3>
+                      <p className="text-2xl font-bold text-blue-700 mt-1">
+                        {plan.price_monthly === 0
+                          ? "Gratis"
+                          : `Rp${plan.price_monthly.toLocaleString("id-ID")}`}
+                      </p>
+                      {plan.price_monthly > 0 && (
+                        <p className="text-xs text-slate-500">/bulan</p>
+                      )}
+                      <p className="text-sm text-slate-600 mt-2">
+                        {plan.max_employees === 0
+                          ? "Unlimited"
+                          : `Max ${plan.max_employees}`}{" "}
+                        karyawan
+                      </p>
+
+                      {isCurrentPlan ? (
+                        <Button
+                          className="w-full mt-4"
+                          variant="outline"
+                          disabled
+                        >
+                          Paket Saat Ini
+                        </Button>
+                      ) : isHigher ? (
+                        <Button
+                          className="w-full mt-4"
+                          onClick={() =>
+                            requestUpgrade({ plan_slug: plan.slug })
+                          }
+                          disabled={isUpgrading}
+                        >
+                          <ArrowUpRight className="w-4 h-4 mr-1" />
+                          Upgrade
+                        </Button>
+                      ) : (
+                        <Button
+                          className="w-full mt-4"
+                          variant="outline"
+                          disabled
+                        >
+                          Tidak Tersedia
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
         </div>

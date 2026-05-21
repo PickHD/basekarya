@@ -24,3 +24,46 @@ func GetDBFromContext(ctx context.Context, defaultDB *gorm.DB) *gorm.DB {
 	}
 	return defaultDB
 }
+
+func GetCompanyIDFromCtx(ctx context.Context) uint {
+	if v, ok := ctx.Value(constants.CompanyIDContextKey).(uint); ok {
+		return v
+	}
+	return 0
+}
+
+func GetUserIDFromCtx(ctx context.Context) uint {
+	if v, ok := ctx.Value(constants.UserIDContextKey).(uint); ok {
+		return v
+	}
+	return 0
+}
+
+func IsPlatformAdminFromCtx(ctx context.Context) bool {
+	if v, ok := ctx.Value(constants.IsPlatformAdminContextKey).(bool); ok {
+		return v
+	}
+	return false
+}
+
+func TenantScope(ctx context.Context, db *gorm.DB) *gorm.DB {
+	if IsPlatformAdminFromCtx(ctx) {
+		return db
+	}
+	companyID := GetCompanyIDFromCtx(ctx)
+	if companyID == 0 {
+		return db
+	}
+
+	tableName := db.Statement.Table
+	if tableName == "" && db.Statement.Model != nil {
+		if err := db.Statement.Parse(db.Statement.Model); err == nil {
+			tableName = db.Statement.Table
+		}
+	}
+
+	if tableName != "" {
+		return db.Where(tableName+".company_id = ?", companyID)
+	}
+	return db.Where("company_id = ?", companyID)
+}

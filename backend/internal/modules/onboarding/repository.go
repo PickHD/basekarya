@@ -41,7 +41,7 @@ func NewRepository(db *gorm.DB) Repository {
 }
 
 func (r *repository) getDB(ctx context.Context) *gorm.DB {
-	return utils.GetDBFromContext(ctx, r.db)
+	return utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 }
 
 // ── Templates ─────────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ package company
 
 import (
 	"basekarya-backend/pkg/constants"
+	"basekarya-backend/pkg/utils"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -26,26 +27,51 @@ func NewService(repo Repository, cache CacheProvider, storage StorageProvider) S
 	return &service{repo, cache, storage}
 }
 
+func (s *service) buildProfileResponse(ctx context.Context, data *Company) (*CompanyProfileResponse, error) {
+	planName, maxEmployees, planModules, _ := s.repo.FindPlanByCompanyID(ctx, data.ID)
+
+	var expiresAt string
+	if data.SubscriptionExpiresAt != nil {
+		expiresAt = data.SubscriptionExpiresAt.Format("2006-01-02")
+	}
+
+	return &CompanyProfileResponse{
+		ID:                    data.ID,
+		Name:                  data.Name,
+		Address:               data.Address,
+		Email:                 data.Email,
+		PhoneNumber:           data.PhoneNumber,
+		Website:               data.Website,
+		TaxNumber:             data.TaxNumber,
+		LogoURL:               data.LogoURL,
+		SubscriptionPlanName:  planName,
+		SubscriptionStatus:    data.SubscriptionStatus,
+		SubscriptionExpiresAt: expiresAt,
+		MaxEmployees:          maxEmployees,
+		PlanModules:           planModules,
+	}, nil
+}
+
 func (s *service) GetProfile(ctx context.Context) (*CompanyProfileResponse, error) {
-	cacheKey := fmt.Sprintf(constants.COMPANY_PROFILE_CACHE_KEY, 1)
+	companyID := utils.GetCompanyIDFromCtx(ctx)
+	if companyID == 0 {
+		return &CompanyProfileResponse{}, nil
+	}
+	cacheKey := fmt.Sprintf(constants.COMPANY_PROFILE_CACHE_KEY, companyID)
 
 	cacheData, err := s.cache.Get(ctx, cacheKey)
 	if err == redis.Nil {
-		data, err := s.repo.FindByID(ctx, 1)
+		data, err := s.repo.FindByID(ctx, companyID)
 		if err != nil {
 			return nil, err
 		}
 
-		parsedData, err := json.Marshal(&CompanyProfileResponse{
-			ID:          data.ID,
-			Name:        data.Name,
-			Address:     data.Address,
-			Email:       data.Email,
-			PhoneNumber: data.PhoneNumber,
-			Website:     data.Website,
-			TaxNumber:   data.TaxNumber,
-			LogoURL:     data.LogoURL,
-		})
+		resp, err := s.buildProfileResponse(ctx, data)
+		if err != nil {
+			return nil, err
+		}
+
+		parsedData, err := json.Marshal(resp)
 		if err != nil {
 			return nil, err
 		}
@@ -55,16 +81,7 @@ func (s *service) GetProfile(ctx context.Context) (*CompanyProfileResponse, erro
 			return nil, err
 		}
 
-		return &CompanyProfileResponse{
-			ID:          data.ID,
-			Name:        data.Name,
-			Address:     data.Address,
-			Email:       data.Email,
-			PhoneNumber: data.PhoneNumber,
-			Website:     data.Website,
-			TaxNumber:   data.TaxNumber,
-			LogoURL:     data.LogoURL,
-		}, nil
+		return resp, nil
 	} else if err != nil {
 		return nil, err
 	}
@@ -79,7 +96,8 @@ func (s *service) GetProfile(ctx context.Context) (*CompanyProfileResponse, erro
 }
 
 func (s *service) UpdateProfile(ctx context.Context, req *UpdateCompanyProfileRequest, file *multipart.FileHeader) error {
-	data, err := s.repo.FindByID(ctx, 1)
+	companyID := utils.GetCompanyIDFromCtx(ctx)
+	data, err := s.repo.FindByID(ctx, companyID)
 	if err != nil {
 		return err
 	}
@@ -94,7 +112,7 @@ func (s *service) UpdateProfile(ctx context.Context, req *UpdateCompanyProfileRe
 		return err
 	}
 
-	err = s.cache.Del(ctx, fmt.Sprintf(constants.COMPANY_PROFILE_CACHE_KEY, 1))
+	err = s.cache.Del(ctx, fmt.Sprintf(constants.COMPANY_PROFILE_CACHE_KEY, utils.GetCompanyIDFromCtx(ctx)))
 	if err != nil {
 		return err
 	}

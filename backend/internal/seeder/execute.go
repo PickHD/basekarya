@@ -4,10 +4,10 @@ import (
 	"strings"
 
 	"basekarya-backend/internal/config"
-	"basekarya-backend/internal/modules/company"
 	"basekarya-backend/internal/modules/master"
 	"basekarya-backend/internal/modules/onboarding"
 	"basekarya-backend/internal/modules/rbac"
+	"basekarya-backend/internal/modules/subscription"
 	"basekarya-backend/internal/modules/user"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/logger"
@@ -30,7 +30,7 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 			return err
 		}
 
-		if err := seedCompanyData(tx); err != nil {
+		if err := seedSubscriptionPlans(tx); err != nil {
 			return err
 		}
 
@@ -51,20 +51,20 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 }
 
 func seedMasterData(tx *gorm.DB) error {
-	generalDept := master.Department{Name: "Umum"}
+	generalDept := master.Department{Name: "Umum", CompanyID: 1}
 	if err := tx.Where(master.Department{Name: "Umum"}).FirstOrCreate(&generalDept).Error; err != nil {
 		return err
 	}
 
-	regularShift := master.Shift{Name: "Regular", StartTime: "09:00:00", EndTime: "18:00:00"}
+	regularShift := master.Shift{Name: "Regular", StartTime: "09:00:00", EndTime: "18:00:00", CompanyID: 1}
 	if err := tx.FirstOrCreate(&regularShift, master.Shift{Name: "Regular"}).Error; err != nil {
 		return err
 	}
 
 	leaveTypes := []master.LeaveType{
-		{Name: "Annual", DefaultQuota: 12, IsDeducted: true},
-		{Name: "Sick", DefaultQuota: 15, IsDeducted: false},
-		{Name: "Unpaid", DefaultQuota: 0, IsDeducted: false},
+		{Name: "Annual", DefaultQuota: 12, IsDeducted: true, CompanyID: 1},
+		{Name: "Sick", DefaultQuota: 15, IsDeducted: false, CompanyID: 1},
+		{Name: "Unpaid", DefaultQuota: 0, IsDeducted: false, CompanyID: 1},
 	}
 
 	for _, lt := range leaveTypes {
@@ -77,18 +77,15 @@ func seedMasterData(tx *gorm.DB) error {
 }
 
 func seedRolesAndAdmin(tx *gorm.DB, cfg *config.Config, hasher Hasher) (*rbac.Role, error) {
-	roleSuperadmin := rbac.Role{Name: string(constants.UserRoleSuperadmin)}
-	if err := tx.Where(rbac.Role{Name: roleSuperadmin.Name}).FirstOrCreate(&roleSuperadmin).Error; err != nil {
-		return nil, err
-	}
-
-	roleEmployee := rbac.Role{Name: string(constants.UserRoleEmployee)}
-	if err := tx.Where(rbac.Role{Name: roleEmployee.Name}).FirstOrCreate(&roleEmployee).Error; err != nil {
+	platformRole := rbac.Role{Name: "PLATFORM_ADMIN", CompanyID: 0}
+	if err := tx.Where(rbac.Role{Name: "PLATFORM_ADMIN"}).FirstOrCreate(&platformRole).Error; err != nil {
 		return nil, err
 	}
 
 	newAdmin := user.User{
-		Username: cfg.CredentialConfig.SuperadminUsername,
+		Username:        cfg.CredentialConfig.SuperadminUsername,
+		CompanyID:       0,
+		IsPlatformAdmin: true,
 	}
 	hashPass, err := hasher.HashPassword(cfg.CredentialConfig.SuperadminPassword)
 	if err != nil {
@@ -98,7 +95,9 @@ func seedRolesAndAdmin(tx *gorm.DB, cfg *config.Config, hasher Hasher) (*rbac.Ro
 	if err := tx.Where(user.User{Username: newAdmin.Username}).
 		Attrs(user.User{
 			PasswordHash:       hashPass,
-			RoleID:             roleSuperadmin.ID,
+			RoleID:             platformRole.ID,
+			CompanyID:          0,
+			IsPlatformAdmin:    true,
 			MustChangePassword: false,
 			IsActive:           true,
 		}).
@@ -106,7 +105,16 @@ func seedRolesAndAdmin(tx *gorm.DB, cfg *config.Config, hasher Hasher) (*rbac.Ro
 		return nil, err
 	}
 
-	return &roleSuperadmin, nil
+	if newAdmin.CompanyID != 0 {
+		newAdmin.CompanyID = 0
+		newAdmin.RoleID = platformRole.ID
+		newAdmin.IsPlatformAdmin = true
+		if err := tx.Save(&newAdmin).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	return &platformRole, nil
 }
 
 func seedPermissions(tx *gorm.DB, roleSuperadmin *rbac.Role) error {
@@ -156,10 +164,10 @@ func seedPermissions(tx *gorm.DB, roleSuperadmin *rbac.Role) error {
 		}
 	}
 
-	// Assign all permissions to superadmin role
+	// Assign all permissions to platform admin role (company_id = 0)
 	for _, pid := range permissionIDs {
 		var rp rbac.RolePermission
-		if err := tx.Where(rbac.RolePermission{RoleID: roleSuperadmin.ID, PermissionID: pid}).FirstOrCreate(&rp).Error; err != nil {
+		if err := tx.Where(rbac.RolePermission{RoleID: roleSuperadmin.ID, PermissionID: pid}).Attrs(rbac.RolePermission{CompanyID: 0}).FirstOrCreate(&rp).Error; err != nil {
 			return err
 		}
 	}
@@ -167,11 +175,24 @@ func seedPermissions(tx *gorm.DB, roleSuperadmin *rbac.Role) error {
 	return nil
 }
 
-func seedCompanyData(tx *gorm.DB) error {
-	// TODO: remove seed company after feature multi tenant implemented
-	companyData := company.Company{Name: "PT. Pick", PhoneNumber: "08531432221023", Address: "Jl.Kejaksaan no.23 Jakarta Utara", Email: "admin@pick.com"}
-	if err := tx.Where(company.Company{Name: companyData.Name}).FirstOrCreate(&companyData).Error; err != nil {
-		return err
+func seedSubscriptionPlans(tx *gorm.DB) error {
+	plans := []subscription.SubscriptionPlan{
+		{Name: "Free", Slug: "free", MaxEmployees: 5, PriceMonthly: 0, Features: `{"modules":["attendance","leave"]}`, IsActive: true},
+		{Name: "Basic", Slug: "basic", MaxEmployees: 50, PriceMonthly: 99000, Features: `{"modules":["attendance","leave","overtime","loan","reimbursement","payroll","contract","finance"]}`, IsActive: true},
+		{Name: "Pro", Slug: "pro", MaxEmployees: 0, PriceMonthly: 249000, Features: `{"modules":["attendance","leave","overtime","loan","reimbursement","payroll","contract","finance","recruitment","onboarding"]}`, IsActive: true},
+	}
+
+	for i := range plans {
+		p := &plans[i]
+		var existing subscription.SubscriptionPlan
+		err := tx.Where("slug = ?", p.Slug).First(&existing).Error
+		if err == gorm.ErrRecordNotFound {
+			if err := tx.Create(p).Error; err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -190,14 +211,20 @@ func seedOnboardingTemplates(tx *gorm.DB) error {
 	type templateDef struct {
 		Name       string
 		Department string
-		Tasks      []struct{ Name, Description string; Order int }
+		Tasks      []struct {
+			Name, Description string
+			Order             int
+		}
 	}
 
 	templates := []templateDef{
 		{
 			Name:       "IT Setup",
 			Department: "IT",
-			Tasks: []struct{ Name, Description string; Order int }{
+			Tasks: []struct {
+				Name, Description string
+				Order             int
+			}{
 				{"Buat akun email perusahaan", "Buat akun email @company.com untuk karyawan baru", 1},
 				{"Setup laptop/PC", "Siapkan laptop atau PC beserta perangkat yang dibutuhkan", 2},
 				{"Berikan akses ke sistem internal", "Berikan akses ke aplikasi HR, project management, dan sistem internal lainnya", 3},
@@ -207,7 +234,10 @@ func seedOnboardingTemplates(tx *gorm.DB) error {
 		{
 			Name:       "HR Document Collection",
 			Department: "HR",
-			Tasks: []struct{ Name, Description string; Order int }{
+			Tasks: []struct {
+				Name, Description string
+				Order             int
+			}{
 				{"Kumpulkan KTP", "Minta dan simpan salinan KTP karyawan baru", 1},
 				{"Kumpulkan Kartu Keluarga (KK)", "Minta dan simpan salinan Kartu Keluarga", 2},
 				{"Kumpulkan NPWP", "Minta dan simpan salinan NPWP", 3},
@@ -222,18 +252,20 @@ func seedOnboardingTemplates(tx *gorm.DB) error {
 		var existing onboarding.OnboardingTemplate
 		result := tx.Where("name = ? AND department = ?", def.Name, def.Department).First(&existing)
 		if result.Error == nil {
-			continue // already seeded
+			continue
 		}
 
 		tmpl := onboarding.OnboardingTemplate{
 			Name:       def.Name,
 			Department: def.Department,
+			CompanyID:  1,
 		}
 		for _, task := range def.Tasks {
 			tmpl.Items = append(tmpl.Items, onboarding.OnboardingTemplateItem{
 				TaskName:    task.Name,
 				Description: task.Description,
 				SortOrder:   task.Order,
+				CompanyID:   1,
 			})
 		}
 		if err := tx.Create(&tmpl).Error; err != nil {

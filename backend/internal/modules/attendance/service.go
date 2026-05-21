@@ -103,8 +103,9 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 				return err
 			}
 
-			newAtt := &Attendance{
-				EmployeeID:         employee.ID,
+		newAtt := &Attendance{
+			CompanyID:          utils.GetCompanyIDFromCtx(ctx),
+			EmployeeID:         employee.ID,
 				ShiftID:            employee.ShiftID,
 				Date:               time.Now(),
 				CheckInTime:        now,

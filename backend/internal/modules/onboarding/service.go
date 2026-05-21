@@ -13,6 +13,7 @@ import (
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/logger"
 	"basekarya-backend/pkg/response"
+	"basekarya-backend/pkg/utils"
 )
 
 type Service interface {
@@ -61,12 +62,14 @@ func NewService(
 func (s *service) CreateTemplate(ctx context.Context, req *CreateTemplateRequest) error {
 	return s.transaction.RunInTransaction(ctx, func(ctx context.Context) error {
 		t := &OnboardingTemplate{
+			CompanyID:  utils.GetCompanyIDFromCtx(ctx),
 			Name:       req.Name,
 			Department: req.Department,
 		}
 
 		for _, item := range req.Items {
 			t.Items = append(t.Items, OnboardingTemplateItem{
+				CompanyID:   utils.GetCompanyIDFromCtx(ctx),
 				TaskName:    item.TaskName,
 				Description: item.Description,
 				SortOrder:   item.SortOrder,
@@ -115,6 +118,7 @@ func (s *service) UpdateTemplate(ctx context.Context, id uint, req *UpdateTempla
 		existing.Items = nil
 		for _, item := range req.Items {
 			existing.Items = append(existing.Items, OnboardingTemplateItem{
+				CompanyID:   utils.GetCompanyIDFromCtx(ctx),
 				TemplateID:  id,
 				TaskName:    item.TaskName,
 				Description: item.Description,
@@ -152,6 +156,7 @@ func (s *service) DeleteTemplate(ctx context.Context, id uint) error {
 func (s *service) CreateWorkflow(ctx context.Context, req *CreateWorkflowRequest) error {
 	return s.transaction.RunInTransaction(ctx, func(ctx context.Context) error {
 		workflow := &OnboardingWorkflow{
+			CompanyID:    utils.GetCompanyIDFromCtx(ctx),
 			ApplicantID:  req.ApplicantID,
 			EmployeeID:   req.EmployeeID,
 			NewHireName:  req.NewHireName,
@@ -182,6 +187,7 @@ func (s *service) CreateWorkflow(ctx context.Context, req *CreateWorkflowRequest
 				for _, item := range tmpl.Items {
 					itemID := item.ID
 					tasks = append(tasks, OnboardingTask{
+						CompanyID:            utils.GetCompanyIDFromCtx(ctx),
 						OnboardingWorkflowID: workflow.ID,
 						TemplateItemID:       &itemID,
 						TaskName:             item.TaskName,
@@ -209,8 +215,9 @@ func (s *service) CreateWorkflow(ctx context.Context, req *CreateWorkflowRequest
 		go func() {
 			itUsers, _ := s.user.FindApprovalUsers(context.Background(), constants.UPDATE_ONBOARDING_TASK)
 			if len(itUsers) > 0 {
-				_ = s.notification.BlastNotification(
-					itUsers,
+			_ = s.notification.BlastNotification(
+				ctx,
+				itUsers,
 					string(constants.NotificationTypeOnboardingTask),
 					"New Onboarding Tasks",
 					"New hire "+req.NewHireName+" has joined. Please complete onboarding tasks.",
@@ -360,12 +367,8 @@ func (s *service) CompleteTask(ctx context.Context, taskID uint, completedByID u
 				return err
 			}
 
-			// create username from full name
-			username := strings.ReplaceAll(strings.ToLower(w.NewHireName), " ", "")
-
 			req := &user.CreateEmployeeRequest{
-				Username:     username,
-				NIK:          username,
+				NIK:          strings.ReplaceAll(strings.ToLower(w.NewHireName), " ", ""),
 				FullName:     w.NewHireName,
 				Email:        w.NewHireEmail,
 				Position:     w.Position,
@@ -375,7 +378,7 @@ func (s *service) CompleteTask(ctx context.Context, taskID uint, completedByID u
 				ShiftID:      shift.ID,
 			}
 
-			if err := s.user.CreateEmployee(ctx, req); err != nil {
+			if _, err := s.user.CreateEmployee(ctx, req); err != nil {
 				return err
 			}
 		}

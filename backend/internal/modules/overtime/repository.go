@@ -26,12 +26,12 @@ func NewRepository(db *gorm.DB) Repository {
 }
 
 func (r *repository) Create(ctx context.Context, overtime *Overtime) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Create(overtime).Error
 }
 
 func (r *repository) FindByID(ctx context.Context, id uint) (*Overtime, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var overtime Overtime
 
 	err := db.
@@ -49,7 +49,7 @@ func (r *repository) FindAll(ctx context.Context, filter OvertimeFilter) ([]Over
 	var overtimes []Overtime
 	var total int64
 
-	query := db.Model(&Overtime{}).
+	query := utils.TenantScope(ctx, db.Model(&Overtime{})).
 		Joins("JOIN users ON users.id = overtimes.user_id").
 		Joins("JOIN employees ON employees.id = overtimes.employee_id").
 		Preload("User").
@@ -78,12 +78,12 @@ func (r *repository) FindAll(ctx context.Context, filter OvertimeFilter) ([]Over
 }
 
 func (r *repository) Update(ctx context.Context, overtime *Overtime) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Save(overtime).Error
 }
 
 func (r *repository) GetBulkActiveOvertimesByEmployeeIds(ctx context.Context, month, year int, ids []uint) (map[uint]int, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	type Result struct {
 		EmployeeID      uint
 		DurationMinutes int
@@ -111,7 +111,7 @@ func (r *repository) GetBulkActiveOvertimesByEmployeeIds(ctx context.Context, mo
 }
 
 func (r *repository) UpdateBulkStatusByEmployeeId(ctx context.Context, employeeID uint, periodMonth, periodYear int, status constants.OvertimeStatus) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Model(&Overtime{}).
 		Where("employee_id = ?", employeeID).
 		Where("status = ?", string(constants.OvertimeStatusApproved)).

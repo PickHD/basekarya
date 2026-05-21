@@ -107,8 +107,16 @@ export const useEmployeeMutations = () => {
     mutationFn: async (data: CreateEmployeePayload) => {
       return await api.post("/employees", data);
     },
-    onSuccess: async () => {
-      toast.success("Employee created successfully");
+    onSuccess: async (response: any) => {
+      const username = response.data?.data?.username;
+      if (username) {
+        toast.success("Employee created", {
+          description: `Username: ${username} | Password default: BaseKarya2024`,
+          duration: 8000,
+        });
+      } else {
+        toast.success("Employee created successfully");
+      }
       await invalidateEmployees();
     },
     onError: (error: any) => {

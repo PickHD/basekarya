@@ -4,6 +4,7 @@ import (
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/response"
+	"basekarya-backend/pkg/utils"
 	"context"
 	"errors"
 	"fmt"
@@ -59,6 +60,7 @@ func (s *service) CreateTransaction(ctx context.Context, req *CreateTransactionR
 		}
 
 		tx := &FinanceTransaction{
+			CompanyID:          utils.GetCompanyIDFromCtx(ctx),
 			FinanceCategoryID: req.FinanceCategoryID,
 			CreatedBy:         req.CreatedBy,
 			Type:              constants.FinanceType(req.Type),
@@ -89,6 +91,7 @@ func (s *service) CreateTransaction(ctx context.Context, req *CreateTransactionR
 
 		go func() {
 			_ = s.notification.BlastNotification(
+				ctx,
 				approvalUserIDs,
 				string(constants.NotificationTypeFinanceApprovalReq),
 				"Pengajuan Transaksi Keuangan Baru",
@@ -238,6 +241,7 @@ func (s *service) ProcessAction(ctx context.Context, req *ActionRequest) error {
 
 		go func() {
 			_ = s.notification.SendNotification(
+				ctx,
 				data.CreatedBy,
 				string(notificationType),
 				notificationTitle,
@@ -294,7 +298,8 @@ func (s *service) ExportTransactions(ctx context.Context, filter TransactionFilt
 
 func (s *service) CreateCategory(ctx context.Context, req *CategoryRequest) error {
 	cat := &FinanceCategory{
-		Name: req.Name,
+		CompanyID: utils.GetCompanyIDFromCtx(ctx),
+		Name:      req.Name,
 		Type: constants.FinanceType(req.Type),
 	}
 

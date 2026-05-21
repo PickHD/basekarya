@@ -27,7 +27,7 @@ func (s *service) Publish(ctx context.Context, req *CreateAnnouncementRequest) e
 		return err
 	}
 
-	err = s.notifProvider.BlastNotification(userIDs, string(constants.NotificationTypeAnnouncement), req.Title, req.Body, 0)
+	err = s.notifProvider.BlastNotification(ctx, userIDs, string(constants.NotificationTypeAnnouncement), req.Title, req.Body, 0)
 	if err != nil {
 		return err
 	}

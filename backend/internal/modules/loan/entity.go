@@ -12,8 +12,9 @@ type Loan struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
-	UserID uint      `gorm:"not null" json:"user_id"`
-	User   user.User `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	UserID    uint      `gorm:"not null" json:"user_id"`
+	User      user.User `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	CompanyID uint      `gorm:"index;not null" json:"company_id"`
 
 	EmployeeID uint          `gorm:"not null" json:"employee_id"`
 	Employee   user.Employee `gorm:"foreignKey:EmployeeID" json:"employee,omitempty"`

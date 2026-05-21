@@ -10,9 +10,9 @@ import (
 )
 
 type Service interface {
-	GetAllDepartments() ([]LookupResponse, error)
-	GetAllShifts() ([]LookupResponse, error)
-	GetAllLeaveTypes() ([]LookupLeaveTypeResponse, error)
+	GetAllDepartments(ctx context.Context) ([]LookupResponse, error)
+	GetAllShifts(ctx context.Context) ([]LookupResponse, error)
+	GetAllLeaveTypes(ctx context.Context) ([]LookupLeaveTypeResponse, error)
 }
 
 type service struct {
@@ -24,11 +24,11 @@ func NewService(repo Repository, cache CacheProvider) Service {
 	return &service{repo, cache}
 }
 
-func (s *service) GetAllDepartments() ([]LookupResponse, error) {
+func (s *service) GetAllDepartments(ctx context.Context) ([]LookupResponse, error) {
 	cacheData, err := s.cache.Get(context.Background(), constants.DEPARTMEN_CACHE_KEY)
 	if err == redis.Nil {
 		var results []LookupResponse
-		data, err := s.repo.FindAllDepartments()
+		data, err := s.repo.FindAllDepartments(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -64,11 +64,11 @@ func (s *service) GetAllDepartments() ([]LookupResponse, error) {
 	return results, nil
 }
 
-func (s *service) GetAllShifts() ([]LookupResponse, error) {
+func (s *service) GetAllShifts(ctx context.Context) ([]LookupResponse, error) {
 	cacheData, err := s.cache.Get(context.Background(), constants.SHIFT_CACHE_KEY)
 	if err == redis.Nil {
 		var results []LookupResponse
-		data, err := s.repo.FindAllShifts()
+		data, err := s.repo.FindAllShifts(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -104,11 +104,11 @@ func (s *service) GetAllShifts() ([]LookupResponse, error) {
 	return results, nil
 }
 
-func (s *service) GetAllLeaveTypes() ([]LookupLeaveTypeResponse, error) {
+func (s *service) GetAllLeaveTypes(ctx context.Context) ([]LookupLeaveTypeResponse, error) {
 	cacheData, err := s.cache.Get(context.Background(), constants.LEAVE_TYPE_CACHE_KEY)
 	if err == redis.Nil {
 		var results []LookupLeaveTypeResponse
-		data, err := s.repo.FindAllLeaveTypes()
+		data, err := s.repo.FindAllLeaveTypes(ctx)
 		if err != nil {
 			return nil, err
 		}

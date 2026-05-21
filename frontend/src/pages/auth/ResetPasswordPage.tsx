@@ -21,7 +21,7 @@ export default function ResetPasswordPage() {
             <p className="text-lg font-medium leading-relaxed">
               "Sistem manajemen sumber daya manusia yang terintegrasi, aman, dan efisien untuk mendukung operasional perusahaan Anda."
             </p>
-            <footer className="text-sm text-slate-400">BaseKarya v2.8</footer>
+            <footer className="text-sm text-slate-400">BaseKarya v2.10</footer>
           </blockquote>
         </div>
       </div>
@@ -31,7 +31,7 @@ export default function ResetPasswordPage() {
           <ResetPasswordForm />
 
           <p className="px-8 text-center text-sm text-slate-500 w-full mt-auto">
-            BaseKarya v2.9 &copy; 2026.
+            BaseKarya v2.10 &copy; 2026.
           </p>
         </div>
       </div>

@@ -4,6 +4,7 @@ import (
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/response"
+	"basekarya-backend/pkg/utils"
 	"context"
 	"fmt"
 	"path/filepath"
@@ -56,6 +57,7 @@ func (s *service) Create(ctx context.Context, req *ReimbursementRequest) error {
 		}
 
 		reimburstment := &Reimbursement{
+			CompanyID:     utils.GetCompanyIDFromCtx(ctx),
 			UserID:        req.UserID,
 			Title:         req.Title,
 			Description:   req.Description,
@@ -77,6 +79,7 @@ func (s *service) Create(ctx context.Context, req *ReimbursementRequest) error {
 
 		go func() {
 			_ = s.notification.BlastNotification(
+				ctx,
 				approvalUserIDs,
 				string(constants.NotificationTypeReimburseApprovalReq),
 				"Pengajuan Reimbursement Baru",
@@ -194,6 +197,7 @@ func (s *service) ProcessAction(ctx context.Context, req *ActionRequest) error {
 		// send notification to requester
 		go func() {
 			_ = s.notification.SendNotification(
+				ctx,
 				data.User.ID,
 				string(notificationType),
 				notificationTitle,

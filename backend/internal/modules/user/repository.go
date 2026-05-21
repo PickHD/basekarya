@@ -27,6 +27,7 @@ type Repository interface {
 	FindApprovalUsers(ctx context.Context, permissionApprovalName string) ([]uint, error)
 	FindRoleByID(ctx context.Context, id uint) (*rbac.Role, error)
 	FindAllUserIDs(ctx context.Context) ([]uint, error)
+	ForceResetPasswordByCompanyID(ctx context.Context, companyID uint) error
 }
 
 type repository struct {
@@ -52,7 +53,7 @@ func (r *repository) FindByUsername(ctx context.Context, username string) (*User
 }
 
 func (r *repository) FindByID(ctx context.Context, id uint) (*User, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var user User
 
 	err := db.Preload("Employee.Department").Preload("Employee.Shift").Preload("Role").First(&user, id).Error
@@ -66,12 +67,12 @@ func (r *repository) FindByID(ctx context.Context, id uint) (*User, error) {
 }
 
 func (r *repository) UpdateEmployee(ctx context.Context, emp *Employee) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Save(emp).Error
 }
 
 func (r *repository) UpdateUser(ctx context.Context, user *User) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Save(user).Error
 }
 
@@ -80,7 +81,7 @@ func (r *repository) FindAllEmployees(ctx context.Context, page, limit int, sear
 	var users []User
 	var total int64
 
-	query := db.Model(&User{}).
+	query := utils.TenantScope(ctx, db.Model(&User{})).
 		Joins("JOIN employees ON employees.user_id = users.id").
 		Preload("Role").
 		Preload("Employee").
@@ -104,22 +105,22 @@ func (r *repository) FindAllEmployees(ctx context.Context, page, limit int, sear
 }
 
 func (r *repository) CreateUser(ctx context.Context, user *User) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Create(user).Error
 }
 
 func (r *repository) CreateEmployee(ctx context.Context, emp *Employee) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Create(emp).Error
 }
 
 func (r *repository) DeleteUser(ctx context.Context, id uint) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Delete(&User{}, id).Error
 }
 
 func (r *repository) FindEmployeeByID(ctx context.Context, id uint) (*Employee, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var emp Employee
 	err := db.Preload("User").First(&emp, id).Error
 	return &emp, err
@@ -145,7 +146,7 @@ func (r *repository) UpdatePasswordByEmail(ctx context.Context, email string, pa
 func (r *repository) CountActiveEmployee(ctx context.Context) (int64, error) {
 	db := utils.GetDBFromContext(ctx, r.db)
 	var totalActive int64
-	if err := db.Model(&User{}).
+	if err := utils.TenantScope(ctx, db.Model(&User{})).
 		Joins("JOIN roles on roles.id = users.role_id").
 		Where("users.is_active = ? AND roles.name = ?", true, string(constants.UserRoleEmployee)).
 		Count(&totalActive).Error; err != nil {
@@ -159,7 +160,7 @@ func (r *repository) FindAllEmployeeActive(ctx context.Context) ([]Employee, err
 	db := utils.GetDBFromContext(ctx, r.db)
 	var employees []Employee
 
-	if err := db.Model(&Employee{}).
+	if err := utils.TenantScope(ctx, db.Model(&Employee{})).
 		Joins("User").
 		Joins("JOIN roles on roles.id = User.role_id").
 		Where("User.is_active = ? AND roles.name = ?", true, string(constants.UserRoleEmployee)).
@@ -177,7 +178,7 @@ func (r *repository) FindAllEmployeeActive(ctx context.Context) ([]Employee, err
 func (r *repository) FindApprovalUsers(ctx context.Context, permissionApprovalName string) ([]uint, error) {
 	db := utils.GetDBFromContext(ctx, r.db)
 	var ids []uint
-	err := db.Model(&User{}).
+	err := utils.TenantScope(ctx, db.Model(&User{})).
 		Joins("JOIN roles ON roles.id = users.role_id").
 		Joins("JOIN role_permissions ON role_permissions.role_id = roles.id").
 		Joins("JOIN permissions ON permissions.id = role_permissions.permission_id").
@@ -194,8 +195,15 @@ func (r *repository) FindApprovalUsers(ctx context.Context, permissionApprovalNa
 	return ids, nil
 }
 
+func (r *repository) ForceResetPasswordByCompanyID(ctx context.Context, companyID uint) error {
+	return utils.GetDBFromContext(ctx, r.db).
+		Model(&User{}).
+		Where("company_id = ?", companyID).
+		Update("must_change_password", true).Error
+}
+
 func (r *repository) FindRoleByID(ctx context.Context, id uint) (*rbac.Role, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var role rbac.Role
 	err := db.First(&role, id).Error
 	if err != nil {
@@ -205,7 +213,7 @@ func (r *repository) FindRoleByID(ctx context.Context, id uint) (*rbac.Role, err
 }
 
 func (r *repository) FindAllUserIDs(ctx context.Context) ([]uint, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var ids []uint
 	err := db.Model(&User{}).
 		Select("id").

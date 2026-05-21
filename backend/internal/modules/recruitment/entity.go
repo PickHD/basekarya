@@ -18,6 +18,7 @@ type JobRequisition struct {
 
 	RequesterID    uint   `gorm:"not null" json:"requester_id"`
 	DepartmentID   uint   `gorm:"not null" json:"department_id"`
+	CompanyID      uint   `gorm:"index;not null" json:"company_id"`
 	Title          string `gorm:"type:varchar(255);not null" json:"title"`
 	Description    string `gorm:"type:text" json:"description"`
 	Quantity       int    `gorm:"default:1" json:"quantity"`
@@ -48,6 +49,7 @@ type Applicant struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
 	JobRequisitionID uint   `gorm:"not null" json:"job_requisition_id"`
+	CompanyID        uint   `gorm:"index;not null" json:"company_id"`
 	FullName         string `gorm:"type:varchar(100);not null" json:"full_name"`
 	Email            string `gorm:"type:varchar(255);not null" json:"email"`
 	PhoneNumber      string `gorm:"type:varchar(20)" json:"phone_number"`
@@ -74,6 +76,7 @@ type ApplicantStageHistory struct {
 	CreatedAt time.Time `json:"created_at"`
 
 	ApplicantID uint   `gorm:"not null" json:"applicant_id"`
+	CompanyID   uint   `gorm:"index;not null" json:"company_id"`
 	FromStage   string `gorm:"type:varchar(15)" json:"from_stage"`
 	ToStage     string `gorm:"type:varchar(15);not null" json:"to_stage"`
 	ChangedBy   uint   `gorm:"not null" json:"changed_by"`

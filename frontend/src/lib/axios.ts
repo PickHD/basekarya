@@ -32,9 +32,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token was expired, so need to force redirect to login page
-      localStorage.removeItem("token");
-      window.location.href = "/login";
+      const token = localStorage.getItem("token");
+      if (token) {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      }
     }
 
     return Promise.reject(error);

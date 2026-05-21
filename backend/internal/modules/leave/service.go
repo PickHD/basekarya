@@ -88,6 +88,7 @@ func (s *service) Apply(ctx context.Context, req *ApplyRequest) error {
 
 		// construct leave request and save it to db
 		leaveReq := &LeaveRequest{
+			CompanyID:     utils.GetCompanyIDFromCtx(ctx),
 			UserID:        req.UserID,
 			EmployeeID:    req.EmployeeID,
 			LeaveTypeID:   req.LeaveTypeID,
@@ -111,6 +112,7 @@ func (s *service) Apply(ctx context.Context, req *ApplyRequest) error {
 
 		go func() {
 			_ = s.notification.BlastNotification(
+				ctx,
 				approvalUserIDs,
 				string(constants.NotificationTypeLeaveApprovalReq),
 				"Pengajuan Cuti Baru",
@@ -213,6 +215,7 @@ func (s *service) RequestAction(ctx context.Context, req *LeaveActionRequest) er
 		// send notification to requester
 		go func() {
 			_ = s.notification.SendNotification(
+				ctx,
 				leaveRequest.User.ID,
 				string(notificationType),
 				notificationTitle,
@@ -332,6 +335,7 @@ func (s *service) GenerateInitialBalance(ctx context.Context, employeeID uint) e
 		}
 
 		balances = append(balances, LeaveBalance{
+			CompanyID:    utils.GetCompanyIDFromCtx(ctx),
 			EmployeeID:  employeeID,
 			LeaveTypeID: lt.ID,
 			Year:        currentYear,
@@ -376,8 +380,9 @@ func (s *service) GenerateAnnualBalance(ctx context.Context) error {
 					Count(&count)
 
 				if count == 0 {
-					newBalances = append(newBalances, LeaveBalance{
-						EmployeeID:  emp.ID,
+				newBalances = append(newBalances, LeaveBalance{
+					CompanyID:    utils.GetCompanyIDFromCtx(ctx),
+					EmployeeID:  emp.ID,
 						LeaveTypeID: lt.ID,
 						Year:        currentYear,
 						QuotaTotal:  lt.DefaultQuota,

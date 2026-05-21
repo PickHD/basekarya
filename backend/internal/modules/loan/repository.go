@@ -26,12 +26,12 @@ func NewRepository(db *gorm.DB) Repository {
 }
 
 func (r *repository) Create(ctx context.Context, loan *Loan) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Create(loan).Error
 }
 
 func (r *repository) FindByID(ctx context.Context, id uint) (*Loan, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var loan Loan
 
 	err := db.
@@ -45,7 +45,7 @@ func (r *repository) FindByID(ctx context.Context, id uint) (*Loan, error) {
 }
 
 func (r *repository) FindActiveLoanByUserID(ctx context.Context, userID uint) (*Loan, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var loan Loan
 
 	err := db.
@@ -68,7 +68,7 @@ func (r *repository) FindAll(ctx context.Context, filter LoanFilter) ([]Loan, in
 	var loans []Loan
 	var total int64
 
-	query := db.Model(&Loan{}).
+	query := utils.TenantScope(ctx, db.Model(&Loan{})).
 		Joins("JOIN users ON users.id = loans.user_id").
 		Joins("JOIN employees ON employees.id = loans.employee_id").
 		Preload("User").
@@ -97,12 +97,12 @@ func (r *repository) FindAll(ctx context.Context, filter LoanFilter) ([]Loan, in
 }
 
 func (r *repository) Update(ctx context.Context, loan *Loan) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Save(loan).Error
 }
 
 func (r *repository) GetBulkActiveLoansByEmployeeIds(ctx context.Context, ids []uint) (map[uint]Loan, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	type Result struct {
 		EmployeeID uint
 		Loan       Loan

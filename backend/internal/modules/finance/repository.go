@@ -31,12 +31,12 @@ func NewRepository(db *gorm.DB) Repository {
 }
 
 func (r *repository) CreateTransaction(ctx context.Context, tx *FinanceTransaction) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Create(tx).Error
 }
 
 func (r *repository) FindTransactionByID(ctx context.Context, id uint) (*FinanceTransaction, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var tx FinanceTransaction
 
 	err := db.
@@ -58,7 +58,7 @@ func (r *repository) FindAllTransactions(ctx context.Context, filter Transaction
 	var transactions []FinanceTransaction
 	var total int64
 
-	query := db.Model(&FinanceTransaction{}).
+	query := utils.TenantScope(ctx, db.Model(&FinanceTransaction{})).
 		Joins("JOIN users ON users.id = finance_transactions.created_by").
 		Joins("JOIN finance_categories ON finance_categories.id = finance_transactions.finance_category_id").
 		Preload("Creator").
@@ -100,17 +100,17 @@ func (r *repository) FindAllTransactions(ctx context.Context, filter Transaction
 }
 
 func (r *repository) UpdateTransaction(ctx context.Context, tx *FinanceTransaction) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Save(tx).Error
 }
 
 func (r *repository) CreateCategory(ctx context.Context, cat *FinanceCategory) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Create(cat).Error
 }
 
 func (r *repository) FindCategoryByID(ctx context.Context, id uint) (*FinanceCategory, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var cat FinanceCategory
 	err := db.First(&cat, id).Error
 	if err != nil {
@@ -120,7 +120,7 @@ func (r *repository) FindCategoryByID(ctx context.Context, id uint) (*FinanceCat
 }
 
 func (r *repository) FindAllCategories(ctx context.Context, catType string) ([]FinanceCategory, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var categories []FinanceCategory
 
 	query := db.Order("name ASC")
@@ -133,12 +133,12 @@ func (r *repository) FindAllCategories(ctx context.Context, catType string) ([]F
 }
 
 func (r *repository) UpdateCategory(ctx context.Context, cat *FinanceCategory) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Save(cat).Error
 }
 
 func (r *repository) DeleteCategory(ctx context.Context, id uint) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Delete(&FinanceCategory{}, id).Error
 }
 
@@ -149,9 +149,9 @@ func (r *repository) GetDashboardSummary(ctx context.Context, startDate, endDate
 
 	statusFilter := "APPROVED"
 
-	incomeQuery := db.Model(&FinanceTransaction{}).
+	incomeQuery := utils.TenantScope(ctx, db.Model(&FinanceTransaction{})).
 		Where("type = ? AND status = ?", "INCOME", statusFilter)
-	expenseQuery := db.Model(&FinanceTransaction{}).
+	expenseQuery := utils.TenantScope(ctx, db.Model(&FinanceTransaction{})).
 		Where("type = ? AND status = ?", "EXPENSE", statusFilter)
 
 	if startDate != "" {
@@ -171,7 +171,7 @@ func (r *repository) GetDashboardSummary(ctx context.Context, startDate, endDate
 	resp.TotalExpense = totalExpense
 	resp.NetBalance = totalIncome - totalExpense
 
-	baseCountQuery := db.Model(&FinanceTransaction{}).Where("status = ?", statusFilter)
+	baseCountQuery := utils.TenantScope(ctx, db.Model(&FinanceTransaction{})).Where("status = ?", statusFilter)
 	if startDate != "" {
 		baseCountQuery = baseCountQuery.Where("transaction_date >= ?", startDate)
 	}
@@ -189,7 +189,7 @@ func (r *repository) GetDashboardSummary(ctx context.Context, startDate, endDate
 	}
 
 	var monthResults []monthResult
-	monthQuery := db.Model(&FinanceTransaction{}).
+	monthQuery := utils.TenantScope(ctx, db.Model(&FinanceTransaction{})).
 		Select("DATE_FORMAT(transaction_date, '%Y-%m') as month, SUM(amount) as total, type as tx_type").
 		Where("status = ?", statusFilter)
 
@@ -227,7 +227,7 @@ func (r *repository) GetDashboardSummary(ctx context.Context, startDate, endDate
 	}
 
 	var catResults []catResult
-	catQuery := db.Model(&FinanceTransaction{}).
+	catQuery := utils.TenantScope(ctx, db.Model(&FinanceTransaction{})).
 		Select("finance_categories.name as category_name, finance_transactions.type as tx_type, SUM(finance_transactions.amount) as total").
 		Joins("JOIN finance_categories ON finance_categories.id = finance_transactions.finance_category_id").
 		Where("finance_transactions.status = ?", statusFilter)
@@ -252,7 +252,7 @@ func (r *repository) GetDashboardSummary(ctx context.Context, startDate, endDate
 	resp.CategoryBreakdown = categoryBreakdown
 
 	var recentTx []FinanceTransaction
-	db.Preload("Creator").
+	utils.TenantScope(ctx, db).Preload("Creator").
 		Preload("Creator.Employee").
 		Preload("FinanceCategory").
 		Where("status = ?", statusFilter).

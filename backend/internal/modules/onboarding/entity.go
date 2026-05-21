@@ -16,6 +16,7 @@ type OnboardingTemplate struct {
 
 	Name       string `gorm:"type:varchar(100);not null" json:"name"`
 	Department string `gorm:"type:varchar(50);not null" json:"department"`
+	CompanyID  uint   `gorm:"index;not null" json:"company_id"`
 
 	Items []OnboardingTemplateItem `gorm:"foreignKey:TemplateID" json:"items,omitempty"`
 }
@@ -26,6 +27,7 @@ func (OnboardingTemplate) TableName() string { return "onboarding_templates" }
 type OnboardingTemplateItem struct {
 	ID         uint   `gorm:"primaryKey" json:"id"`
 	TemplateID uint   `gorm:"not null" json:"template_id"`
+	CompanyID  uint   `gorm:"index;not null" json:"company_id"`
 	TaskName   string `gorm:"type:varchar(255);not null" json:"task_name"`
 	Description string `gorm:"type:text" json:"description"`
 	SortOrder  int    `gorm:"default:0" json:"sort_order"`
@@ -41,6 +43,7 @@ type OnboardingWorkflow struct {
 
 	ApplicantID *uint  `json:"applicant_id"`
 	EmployeeID  *uint  `json:"employee_id"`
+	CompanyID   uint   `gorm:"index;not null" json:"company_id"`
 	NewHireName  string `gorm:"type:varchar(100);not null" json:"new_hire_name"`
 	NewHireEmail string `gorm:"type:varchar(255);not null" json:"new_hire_email"`
 	Position     string `gorm:"type:varchar(100)" json:"position"`
@@ -60,6 +63,7 @@ type OnboardingTask struct {
 	ID                   uint           `gorm:"primaryKey" json:"id"`
 	OnboardingWorkflowID uint           `gorm:"not null" json:"onboarding_workflow_id"`
 	TemplateItemID       *uint          `json:"template_item_id"`
+	CompanyID            uint           `gorm:"index;not null" json:"company_id"`
 
 	TaskName    string     `gorm:"type:varchar(255);not null" json:"task_name"`
 	Description string     `gorm:"type:text" json:"description"`

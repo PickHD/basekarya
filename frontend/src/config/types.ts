@@ -6,4 +6,7 @@ export interface MenuItem {
   icon: LucideIcon;
   permission?: string | string[];
   group?: string;
+  hideForPlatformAdmin?: boolean;
+  platformAdminOnly?: boolean;
+  requiredModule?: string;
 }
