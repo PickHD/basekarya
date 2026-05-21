@@ -18,6 +18,8 @@ import AttendanceHistoryPage from "@/pages/dashboard/AttendanceHistoryPage";
 import ReimbursementListPage from "@/pages/reimbursement/ReimbursementListPage";
 import LoanListPage from "@/pages/loan/LoanListPage";
 import OvertimeListPage from "@/pages/overtime/OvertimeListPage";
+import FinancePage from "@/pages/finance/FinancePage";
+import FinanceDashboardPage from "@/pages/finance/FinanceDashboardPage";
 
 // Pages - Admin
 import EmployeeListPage from "@/pages/admin/EmployeeListPage";
@@ -112,6 +114,18 @@ function App() {
           <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.VIEW_LEAVE, PERMISSIONS.VIEW_SELF_LEAVE]} />}>
             <Route path="leave">
               <Route index element={<LeaveListPage />} />
+            </Route>
+          </Route>
+
+          <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.VIEW_FINANCE]} />}>
+            <Route path="finance">
+              <Route index element={<FinancePage />} />
+            </Route>
+          </Route>
+
+          <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.VIEW_FINANCE_DASHBOARD]} />}>
+            <Route path="finance/dashboard">
+              <Route index element={<FinanceDashboardPage />} />
             </Route>
           </Route>
 

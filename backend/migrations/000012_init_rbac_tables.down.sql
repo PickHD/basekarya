@@ -2,7 +2,10 @@ ALTER TABLE users ADD COLUMN role ENUM('SUPERADMIN', 'EMPLOYEE') DEFAULT 'EMPLOY
 
 UPDATE users u
 JOIN roles r ON u.role_id = r.id
-SET u.role = r.name;
+SET u.role = CASE
+  WHEN r.name = 'SUPERADMIN' THEN 'SUPERADMIN'
+  ELSE 'EMPLOYEE'
+END;
 
 ALTER TABLE users DROP FOREIGN KEY fk_user_role;
 ALTER TABLE users DROP COLUMN role_id;

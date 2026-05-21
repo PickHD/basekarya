@@ -9,6 +9,7 @@ import (
 	"basekarya-backend/internal/modules/auth"
 	"basekarya-backend/internal/modules/company"
 	"basekarya-backend/internal/modules/contract"
+	"basekarya-backend/internal/modules/finance"
 	"basekarya-backend/internal/modules/health"
 	"basekarya-backend/internal/modules/leave"
 	"basekarya-backend/internal/modules/loan"
@@ -52,6 +53,7 @@ type Container struct {
 	ContractHandler      *contract.Handler
 	RecruitmentHandler   *recruitment.Handler
 	OnboardingHandler    *onboarding.Handler
+	FinanceHandler       *finance.Handler
 
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
@@ -95,6 +97,7 @@ func NewContainer() (*Container, error) {
 	contractRepo := contract.NewRepository(db.GetDB())
 	recruitmentRepo := recruitment.NewRepository(db.GetDB())
 	onboardingRepo := onboarding.NewRepository(db.GetDB())
+	financeRepo := finance.NewRepository(db.GetDB())
 
 	healthSvc := health.NewService(healthRepo)
 	notificationSvc := notification.NewService(wsHub, notificationRepo)
@@ -113,6 +116,7 @@ func NewContainer() (*Container, error) {
 	contractSvc := contract.NewService(contractRepo, storage, notificationSvc, userRepo, excel)
 	onboardingSvc := onboarding.NewService(onboardingRepo, notificationSvc, userSvc, email, companyRepo, rbacRepo, masterRepo, transactionManager)
 	recruitmentSvc := recruitment.NewService(recruitmentRepo, storage, notificationSvc, userRepo, onboardingSvc, transactionManager)
+	financeSvc := finance.NewService(financeRepo, notificationSvc, userRepo, transactionManager, excel)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)
@@ -131,6 +135,7 @@ func NewContainer() (*Container, error) {
 	contractHandler := contract.NewHandler(contractSvc)
 	recruitmentHandler := recruitment.NewHandler(recruitmentSvc)
 	onboardingHandler := onboarding.NewHandler(onboardingSvc)
+	financeHandler := finance.NewHandler(financeSvc)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 	rateLimiterMiddleware := middleware.NewRateLimiterMiddleware()
@@ -168,6 +173,7 @@ func NewContainer() (*Container, error) {
 		ContractHandler:      contractHandler,
 		RecruitmentHandler:   recruitmentHandler,
 		OnboardingHandler:    onboardingHandler,
+		FinanceHandler:       financeHandler,
 
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,

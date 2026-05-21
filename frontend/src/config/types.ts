@@ -5,4 +5,5 @@ export interface MenuItem {
   href: string;
   icon: LucideIcon;
   permission?: string | string[];
+  group?: string;
 }

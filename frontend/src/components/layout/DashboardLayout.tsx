@@ -18,9 +18,11 @@ import { Link } from "react-router-dom";
 import { useProfile } from "@/features/user/hooks/useProfile";
 import { Loader2 } from "lucide-react";
 import { NotificationBell } from "@/features/notification";
+import { cn } from "@/lib/utils";
 
 export default function DashboardLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { logout } = useLogout();
   const { data: user, isLoading } = useProfile();
 
@@ -29,13 +31,21 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
-      <aside className="hidden w-64 md:block bg-white shadow-sm">
-        <Sidebar />
+    <div className="flex h-screen overflow-hidden bg-background">
+      <aside
+        className={cn(
+          "hidden md:block bg-sidebar transition-all duration-300 ease-in-out overflow-hidden",
+          isSidebarCollapsed ? "w-16" : "w-64"
+        )}
+      >
+        <Sidebar
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        />
       </aside>
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 items-center justify-between gap-4 border-b bg-white px-6 shadow-sm">
+        <header className="flex h-16 items-center justify-between gap-4 border-b bg-card px-6 transition-all duration-300">
           <div className="md:hidden">
             <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
               <SheetTrigger asChild>
@@ -43,9 +53,9 @@ export default function DashboardLayout() {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-64">
+              <SheetContent side="left" className="p-0 w-64 bg-sidebar">
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                <Sidebar />
+                <Sidebar isCollapsed={false} />
               </SheetContent>
             </Sheet>
           </div>
@@ -53,7 +63,7 @@ export default function DashboardLayout() {
           <div className="flex w-full justify-end md:justify-end">
             {isLoading ? (
               <div className="flex items-center justify-end h-10 w-10">
-                <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             ) : (
               <DropdownMenu>
@@ -98,7 +108,7 @@ export default function DashboardLayout() {
 
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    className="text-red-600 cursor-pointer"
+                    className="text-destructive cursor-pointer"
                     onClick={handleLogout}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
