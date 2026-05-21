@@ -57,7 +57,7 @@ export default function DashboardPage() {
 
   const renderButtonContent = () => {
     if (isLoadingAttendance) {
-      return <Loader2 className="h-8 w-8 animate-spin text-blue-600" />;
+      return <Loader2 className="h-8 w-8 animate-spin text-primary" />;
     }
 
     const type = attendanceToday?.type || "NONE";
@@ -65,11 +65,11 @@ export default function DashboardPage() {
     if (type === "NONE") {
       return (
         <>
-          <div className="p-4 bg-blue-600 rounded-full text-white mb-2 shadow-lg group-hover:scale-110 transition-transform">
+          <div className="p-4 bg-primary rounded-full text-primary-foreground mb-2 shadow-lg group-hover:scale-110 transition-transform">
             <Camera className="h-8 w-8" />
           </div>
-          <span className="text-xl font-bold text-blue-900">CLOCK IN</span>
-          <span className="text-xs text-slate-400 font-medium">
+          <span className="text-xl font-bold text-primary">CLOCK IN</span>
+          <span className="text-xs text-muted-foreground font-medium">
             Tap to Scan Face
           </span>
         </>
@@ -82,8 +82,8 @@ export default function DashboardPage() {
           <div className="p-4 bg-orange-500 rounded-full text-white mb-2 shadow-lg group-hover:scale-110 transition-transform">
             <LogOut className="h-8 w-8" />
           </div>
-          <span className="text-xl font-bold text-orange-900">CLOCK OUT</span>
-          <span className="text-xs text-slate-400 font-medium">
+          <span className="text-xl font-bold text-orange-700">CLOCK OUT</span>
+          <span className="text-xs text-muted-foreground font-medium">
             End your shift
           </span>
         </>
@@ -93,11 +93,11 @@ export default function DashboardPage() {
     if (type === "COMPLETED") {
       return (
         <>
-          <div className="p-4 bg-green-600 rounded-full text-white mb-2 shadow-lg">
+          <div className="p-4 bg-emerald-600 rounded-full text-white mb-2 shadow-lg">
             <CheckCircle2 className="h-8 w-8" />
           </div>
-          <span className="text-xl font-bold text-green-900">COMPLETE</span>
-          <span className="text-xs text-slate-400 font-medium">
+          <span className="text-xl font-bold text-emerald-700">COMPLETE</span>
+          <span className="text-xs text-muted-foreground font-medium">
             See you tomorrow!
           </span>
         </>
@@ -120,27 +120,27 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">
             {isLoadingUser ? (
-              <Skeleton className="h-10 w-64 bg-slate-200" />
+              <Skeleton className="h-10 w-64" />
             ) : (
               greeting
             )}
           </h2>
-          <p className="text-slate-500">
+          <p className="text-muted-foreground">
             Here is your daily attendance overview.
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border shadow-sm">
-          <CalendarClock className="h-5 w-5 text-blue-600" />
-          <span className="font-mono font-medium text-slate-900">
+        <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-full border shadow-sm">
+          <CalendarClock className="h-5 w-5 text-primary" />
+          <span className="font-mono font-medium text-foreground">
             {format(currentTime, "EEEE, dd MMMM yyyy - HH:mm:ss")}
           </span>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4 border-blue-100 shadow-md">
+        <Card className="lg:col-span-4 border-primary/20 shadow-md">
           <CardHeader>
             <CardTitle>Attendance Action</CardTitle>
             <CardDescription>
@@ -152,21 +152,21 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-center py-10 space-y-6">
             <div className="flex flex-col items-center space-y-2">
-              <span className="text-sm text-slate-500 uppercase tracking-wider font-semibold">
+              <span className="text-sm text-muted-foreground uppercase tracking-wider font-semibold">
                 Current Status
               </span>
               {isLoadingAttendance ? (
-                <div className="h-6 w-24 bg-slate-100 animate-pulse rounded" />
+                <div className="h-6 w-24 bg-muted animate-pulse rounded" />
               ) : (
                 <Badge
                   variant="outline"
-                  className={`text-lg px-4 py-1 border-slate-300
+                  className={`text-lg px-4 py-1
                             ${
                               attendanceToday?.status === "ABSENT"
-                                ? "bg-slate-100 text-slate-600"
+                                ? "bg-muted text-muted-foreground"
                                 : attendanceToday?.status === "LATE"
-                                ? "bg-red-50 text-red-600 border-red-200"
-                                : "bg-green-50 text-green-600 border-green-200"
+                                ? "bg-destructive/10 text-destructive border-destructive/30"
+                                : "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
                             }
                         `}
                 >
@@ -181,7 +181,7 @@ export default function DashboardPage() {
                 disabled={
                   isLoadingAttendance || attendanceToday?.type === "COMPLETED"
                 }
-                className="relative w-48 h-48 rounded-full flex flex-col items-center justify-center gap-2 bg-white hover:bg-slate-50 border-4 border-blue-100 text-slate-900 shadow-xl transition-all active:scale-95 disabled:opacity-80 disabled:cursor-not-allowed"
+                className="relative w-48 h-48 rounded-full flex flex-col items-center justify-center gap-2 bg-card hover:bg-muted border-4 border-primary/20 text-foreground shadow-xl transition-all active:scale-95 disabled:opacity-80 disabled:cursor-not-allowed"
                 onClick={handleClockInClick}
               >
                 {renderButtonContent()}
@@ -189,7 +189,7 @@ export default function DashboardPage() {
             </div>
 
             {attendanceToday?.check_in_time && (
-              <p className="text-sm text-slate-500 mt-4 font-mono">
+              <p className="text-sm text-muted-foreground mt-4 font-mono">
                 In:{" "}
                 {new Date(attendanceToday.check_in_time).toLocaleTimeString()}
                 {attendanceToday.check_out_time &&
@@ -199,7 +199,7 @@ export default function DashboardPage() {
               </p>
             )}
 
-            <p className="text-sm text-slate-400 max-w-xs text-center">
+            <p className="text-sm text-muted-foreground max-w-xs text-center">
               Pastikan Anda berada di area yang ditentukan dan berikan akses
               kamera & lokasi.
             </p>
@@ -221,7 +221,7 @@ export default function DashboardPage() {
               ) : (
                 <>
                   <div className="flex items-center space-x-4">
-                    <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center border overflow-hidden">
+                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center border overflow-hidden">
                       {user?.profile_picture_url ? (
                         <img
                           src={user.profile_picture_url}
@@ -229,26 +229,26 @@ export default function DashboardPage() {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <User className="h-6 w-6 text-slate-500" />
+                        <User className="h-6 w-6 text-muted-foreground" />
                       )}
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900">
+                      <p className="font-semibold text-foreground">
                         {user?.full_name}
                       </p>
-                      <p className="text-sm text-slate-500">{user?.role}</p>
+                      <p className="text-sm text-muted-foreground">{user?.role}</p>
                     </div>
                   </div>
                   <Separator className="my-4" />
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Department</span>
+                      <span className="text-muted-foreground">Department</span>
                       <span className="font-medium">
                         {user?.department_name || "-"}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-500">ID / NIK</span>
+                      <span className="text-muted-foreground">ID / NIK</span>
                       <span className="font-medium">{user?.nik}</span>
                     </div>
                   </div>
@@ -263,15 +263,15 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                  <CalendarClock className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div className="flex items-start gap-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                  <CalendarClock className="h-5 w-5 text-primary mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-blue-900">
+                    <p className="text-sm font-semibold text-foreground">
                       {isLoadingUser
                         ? "Loading..."
                         : user?.shift_name || "No Shift Assigned"}
                     </p>
-                    <p className="text-xs text-blue-700">
+                    <p className="text-xs text-primary/80">
                       {isLoadingUser
                         ? "..."
                         : `${formatShiftTime(
@@ -281,13 +281,13 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-100">
-                  <MapPin className="h-5 w-5 text-green-600 mt-0.5" />
+                <div className="flex items-start gap-3 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                  <MapPin className="h-5 w-5 text-emerald-600 mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-green-900">
+                    <p className="text-sm font-semibold text-foreground">
                       Location Access
                     </p>
-                    <p className="text-xs text-green-700">
+                    <p className="text-xs text-emerald-700">
                       Remote / Work From Anywhere
                     </p>
                   </div>
