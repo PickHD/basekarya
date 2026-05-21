@@ -25,8 +25,12 @@ import { AttendanceDialog } from "@/features/attendance/components/AttendanceDia
 import { useTodayAttendance } from "@/features/attendance/hooks/useAttendance";
 
 import { useProfile } from "@/features/user/hooks/useProfile";
+import { useCompanyProfile } from "@/features/company/hooks/useCompany";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getGreetingWithName } from "@/lib/greeting";
+import { AlertCircle, Crown } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Link } from "react-router-dom";
 
 export default function DashboardPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -106,6 +110,7 @@ export default function DashboardPage() {
   };
 
   const { data: user, isLoading: isLoadingUser } = useProfile();
+  const { data: company } = useCompanyProfile();
 
   const greeting = useMemo(() => {
     return getGreetingWithName(user?.full_name, currentTime);
@@ -138,6 +143,30 @@ export default function DashboardPage() {
           </span>
         </div>
       </div>
+
+      {company?.subscription_status === "PENDING_PAYMENT" && (
+        <Alert className="border-amber-300 bg-amber-50 text-amber-800">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Menunggu Pembayaran</AlertTitle>
+          <AlertDescription>
+            Paket <strong>{company.subscription_plan_name}</strong> Anda sedang menunggu konfirmasi pembayaran. Tim kami akan menghubungi Anda segera.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {company?.subscription_plan_name?.toLowerCase() === "free" && company.max_employees > 0 && (
+        <Alert className="border-primary/30 bg-primary/5">
+          <Crown className="h-4 w-4 text-primary" />
+          <AlertTitle>Upgrade Paket Anda</AlertTitle>
+          <AlertDescription>
+            Anda menggunakan paket <strong>Free</strong> dengan batas {company.max_employees} karyawan.{" "}
+            <Link to="/admin/company-settings" className="underline font-semibold hover:text-primary">
+              Upgrade sekarang
+            </Link>{" "}
+            untuk membuka fitur lebih banyak.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4 border-primary/20 shadow-md">

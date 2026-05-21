@@ -17,7 +17,7 @@ func NewHandler(service Service) *Handler {
 }
 
 func (h *Handler) GetDepartments(ctx echo.Context) error {
-	resp, err := h.service.GetAllDepartments()
+	resp, err := h.service.GetAllDepartments(ctx.Request().Context())
 	if err != nil {
 		logger.Errorw("get departments failed: ", err)
 
@@ -28,7 +28,7 @@ func (h *Handler) GetDepartments(ctx echo.Context) error {
 }
 
 func (h *Handler) GetShifts(ctx echo.Context) error {
-	resp, err := h.service.GetAllShifts()
+	resp, err := h.service.GetAllShifts(ctx.Request().Context())
 	if err != nil {
 		logger.Errorw("get shifts failed: ", err)
 
@@ -39,7 +39,7 @@ func (h *Handler) GetShifts(ctx echo.Context) error {
 }
 
 func (h *Handler) GetLeaveTypes(ctx echo.Context) error {
-	resp, err := h.service.GetAllLeaveTypes()
+	resp, err := h.service.GetAllLeaveTypes(ctx.Request().Context())
 
 	if err != nil {
 		logger.Errorw("get leave types failed: ", err)

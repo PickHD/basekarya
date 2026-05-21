@@ -10,3 +10,7 @@ type CacheProvider interface {
 	Get(ctx context.Context, key string) (string, error)
 	Del(ctx context.Context, key string) error
 }
+
+type PlanProvider interface {
+	FindModulesByCompanyID(ctx context.Context, companyID uint) ([]string, error)
+}

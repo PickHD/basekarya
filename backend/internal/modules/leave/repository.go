@@ -37,12 +37,12 @@ func NewRepository(db *gorm.DB) Repository {
 }
 
 func (r *repository) CreateRequest(ctx context.Context, req *LeaveRequest) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Create(req).Error
 }
 
 func (r *repository) FindRequestByID(ctx context.Context, id uint) (*LeaveRequest, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var req LeaveRequest
 	err := db.
 		Preload("User").
@@ -60,7 +60,7 @@ func (r *repository) FindAllRequests(ctx context.Context, filter *LeaveFilter) (
 
 	offset := (filter.Page - 1) * filter.Limit
 
-	query := db.Model(&LeaveRequest{}).
+	query := utils.TenantScope(ctx, db.Model(&LeaveRequest{})).
 		Joins("JOIN employees ON employees.id = leave_requests.employee_id").
 		Joins("JOIN ref_leave_types ON ref_leave_types.id = leave_requests.leave_type_id").
 		Preload("Employee").
@@ -91,7 +91,7 @@ func (r *repository) FindAllRequests(ctx context.Context, filter *LeaveFilter) (
 }
 
 func (r *repository) GetBalance(ctx context.Context, employeeID, leaveTypeID uint, year int) (*LeaveBalance, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var balance LeaveBalance
 	err := db.
 		Where("employee_id = ? AND leave_type_id = ? AND year = ?",
@@ -101,7 +101,7 @@ func (r *repository) GetBalance(ctx context.Context, employeeID, leaveTypeID uin
 }
 
 func (r *repository) ApproveRequest(ctx context.Context, requestID uint, approverID uint, attendanceRecords []attendance.Attendance, shouldDeduct bool, days int) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 
 	if err := db.Model(&LeaveRequest{}).Where("id = ?", requestID).
 		Updates(map[string]interface{}{
@@ -151,7 +151,7 @@ func (r *repository) ApproveRequest(ctx context.Context, requestID uint, approve
 }
 
 func (r *repository) RejectRequest(ctx context.Context, requestID uint, approverID uint, reason string) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	if reason == "" {
 		return errors.New("reject reason required")
 	}
@@ -165,7 +165,7 @@ func (r *repository) RejectRequest(ctx context.Context, requestID uint, approver
 }
 
 func (r *repository) FindAllLeaveTypes(ctx context.Context) ([]master.LeaveType, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var leaveTypes []master.LeaveType
 	if err := db.Find(&leaveTypes).Error; err != nil {
 		return nil, err
@@ -174,7 +174,7 @@ func (r *repository) FindAllLeaveTypes(ctx context.Context) ([]master.LeaveType,
 }
 
 func (r *repository) CreateLeaveBalances(ctx context.Context, balances []LeaveBalance) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	if len(balances) == 0 {
 		return nil
 	}

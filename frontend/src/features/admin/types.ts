@@ -25,7 +25,6 @@ export interface AttendanceRecap {
 }
 
 export interface CreateEmployeePayload {
-  username: string;
   full_name: string;
   nik: string;
   department_id: number;

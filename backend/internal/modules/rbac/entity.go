@@ -4,7 +4,8 @@ import "time"
 
 type Role struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
-	Name      string    `gorm:"unique;not null" json:"name"`
+	Name      string    `gorm:"uniqueIndex:idx_roles_name_company_id;not null" json:"name"`
+	CompanyID uint      `gorm:"index;not null" json:"company_id"`
 	CreatedAt time.Time `json:"created_at"`
 
 	Permissions []Permission `gorm:"many2many:role_permissions;" json:"permissions,omitempty"`
@@ -31,6 +32,7 @@ type RolePermission struct {
 	ID           uint      `gorm:"primaryKey" json:"id"`
 	RoleID       uint      `gorm:"uniqueIndex:idx_role_permission" json:"role_id"`
 	PermissionID uint      `gorm:"uniqueIndex:idx_role_permission" json:"permission_id"`
+	CompanyID    uint      `gorm:"index;not null" json:"company_id"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 

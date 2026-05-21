@@ -4,6 +4,7 @@ import (
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/response"
+	"basekarya-backend/pkg/utils"
 	"context"
 	"encoding/json"
 	"errors"
@@ -19,7 +20,7 @@ type Service interface {
 	UpdateProfile(ctx context.Context, userID uint, req *UpdateProfileRequest, file *multipart.FileHeader) error
 	ChangePassword(ctx context.Context, userID uint, req *ChangePasswordRequest) error
 	GetAllEmployees(ctx context.Context, page, limit int, search string) ([]EmployeeListResponse, *response.Meta, error)
-	CreateEmployee(ctx context.Context, req *CreateEmployeeRequest) error
+	CreateEmployee(ctx context.Context, req *CreateEmployeeRequest) (*CreateEmployeeResponse, error)
 	UpdateEmployee(ctx context.Context, id uint, req *UpdateEmployeeRequest) error
 	DeleteEmployee(ctx context.Context, id uint) error
 
@@ -33,10 +34,11 @@ type service struct {
 	cache              CacheProvider
 	leaveGenerator     LeaveBalanceGenerator
 	transactionManager infrastructure.TransactionManager
+	subscription       SubscriptionProvider
 }
 
-func NewService(repo Repository, bcrypt Hasher, storage StorageProvider, cache CacheProvider, leaveGenerator LeaveBalanceGenerator, transactionManager infrastructure.TransactionManager) Service {
-	return &service{repo, bcrypt, storage, cache, leaveGenerator, transactionManager}
+func NewService(repo Repository, bcrypt Hasher, storage StorageProvider, cache CacheProvider, leaveGenerator LeaveBalanceGenerator, transactionManager infrastructure.TransactionManager, subscription SubscriptionProvider) Service {
+	return &service{repo, bcrypt, storage, cache, leaveGenerator, transactionManager, subscription}
 }
 
 func (s *service) GetProfile(userID uint) (*UserProfileResponse, error) {
@@ -213,14 +215,23 @@ func (s *service) GetAllEmployees(ctx context.Context, page, limit int, search s
 	return list, meta, nil
 }
 
-func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest) error {
-	return s.transactionManager.RunInTransaction(ctx, func(ctx context.Context) error {
-		checkUser, err := s.repo.FindByUsername(ctx, req.Username)
-		if err == nil && checkUser.ID != 0 {
-			return errors.New("username already exists")
+func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest) (*CreateEmployeeResponse, error) {
+	if s.subscription != nil {
+		allowed, err := s.subscription.CheckEmployeeLimit(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check employee limit: %w", err)
 		}
+		if !allowed {
+			return nil, errors.New("employee limit reached for your subscription plan. please upgrade to add more employees")
+		}
+	}
 
-		hashPass, _ := s.bcrypt.HashPassword(req.Username)
+	var generatedUsername string
+
+	err := s.transactionManager.RunInTransaction(ctx, func(ctx context.Context) error {
+		generatedUsername = utils.GenerateUsername(req.FullName)
+
+		hashPass, _ := s.bcrypt.HashPassword("BaseKarya2024")
 
 		role, err := s.repo.FindRoleByID(ctx, req.RoleID)
 		if err != nil {
@@ -228,9 +239,10 @@ func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest
 		}
 
 		newUser := User{
-			Username:           req.Username,
+			Username:           generatedUsername,
 			PasswordHash:       hashPass,
 			RoleID:             role.ID,
+			CompanyID:          utils.GetCompanyIDFromCtx(ctx),
 			MustChangePassword: true,
 		}
 
@@ -240,6 +252,7 @@ func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest
 
 		newEmp := Employee{
 			UserID:       newUser.ID,
+			CompanyID:    utils.GetCompanyIDFromCtx(ctx),
 			FullName:     req.FullName,
 			NIK:          req.NIK,
 			DepartmentID: req.DepartmentID,
@@ -253,13 +266,14 @@ func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest
 			return err
 		}
 
-		err = s.leaveGenerator.GenerateInitialBalance(ctx, newEmp.ID)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return s.leaveGenerator.GenerateInitialBalance(ctx, newEmp.ID)
 	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &CreateEmployeeResponse{Username: generatedUsername}, nil
 }
 
 func (s *service) UpdateEmployee(ctx context.Context, id uint, req *UpdateEmployeeRequest) error {

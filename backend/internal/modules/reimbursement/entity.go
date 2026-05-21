@@ -15,8 +15,9 @@ type Reimbursement struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 
-	UserID uint      `gorm:"not null" json:"user_id"`
-	User   user.User `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	UserID    uint      `gorm:"not null" json:"user_id"`
+	User      user.User `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	CompanyID uint      `gorm:"index;not null" json:"company_id"`
 
 	ApprovedBy *uint      `json:"approved_by"`
 	Approver   *user.User `gorm:"foreignKey:ApprovedBy" json:"approver,omitempty"`

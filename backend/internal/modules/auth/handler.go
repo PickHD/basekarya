@@ -115,3 +115,22 @@ func (h *Handler) ResetPassword(ctx echo.Context) error {
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Reset Password Success", nil, nil, nil)
 }
+
+func (h *Handler) RegisterCompany(ctx echo.Context) error {
+	var req RegisterCompanyRequest
+	if err := ctx.Bind(&req); err != nil {
+		return response.NewResponses[any](ctx, http.StatusBadRequest, "Invalid Request", nil, err, nil)
+	}
+
+	if err := ctx.Validate(&req); err != nil {
+		return response.NewResponses[any](ctx, http.StatusBadRequest, "Invalid Request", nil, err, nil)
+	}
+
+	resp, err := h.service.RegisterCompany(ctx.Request().Context(), &req)
+	if err != nil {
+		logger.Errorw("Register company failed: ", err)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	return response.NewResponses[any](ctx, http.StatusCreated, "Company registered successfully", resp, nil, nil)
+}

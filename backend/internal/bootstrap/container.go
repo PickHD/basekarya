@@ -21,6 +21,7 @@ import (
 	"basekarya-backend/internal/modules/rbac"
 	"basekarya-backend/internal/modules/recruitment"
 	"basekarya-backend/internal/modules/reimbursement"
+	"basekarya-backend/internal/modules/subscription"
 	"basekarya-backend/internal/modules/user"
 )
 
@@ -54,9 +55,11 @@ type Container struct {
 	RecruitmentHandler   *recruitment.Handler
 	OnboardingHandler    *onboarding.Handler
 	FinanceHandler       *finance.Handler
+	SubscriptionHandler  *subscription.Handler
 
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
+	SubscriptionMiddleware *middleware.SubscriptionMiddleware
 
 	GeocodeWorker         attendance.GeocodeWorker
 	LeaveScheduler        leave.Scheduler
@@ -98,25 +101,28 @@ func NewContainer() (*Container, error) {
 	recruitmentRepo := recruitment.NewRepository(db.GetDB())
 	onboardingRepo := onboarding.NewRepository(db.GetDB())
 	financeRepo := finance.NewRepository(db.GetDB())
+	subscriptionRepo := subscription.NewRepository(db.GetDB())
+	subscriptionMW := middleware.NewSubscriptionMiddleware(db.GetDB())
 
 	healthSvc := health.NewService(healthRepo)
 	notificationSvc := notification.NewService(wsHub, notificationRepo)
-	authSvc := auth.NewService(userRepo, bcrypt, jwt, redis, email)
+	authSvc := auth.NewService(userRepo, bcrypt, jwt, redis, email, companyRepo, rbacRepo, masterRepo)
 	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeWorker, transactionManager, excel)
 	masterSvc := master.NewService(masterRepo, redis)
 	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo, notificationSvc, transactionManager, httpClient.GetClient(), email, loanRepo, overtimeRepo)
 	leaveSvc := leave.NewService(leaveRepo, storage, notificationSvc, userRepo, transactionManager, excel)
-	userSvc := user.NewService(userRepo, bcrypt, storage, redis, leaveSvc, transactionManager)
+	userSvc := user.NewService(userRepo, bcrypt, storage, redis, leaveSvc, transactionManager, subscriptionMW)
 	reimburseSvc := reimbursement.NewService(reimburseRepo, storage, notificationSvc, userRepo, transactionManager, excel)
 	companySvc := company.NewService(companyRepo, redis, storage)
 	loanSvc := loan.NewService(loanRepo, notificationSvc, userRepo, transactionManager, excel)
 	overtimeSvc := overtime.NewService(overtimeRepo, notificationSvc, userRepo, transactionManager, excel)
-	rbacSvc := rbac.NewService(rbacRepo, redis, transactionManager)
+	rbacSvc := rbac.NewService(rbacRepo, redis, companyRepo, transactionManager)
 	announcementSvc := announcement.NewService(userRepo, notificationSvc)
 	contractSvc := contract.NewService(contractRepo, storage, notificationSvc, userRepo, excel)
 	onboardingSvc := onboarding.NewService(onboardingRepo, notificationSvc, userSvc, email, companyRepo, rbacRepo, masterRepo, transactionManager)
 	recruitmentSvc := recruitment.NewService(recruitmentRepo, storage, notificationSvc, userRepo, onboardingSvc, transactionManager)
 	financeSvc := finance.NewService(financeRepo, notificationSvc, userRepo, transactionManager, excel)
+	subscriptionSvc := subscription.NewService(subscriptionRepo, companyRepo, rbacRepo, userRepo, redis)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)
@@ -136,9 +142,11 @@ func NewContainer() (*Container, error) {
 	recruitmentHandler := recruitment.NewHandler(recruitmentSvc)
 	onboardingHandler := onboarding.NewHandler(onboardingSvc)
 	financeHandler := finance.NewHandler(financeSvc)
+	subscriptionHandler := subscription.NewHandler(subscriptionSvc)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 	rateLimiterMiddleware := middleware.NewRateLimiterMiddleware()
+	subscriptionMiddleware := subscriptionMW
 
 	leaveScheduler := leave.NewScheduler(cronScheduler, leaveSvc)
 	notificationScheduler := notification.NewScheduler(cronScheduler, notificationSvc)
@@ -174,9 +182,11 @@ func NewContainer() (*Container, error) {
 		RecruitmentHandler:   recruitmentHandler,
 		OnboardingHandler:    onboardingHandler,
 		FinanceHandler:       financeHandler,
+		SubscriptionHandler:  subscriptionHandler,
 
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,
+		SubscriptionMiddleware: subscriptionMiddleware,
 
 		GeocodeWorker:         geocodeWorker,
 		LeaveScheduler:        leaveScheduler,

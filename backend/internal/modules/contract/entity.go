@@ -15,6 +15,7 @@ type Contract struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
 	EmployeeID uint `gorm:"unique;not null" json:"employee_id"`
+	CompanyID  uint `gorm:"index;not null" json:"company_id"`
 
 	ContractType   constants.ContractType `gorm:"type:varchar(20);not null" json:"contract_type"`
 	ContractNumber string                 `gorm:"type:varchar(50)" json:"contract_number"`

@@ -20,8 +20,6 @@ CREATE TABLE IF NOT EXISTS role_permissions (
     UNIQUE KEY unique_role_permission (role_id, permission_id)
 );
 
-INSERT IGNORE INTO roles (name) VALUES ('SUPERADMIN'), ('EMPLOYEE');
-
 SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'role_id');
 
 SET @sql = IF(@col_exists = 0, 'ALTER TABLE users ADD COLUMN role_id BIGINT NULL', 'SELECT 1');

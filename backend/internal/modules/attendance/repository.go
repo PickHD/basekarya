@@ -30,7 +30,7 @@ func NewRepository(db *gorm.DB) Repository {
 }
 
 func (r *repository) GetTodayAttendance(ctx context.Context, employeeID uint) (*Attendance, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var att Attendance
 
 	err := db.Where("employee_id = ? AND date = ?", employeeID, time.Now().Format("2006-01-02")).
@@ -43,17 +43,17 @@ func (r *repository) GetTodayAttendance(ctx context.Context, employeeID uint) (*
 }
 
 func (r *repository) Create(ctx context.Context, attendance *Attendance) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Create(attendance).Error
 }
 
 func (r *repository) Update(ctx context.Context, attendance *Attendance) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Save(attendance).Error
 }
 
 func (r *repository) GetHistory(ctx context.Context, employeeID uint, month, year, limit int, cursor string) ([]Attendance, *response.Cursor, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var logs []Attendance
 
 	query := db.Model(&Attendance{}).
@@ -103,7 +103,7 @@ func (r *repository) FindAll(ctx context.Context, filter *FilterParams) ([]Atten
 	db := utils.GetDBFromContext(ctx, r.db)
 	var logs []Attendance
 
-	query := db.Model(&Attendance{}).
+	query := utils.TenantScope(ctx, db.Model(&Attendance{})).
 		Select("attendances.*").
 		Joins("JOIN employees ON employees.id = attendances.employee_id").
 		Joins("JOIN ref_departments ON ref_departments.id = employees.department_id").
@@ -164,7 +164,7 @@ func (r *repository) FindAll(ctx context.Context, filter *FilterParams) ([]Atten
 }
 
 func (r *repository) CountByStatus(ctx context.Context, status constants.AttendanceStatus, todayDate string) (int64, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var totalStatus int64
 	if err := db.Model(&Attendance{}).
 		Where("date = ? AND status = ?", todayDate, string(status)).
@@ -176,7 +176,7 @@ func (r *repository) CountByStatus(ctx context.Context, status constants.Attenda
 }
 
 func (r *repository) CountAttendanceToday(ctx context.Context, todayDate string) (int64, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var totalStatus int64
 	if err := db.Model(&Attendance{}).
 		Where("date = ?", todayDate).
@@ -188,7 +188,7 @@ func (r *repository) CountAttendanceToday(ctx context.Context, todayDate string)
 }
 
 func (r *repository) GetBulkLateDuration(ctx context.Context, month, year int) (map[uint]int, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	type Result struct {
 		UserID      uint
 		TotalMinute int

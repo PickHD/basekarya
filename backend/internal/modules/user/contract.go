@@ -24,3 +24,7 @@ type CacheProvider interface {
 	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
 	Del(ctx context.Context, key string) error
 }
+
+type SubscriptionProvider interface {
+	CheckEmployeeLimit(ctx context.Context) (bool, error)
+}

@@ -49,6 +49,7 @@ func NewService(repo Repository, storage StorageProvider, notification Notificat
 func (s *service) CreateRequisition(ctx context.Context, requesterID uint, req *CreateRequisitionRequest) error {
 	return s.transactionManager.RunInTransaction(ctx, func(ctx context.Context) error {
 		jr := &JobRequisition{
+			CompanyID:      utils.GetCompanyIDFromCtx(ctx),
 			RequesterID:    requesterID,
 			DepartmentID:   req.DepartmentID,
 			Title:          req.Title,
@@ -105,6 +106,7 @@ func (s *service) SubmitRequisition(ctx context.Context, id uint, requesterID ui
 
 		go func() {
 			_ = s.notification.BlastNotification(
+				ctx,
 				approverIDs,
 				string(constants.NotificationTypeRequisitionApprovalReq),
 				"Pengajuan Lowongan Baru",
@@ -151,6 +153,7 @@ func (s *service) RequisitionAction(ctx context.Context, id uint, approverID uin
 
 		go func() {
 			_ = s.notification.SendNotification(
+				ctx,
 				jr.RequesterID,
 				string(constants.NotificationTypeRequisitionApprovalReq),
 				fmt.Sprintf("Requisition %s", strings.Title(strings.ToLower(newStatus))),
@@ -286,6 +289,7 @@ func (s *service) AddApplicant(ctx context.Context, requisitionID uint, req *Cre
 		}
 
 		applicant := &Applicant{
+			CompanyID:        utils.GetCompanyIDFromCtx(ctx),
 			JobRequisitionID: requisitionID,
 			FullName:         req.FullName,
 			Email:            req.Email,
@@ -351,6 +355,7 @@ func (s *service) UpdateStage(ctx context.Context, id uint, changedByID uint, re
 		}
 
 		history := &ApplicantStageHistory{
+			CompanyID:   utils.GetCompanyIDFromCtx(ctx),
 			ApplicantID: id,
 			FromStage:   fromStage,
 			ToStage:     req.Stage,

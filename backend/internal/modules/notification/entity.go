@@ -9,7 +9,8 @@ type Notification struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 
-	UserID uint `json:"user_id"`
+	UserID    uint `json:"user_id"`
+	CompanyID uint `gorm:"index;not null" json:"company_id"`
 
 	Type      string `gorm:"type:varchar(50);not null" json:"type"`
 	Title     string `gorm:"type:varchar(255);not null" json:"title"`

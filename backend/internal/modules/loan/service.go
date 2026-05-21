@@ -4,6 +4,7 @@ import (
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/response"
+	"basekarya-backend/pkg/utils"
 	"context"
 	"errors"
 	"fmt"
@@ -52,6 +53,7 @@ func (s *service) Create(ctx context.Context, req *LoanRequest) error {
 		}
 
 		loan := &Loan{
+			CompanyID:         utils.GetCompanyIDFromCtx(ctx),
 			UserID:            req.UserID,
 			EmployeeID:        req.EmployeeID,
 			TotalAmount:       req.TotalAmount,
@@ -72,6 +74,7 @@ func (s *service) Create(ctx context.Context, req *LoanRequest) error {
 
 		go func() {
 			_ = s.notification.BlastNotification(
+				ctx,
 				approvalUserIDs,
 				string(constants.NotificationTypeLoanApprovalReq),
 				"Pengajuan Kasbon Baru",
@@ -193,6 +196,7 @@ func (s *service) ProcessAction(ctx context.Context, req *ActionRequest) error {
 
 		go func() {
 			_ = s.notification.SendNotification(
+				ctx,
 				data.UserID,
 				string(notificationType),
 				notificationTitle,

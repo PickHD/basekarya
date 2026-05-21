@@ -6,6 +6,7 @@ import { menuItems } from "@/config/menu";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/features/user/hooks/useProfile";
 import { usePermissions } from "@/hooks/usePermissions";
+import { usePlanModules } from "@/hooks/usePlanModules";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { MenuItem } from "@/config/types";
 import { ChevronDown, ChevronRight, PanelLeftClose, PanelLeft } from "lucide-react";
@@ -19,16 +20,20 @@ interface SidebarProps {
 export function Sidebar({ className, isCollapsed = false, onToggleCollapse }: SidebarProps) {
   const location = useLocation();
   const { data: user, isLoading } = useProfile();
-  const { hasPermission, hasAnyPermission } = usePermissions();
+  const { hasPermission, hasAnyPermission, isPlatformAdmin } = usePermissions();
+  const { hasModule } = usePlanModules();
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   const filteredItems = useMemo(() => {
     return menuItems.filter((item) => {
+      if (isPlatformAdmin && item.hideForPlatformAdmin) return false;
+      if (!isPlatformAdmin && item.platformAdminOnly) return false;
+      if (item.requiredModule && !hasModule(item.requiredModule)) return false;
       if (!item.permission) return true;
       if (Array.isArray(item.permission)) return hasAnyPermission(item.permission);
       return hasPermission(item.permission);
     });
-  }, [hasPermission, hasAnyPermission]);
+  }, [hasPermission, hasAnyPermission, isPlatformAdmin, hasModule]);
 
   const groupedItems = useMemo(() => {
     const groups = new Map<string, MenuItem[]>();

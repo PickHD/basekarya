@@ -4,6 +4,7 @@ import (
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/response"
+	"basekarya-backend/pkg/utils"
 	"context"
 	"fmt"
 	"time"
@@ -58,6 +59,7 @@ func (s *service) Create(ctx context.Context, req *OvertimeRequest) error {
 		}
 
 		overtime := &Overtime{
+			CompanyID:       utils.GetCompanyIDFromCtx(ctx),
 			UserID:          req.UserID,
 			EmployeeID:      req.EmployeeID,
 			Date:            req.Date,
@@ -80,6 +82,7 @@ func (s *service) Create(ctx context.Context, req *OvertimeRequest) error {
 
 		go func() {
 			_ = s.notification.BlastNotification(
+				ctx,
 				approvalUserIDs,
 				string(constants.NotificationTypeOvertimeApprovalReq),
 				"Pengajuan Lembur Baru",
@@ -201,6 +204,7 @@ func (s *service) ProcessAction(ctx context.Context, req *ActionRequest) error {
 
 		go func() {
 			_ = s.notification.SendNotification(
+				ctx,
 				data.UserID,
 				notificationType,
 				notificationTitle,

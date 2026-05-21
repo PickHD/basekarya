@@ -39,6 +39,7 @@ func (r *Router) setupRoutes() {
 
 	api := r.app.Group("/api/v1")
 	r.SetupAuthRoutes(api.Group("/auth"))
+	api.GET("/subscriptions/plans", r.container.SubscriptionHandler.ListPlans)
 
 	// protected global
 	protected := api.Group("", r.container.AuthMiddleware.VerifyToken)
@@ -55,16 +56,18 @@ func (r *Router) setupRoutes() {
 	r.SetupMasterRoutes(protected.Group("/masters"))
 	r.SetupNotificationRoutes(protected.Group("/notifications"))
 	r.SetupOvertimeRoutes(protected.Group("/overtimes"))
-	r.SetupPayrollRoutes(protected.Group("/payrolls"))
+	r.SetupPayrollRoutes(protected.Group("/payrolls"), r.container.SubscriptionMiddleware)
 	r.SetupReimbursementRoutes(protected.Group("/reimbursements"))
 	r.SetupRoleRoutes(protected.Group("/roles"))
 	r.SetupPermissionRoutes(protected.Group("/permissions"))
 	r.SetupUserRoutes(protected.Group("/users"))
 	r.SetupAnnouncementRoutes(protected.Group("/announcements"))
-	r.SetupContractRoutes(protected.Group("/contracts"))
-	r.SetupRecruitmentRoutes(protected.Group("/recruitments"))
-	r.SetupOnboardingRoutes(protected.Group("/onboarding"))
-	r.SetupFinanceRoutes(protected.Group("/finances"))
+	r.SetupContractRoutes(protected.Group("/contracts"), r.container.SubscriptionMiddleware)
+	r.SetupRecruitmentRoutes(protected.Group("/recruitments"), r.container.SubscriptionMiddleware)
+	r.SetupOnboardingRoutes(protected.Group("/onboarding"), r.container.SubscriptionMiddleware)
+	r.SetupFinanceRoutes(protected.Group("/finances"), r.container.SubscriptionMiddleware)
+	r.SetupSubscriptionRoutes(protected.Group("/subscriptions"))
+	r.SetupSubscriptionAdminRoutes(protected.Group("/admin/subscriptions"))
 }
 
 func ServeHTTP(container *bootstrap.Container) *echo.Echo {

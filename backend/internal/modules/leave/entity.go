@@ -13,6 +13,7 @@ type LeaveBalance struct {
 	ID          uint `gorm:"primaryKey" json:"id"`
 	EmployeeID  uint `gorm:"index" json:"employee_id"`
 	LeaveTypeID uint `json:"leave_type_id"`
+	CompanyID   uint `gorm:"index;not null" json:"company_id"`
 	Year        int  `json:"year"`
 	QuotaTotal  int  `json:"quota_total"`
 	QuotaUsed   int  `json:"quota_used"`
@@ -31,6 +32,7 @@ type LeaveRequest struct {
 	UserID      uint `json:"user_id"`
 	EmployeeID  uint `json:"employee_id"`
 	LeaveTypeID uint `json:"leave_type_id"`
+	CompanyID   uint `gorm:"index;not null" json:"company_id"`
 
 	StartDate time.Time `gorm:"type:date;not null" json:"start_date"`
 	EndDate   time.Time `gorm:"type:date;not null" json:"end_date"`

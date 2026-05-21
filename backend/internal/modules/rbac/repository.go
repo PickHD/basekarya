@@ -9,13 +9,19 @@ import (
 )
 
 type Repository interface {
-	Create(ctx context.Context, role Role) error
+	Create(ctx context.Context, role *Role) error
 	FindRoleByID(ctx context.Context, id uint) (*Role, error)
 	FindRoleByName(ctx context.Context, name string) (*Role, error)
-	ReplacingRolePermissions(ctx context.Context, roleID uint, permissionIDs []uint) error
+	ReplacingRolePermissions(ctx context.Context, roleID uint, permissionIDs []uint, companyID uint) error
 	FindPermissionsByIDs(ctx context.Context, ids []uint) ([]Permission, error)
 	FindAllPermissions(ctx context.Context) ([]Permission, error)
 	FindAllRoles(ctx context.Context) ([]Role, error)
+	FindAllPermissionIDs(ctx context.Context) ([]uint, error)
+	FindPermissionIDsByGroupNames(ctx context.Context, groupNames []string) ([]uint, error)
+	FindAllPermissionsByGroupNames(ctx context.Context, groupNames []string) ([]Permission, error)
+	AssignPermissions(ctx context.Context, roleID uint, permissionIDs []uint, companyID uint) error
+	FindRolesByCompanyID(ctx context.Context, companyID uint) ([]Role, error)
+	FindRoleIDsByCompanyID(ctx context.Context, companyID uint) ([]uint, error)
 }
 
 type repository struct {
@@ -26,14 +32,14 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db}
 }
 
-func (r *repository) Create(ctx context.Context, role Role) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+func (r *repository) Create(ctx context.Context, role *Role) error {
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 
-	return db.Create(&role).Error
+	return db.Create(role).Error
 }
 
 func (r *repository) FindRoleByID(ctx context.Context, id uint) (*Role, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var role Role
 
 	err := db.Preload("Permissions").First(&role, id).Error
@@ -57,7 +63,7 @@ func (r *repository) FindPermissionsByIDs(ctx context.Context, ids []uint) ([]Pe
 }
 
 func (r *repository) FindRoleByName(ctx context.Context, name string) (*Role, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var role Role
 
 	err := db.Where("name = ?", name).First(&role).Error
@@ -68,7 +74,7 @@ func (r *repository) FindRoleByName(ctx context.Context, name string) (*Role, er
 	return &role, nil
 }
 
-func (r *repository) ReplacingRolePermissions(ctx context.Context, roleID uint, permissionIDs []uint) error {
+func (r *repository) ReplacingRolePermissions(ctx context.Context, roleID uint, permissionIDs []uint, companyID uint) error {
 	db := utils.GetDBFromContext(ctx, r.db)
 
 	return db.Transaction(func(tx *gorm.DB) error {
@@ -82,6 +88,7 @@ func (r *repository) ReplacingRolePermissions(ctx context.Context, roleID uint, 
 				rolePermissions = append(rolePermissions, RolePermission{
 					RoleID:       roleID,
 					PermissionID: pid,
+					CompanyID:    companyID,
 				})
 			}
 
@@ -108,7 +115,7 @@ func (r *repository) FindAllPermissions(ctx context.Context) ([]Permission, erro
 }
 
 func (r *repository) FindAllRoles(ctx context.Context) ([]Role, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 
 	var roles []Role
 
@@ -118,4 +125,59 @@ func (r *repository) FindAllRoles(ctx context.Context) ([]Role, error) {
 	}
 
 	return roles, nil
+}
+
+func (r *repository) FindAllPermissionIDs(ctx context.Context) ([]uint, error) {
+	var ids []uint
+	err := utils.GetDBFromContext(ctx, r.db).Model(&Permission{}).Select("id").Find(&ids).Error
+	return ids, err
+}
+
+func (r *repository) FindPermissionIDsByGroupNames(ctx context.Context, groupNames []string) ([]uint, error) {
+	var ids []uint
+	err := utils.GetDBFromContext(ctx, r.db).
+		Model(&Permission{}).
+		Joins("JOIN permission_groups ON permission_groups.id = permissions.permission_group_id").
+		Where("permission_groups.name IN ?", groupNames).
+		Pluck("permissions.id", &ids).Error
+	return ids, err
+}
+
+func (r *repository) FindAllPermissionsByGroupNames(ctx context.Context, groupNames []string) ([]Permission, error) {
+	var perms []Permission
+	err := utils.GetDBFromContext(ctx, r.db).
+		Preload("PermissionGroup").
+		Joins("JOIN permission_groups ON permission_groups.id = permissions.permission_group_id").
+		Where("permission_groups.name IN ?", groupNames).
+		Find(&perms).Error
+	return perms, err
+}
+
+func (r *repository) AssignPermissions(ctx context.Context, roleID uint, permissionIDs []uint, companyID uint) error {
+	db := utils.GetDBFromContext(ctx, r.db)
+	if err := db.Where("role_id = ?", roleID).Delete(&RolePermission{}).Error; err != nil {
+		return err
+	}
+
+	var rolePermissions []RolePermission
+	for _, pid := range permissionIDs {
+		rolePermissions = append(rolePermissions, RolePermission{
+			RoleID:       roleID,
+			PermissionID: pid,
+			CompanyID:    companyID,
+		})
+	}
+	return db.Create(&rolePermissions).Error
+}
+
+func (r *repository) FindRolesByCompanyID(ctx context.Context, companyID uint) ([]Role, error) {
+	var roles []Role
+	err := utils.GetDBFromContext(ctx, r.db).Where("company_id = ?", companyID).Find(&roles).Error
+	return roles, err
+}
+
+func (r *repository) FindRoleIDsByCompanyID(ctx context.Context, companyID uint) ([]uint, error) {
+	var ids []uint
+	err := utils.GetDBFromContext(ctx, r.db).Model(&Role{}).Where("company_id = ?", companyID).Pluck("id", &ids).Error
+	return ids, err
 }

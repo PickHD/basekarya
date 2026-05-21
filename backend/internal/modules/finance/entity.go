@@ -14,6 +14,7 @@ type FinanceCategory struct {
 	Name        string                `gorm:"type:varchar(255);not null" json:"name"`
 	Type        constants.FinanceType `gorm:"type:enum('INCOME','EXPENSE');not null" json:"type"`
 	Description sql.NullString        `gorm:"type:text" json:"description"`
+	CompanyID   uint                  `gorm:"index;not null" json:"company_id"`
 }
 
 func (FinanceCategory) TableName() string {
@@ -30,6 +31,7 @@ type FinanceTransaction struct {
 
 	CreatedBy  uint      `gorm:"not null" json:"created_by"`
 	Creator    user.User `gorm:"foreignKey:CreatedBy" json:"creator,omitempty"`
+	CompanyID  uint      `gorm:"index;not null" json:"company_id"`
 
 	ApprovedBy *uint      `json:"approved_by"`
 	Approver   *user.User `gorm:"foreignKey:ApprovedBy" json:"approver,omitempty"`

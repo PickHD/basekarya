@@ -2,8 +2,10 @@ package middleware
 
 import (
 	"basekarya-backend/internal/infrastructure"
+	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/response"
 	"basekarya-backend/pkg/utils"
+	"context"
 	"net/http"
 	"slices"
 	"strings"
@@ -48,6 +50,11 @@ func (m *AuthMiddleware) VerifyToken(next echo.HandlerFunc) echo.HandlerFunc {
 
 		ctx.Set("user", claims)
 
+		stdCtx := context.WithValue(ctx.Request().Context(), constants.CompanyIDContextKey, claims.CompanyID)
+		stdCtx = context.WithValue(stdCtx, constants.IsPlatformAdminContextKey, claims.IsPlatformAdmin)
+		stdCtx = context.WithValue(stdCtx, constants.UserIDContextKey, claims.UserID)
+		ctx.SetRequest(ctx.Request().WithContext(stdCtx))
+
 		return next(ctx)
 	}
 }
@@ -58,6 +65,10 @@ func (m *AuthMiddleware) GrantPermission(permission string) echo.MiddlewareFunc 
 			userContext, err := utils.GetUserContext(ctx)
 			if err != nil {
 				return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+			}
+
+			if userContext.IsPlatformAdmin {
+				return next(ctx)
 			}
 
 			if !slices.Contains(userContext.Permissions, permission) {
@@ -87,6 +98,23 @@ func (m *AuthMiddleware) GrantAnyPermission(permissions ...string) echo.Middlewa
 
 			if !hasPermission {
 				return response.NewResponses[any](ctx, http.StatusForbidden, "You dont have access to this resource", nil, nil, nil)
+			}
+
+			return next(ctx)
+		}
+	}
+}
+
+func RequirePlatformAdmin(authMW *AuthMiddleware) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			userContext, err := utils.GetUserContext(ctx)
+			if err != nil {
+				return response.NewResponses[any](ctx, http.StatusUnauthorized, "unauthorized", nil, err, nil)
+			}
+
+			if !userContext.IsPlatformAdmin {
+				return response.NewResponses[any](ctx, http.StatusForbidden, "platform admin access required", nil, nil, nil)
 			}
 
 			return next(ctx)

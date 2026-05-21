@@ -3,6 +3,7 @@ package rbac
 import (
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/pkg/constants"
+	"basekarya-backend/pkg/utils"
 	"context"
 	"encoding/json"
 	"errors"
@@ -23,13 +24,15 @@ type Service interface {
 type service struct {
 	repo               Repository
 	cache              CacheProvider
+	plan               PlanProvider
 	transactionManager infrastructure.TransactionManager
 }
 
-func NewService(repo Repository, cache CacheProvider, transactionManager infrastructure.TransactionManager) Service {
+func NewService(repo Repository, cache CacheProvider, plan PlanProvider, transactionManager infrastructure.TransactionManager) Service {
 	return &service{
 		repo:               repo,
 		cache:              cache,
+		plan:               plan,
 		transactionManager: transactionManager,
 	}
 }
@@ -41,7 +44,8 @@ func (s *service) CreateRole(ctx context.Context, req *CreateRoleRequest) error 
 			return errors.New("role already exists")
 		}
 
-		err = s.repo.Create(ctx, Role{
+		err = s.repo.Create(ctx, &Role{
+			CompanyID: utils.GetCompanyIDFromCtx(ctx),
 			Name: req.Name,
 		})
 		if err != nil {
@@ -120,7 +124,7 @@ func (s *service) AssignPermissions(ctx context.Context, roleID uint, req *Assig
 			return errors.New("one or more permissions are invalid")
 		}
 
-		err = s.repo.ReplacingRolePermissions(ctx, roleID, req.PermissionIDs)
+		err = s.repo.ReplacingRolePermissions(ctx, roleID, req.PermissionIDs, utils.GetCompanyIDFromCtx(ctx))
 		if err != nil {
 			return err
 		}
@@ -135,9 +139,20 @@ func (s *service) AssignPermissions(ctx context.Context, roleID uint, req *Assig
 }
 
 func (s *service) GetAllPermissions(ctx context.Context) ([]PermissionResponse, error) {
-	cacheData, err := s.cache.Get(ctx, constants.PERMISSION_CACHE_KEY)
+	allowedGroups := s.resolveAllowedGroups(ctx)
+	cacheKey := constants.PERMISSION_CACHE_KEY
+	if len(allowedGroups) > 0 {
+		cacheKey = fmt.Sprintf("%s:%v", constants.PERMISSION_CACHE_KEY, allowedGroups)
+	}
+
+	cacheData, err := s.cache.Get(ctx, cacheKey)
 	if err == redis.Nil {
-		data, err := s.repo.FindAllPermissions(ctx)
+		var data []Permission
+		if len(allowedGroups) > 0 {
+			data, err = s.repo.FindAllPermissionsByGroupNames(ctx, allowedGroups)
+		} else {
+			data, err = s.repo.FindAllPermissions(ctx)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -146,46 +161,14 @@ func (s *service) GetAllPermissions(ctx context.Context) ([]PermissionResponse, 
 			return []PermissionResponse{}, nil
 		}
 
-		permissionMap := make(map[uint]PermissionResponse)
-
-		for _, perm := range data {
-			if existing, ok := permissionMap[perm.PermissionGroup.ID]; ok {
-				existing.Permissions = append(existing.Permissions, PermissionDetailResponse{
-					ID:          perm.ID,
-					Name:        perm.Name,
-					DisplayName: perm.DisplayName,
-					Description: perm.Description,
-				})
-				permissionMap[perm.PermissionGroup.ID] = existing
-			} else {
-				permissionMap[perm.PermissionGroup.ID] = PermissionResponse{
-					Group: PermissionGroupResponse{
-						ID:   perm.PermissionGroup.ID,
-						Name: perm.PermissionGroup.Name,
-					},
-					Permissions: []PermissionDetailResponse{
-						{
-							ID:          perm.ID,
-							Name:        perm.Name,
-							DisplayName: perm.DisplayName,
-							Description: perm.Description,
-						},
-					},
-				}
-			}
-		}
-
-		var permissions []PermissionResponse
-		for _, v := range permissionMap {
-			permissions = append(permissions, v)
-		}
+		permissions := buildPermissionResponse(data)
 
 		parsedData, err := json.Marshal(permissions)
 		if err != nil {
 			return nil, err
 		}
 
-		err = s.cache.Set(ctx, constants.PERMISSION_CACHE_KEY, parsedData, 24*time.Hour)
+		err = s.cache.Set(ctx, cacheKey, parsedData, 24*time.Hour)
 		if err != nil {
 			return nil, err
 		}
@@ -202,6 +185,75 @@ func (s *service) GetAllPermissions(ctx context.Context) ([]PermissionResponse, 
 	}
 
 	return permissions, nil
+}
+
+func (s *service) resolveAllowedGroups(ctx context.Context) []string {
+	if utils.IsPlatformAdminFromCtx(ctx) {
+		return nil
+	}
+
+	companyID := utils.GetCompanyIDFromCtx(ctx)
+	if companyID == 0 {
+		return nil
+	}
+
+	modules, err := s.plan.FindModulesByCompanyID(ctx, companyID)
+	if err != nil || len(modules) == 0 {
+		return nil
+	}
+
+	return buildGroupsFromModules(modules)
+}
+
+func buildGroupsFromModules(modules []string) []string {
+	groups := make([]string, len(constants.AlwaysAvailableGroups))
+	copy(groups, constants.AlwaysAvailableGroups)
+
+	for _, mod := range modules {
+		if modGroups, exists := constants.ModulePermissionGroups[mod]; exists {
+			groups = append(groups, modGroups...)
+		}
+	}
+
+	return groups
+}
+
+func buildPermissionResponse(data []Permission) []PermissionResponse {
+	permissionMap := make(map[uint]PermissionResponse)
+
+	for _, perm := range data {
+		if existing, ok := permissionMap[perm.PermissionGroup.ID]; ok {
+			existing.Permissions = append(existing.Permissions, PermissionDetailResponse{
+				ID:          perm.ID,
+				Name:        perm.Name,
+				DisplayName: perm.DisplayName,
+				Description: perm.Description,
+			})
+			permissionMap[perm.PermissionGroup.ID] = existing
+		} else {
+			permissionMap[perm.PermissionGroup.ID] = PermissionResponse{
+				Group: PermissionGroupResponse{
+					ID:   perm.PermissionGroup.ID,
+					Name: perm.PermissionGroup.Name,
+				},
+				Permissions: []PermissionDetailResponse{
+					{
+						ID:          perm.ID,
+						Name:        perm.Name,
+						DisplayName: perm.DisplayName,
+						Description: perm.Description,
+					},
+				},
+			}
+		}
+	}
+
+	var permissions []PermissionResponse
+	for _, v := range permissionMap {
+		permissions = append(permissions, v)
+	}
+
+	return permissions
 }
 
 func (s *service) GetAllRoles(ctx context.Context) ([]RoleResponse, error) {

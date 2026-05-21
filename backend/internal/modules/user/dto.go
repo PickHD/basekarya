@@ -52,7 +52,6 @@ type EmployeeListResponse struct {
 }
 
 type CreateEmployeeRequest struct {
-	Username     string  `json:"username" validate:"required"`
 	FullName     string  `json:"full_name" validate:"required"`
 	NIK          string  `json:"nik" validate:"required"`
 	DepartmentID uint    `json:"department_id" validate:"required"`
@@ -61,6 +60,10 @@ type CreateEmployeeRequest struct {
 	BaseSalary   float64 `json:"base_salary" validate:"required"`
 	Email        string  `json:"email" validate:"required"`
 	Position     string  `json:"position" validate:"required,min=3,max=100"`
+}
+
+type CreateEmployeeResponse struct {
+	Username string `json:"username"`
 }
 
 type UpdateEmployeeRequest struct {

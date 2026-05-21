@@ -7,7 +7,7 @@ type UserProvider interface {
 }
 
 type NotificationProvider interface {
-	BlastNotification(userIDs []uint,
+	BlastNotification(ctx context.Context, userIDs []uint,
 		Type string,
 		Title string,
 		Message string,

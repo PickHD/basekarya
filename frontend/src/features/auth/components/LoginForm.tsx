@@ -43,7 +43,9 @@ export function LoginForm() {
       try {
         const decoded = jwtDecode<DecodedToken>(token);
 
-        if (decoded.permissions?.includes("EXPORT_ATTENDANCE")) {
+        if (decoded.company_id === 0) {
+          navigate("/admin/platform-dashboard", { replace: true });
+        } else if (decoded.permissions?.includes("EXPORT_ATTENDANCE")) {
           navigate("/admin/recap", { replace: true });
         } else {
           navigate("/dashboard", { replace: true });

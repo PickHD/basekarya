@@ -11,6 +11,7 @@ type Attendance struct {
 
 	EmployeeID uint `gorm:"not null;uniqueIndex:idx_emp_date,priority:1" json:"employee_id"`
 	ShiftID    uint `gorm:"not null" json:"shift_id"`
+	CompanyID  uint `gorm:"index;not null" json:"company_id"`
 
 	Date time.Time `gorm:"type:date;not null;uniqueIndex:idx_emp_date,priority:2;index:idx_date_status,priority:1" json:"date"`
 

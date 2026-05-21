@@ -80,6 +80,7 @@ func (s *service) Upsert(ctx context.Context, req *UpsertContractRequest) error 
 	}
 
 	contract := &Contract{
+		CompanyID:      utils.GetCompanyIDFromCtx(ctx),
 		EmployeeID:     req.EmployeeID,
 		ContractType:   req.ContractType,
 		ContractNumber: req.ContractNumber,
@@ -240,6 +241,7 @@ func (s *service) CheckExpiringContracts(ctx context.Context) error {
 		message := fmt.Sprintf("Kontrak PKWT atas nama %s (%s) akan segera berakhir pada %s.", empName, c.ContractNumber, c.EndDate.Format(constants.DefaultTimeFormat))
 
 		_ = s.notification.BlastNotification(
+			ctx,
 			approvalUserIDs,
 			string(constants.NotificationTypeContractExpiring),
 			"Kontrak Segera Berakhir",

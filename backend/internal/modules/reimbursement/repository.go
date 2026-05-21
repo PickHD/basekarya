@@ -24,12 +24,12 @@ func NewRepository(db *gorm.DB) Repository {
 }
 
 func (r *repository) Create(ctx context.Context, reimbursement *Reimbursement) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Create(reimbursement).Error
 }
 
 func (r *repository) FindByID(ctx context.Context, id uint) (*Reimbursement, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var reimburstment Reimbursement
 
 	err := db.Preload("User").First(&reimburstment, id).Error
@@ -41,7 +41,7 @@ func (r *repository) FindByID(ctx context.Context, id uint) (*Reimbursement, err
 }
 
 func (r *repository) FindAll(ctx context.Context, filter ReimbursementFilter) ([]Reimbursement, int64, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var reimbursements []Reimbursement
 	var total int64
 
@@ -70,12 +70,12 @@ func (r *repository) FindAll(ctx context.Context, filter ReimbursementFilter) ([
 }
 
 func (r *repository) Update(ctx context.Context, reimbursement *Reimbursement) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Save(reimbursement).Error
 }
 
 func (r *repository) GetBulkApprovedAmount(ctx context.Context, month, year int) (map[uint]float64, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	type Result struct {
 		UserID      uint
 		TotalAmount float64

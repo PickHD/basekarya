@@ -16,6 +16,7 @@ type Payroll struct {
 
 	EmployeeID uint           `json:"employee_id"`
 	Employee   *user.Employee `gorm:"foreignKey:EmployeeID" json:"employee,omitempty"`
+	CompanyID  uint           `gorm:"index;not null" json:"company_id"`
 	PeriodDate time.Time      `gorm:"type:date;not null;index" json:"period_date"`
 
 	BaseSalary     float64 `gorm:"type:decimal(15,2)" json:"base_salary"`
@@ -33,6 +34,7 @@ type Payroll struct {
 type PayrollDetail struct {
 	ID        uint `gorm:"primaryKey" json:"id"`
 	PayrollID uint `json:"payroll_id"`
+	CompanyID uint `gorm:"index;not null" json:"company_id"`
 
 	Title string `gorm:"type:varchar(150);not null" json:"title"`
 

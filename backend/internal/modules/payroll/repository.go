@@ -10,10 +10,10 @@ import (
 )
 
 type Repository interface {
-	CreateBulk(payroll *[]Payroll) error
-	FindAll(filter *PayrollFilter) ([]Payroll, int64, error)
-	FindByID(id uint) (*Payroll, error)
-	GetExistingEmployeeID(month, year int) (map[uint]bool, error)
+	CreateBulk(ctx context.Context, payroll *[]Payroll) error
+	FindAll(ctx context.Context, filter *PayrollFilter) ([]Payroll, int64, error)
+	FindByID(ctx context.Context, id uint) (*Payroll, error)
+	GetExistingEmployeeID(ctx context.Context, month, year int) (map[uint]bool, error)
 	UpdateStatus(ctx context.Context, id uint, status constants.PayrollStatus) error
 }
 
@@ -25,8 +25,9 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db}
 }
 
-func (r *repository) CreateBulk(payroll *[]Payroll) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
+func (r *repository) CreateBulk(ctx context.Context, payroll *[]Payroll) error {
+	db := utils.TenantScope(ctx, r.db)
+	return db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.CreateInBatches(payroll, 100).Error; err != nil {
 			return err
 		}
@@ -35,11 +36,11 @@ func (r *repository) CreateBulk(payroll *[]Payroll) error {
 	})
 }
 
-func (r *repository) FindAll(filter *PayrollFilter) ([]Payroll, int64, error) {
+func (r *repository) FindAll(ctx context.Context, filter *PayrollFilter) ([]Payroll, int64, error) {
 	var payrolls []Payroll
 	var total int64
 
-	query := r.db.Model(&Payroll{}).
+	query := utils.TenantScope(ctx, r.db.Model(&Payroll{})).
 		Joins("JOIN employees ON employees.id = payrolls.employee_id").
 		Preload("Employee")
 
@@ -68,9 +69,10 @@ func (r *repository) FindAll(filter *PayrollFilter) ([]Payroll, int64, error) {
 	return payrolls, total, err
 }
 
-func (r *repository) FindByID(id uint) (*Payroll, error) {
+func (r *repository) FindByID(ctx context.Context, id uint) (*Payroll, error) {
 	var payroll Payroll
-	err := r.db.
+	db := utils.TenantScope(ctx, r.db)
+	err := db.
 		Preload("Employee").
 		Preload("Details").
 		First(&payroll, id).Error
@@ -81,13 +83,14 @@ func (r *repository) FindByID(id uint) (*Payroll, error) {
 	return &payroll, nil
 }
 
-func (r *repository) GetExistingEmployeeID(month, year int) (map[uint]bool, error) {
+func (r *repository) GetExistingEmployeeID(ctx context.Context, month, year int) (map[uint]bool, error) {
 	var existingID []uint
 
 	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.Local)
 	endDate := startDate.AddDate(0, 1, -1)
 
-	err := r.db.Model(&Payroll{}).
+	db := utils.TenantScope(ctx, r.db)
+	err := db.Model(&Payroll{}).
 		Where("period_date BETWEEN ? AND ?", startDate, endDate).
 		Pluck("employee_id", &existingID).Error
 	if err != nil {
@@ -103,7 +106,7 @@ func (r *repository) GetExistingEmployeeID(month, year int) (map[uint]bool, erro
 }
 
 func (r *repository) UpdateStatus(ctx context.Context, id uint, status constants.PayrollStatus) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Model(&Payroll{}).
 		Where("id = ?", id).
 		Update("status", status).Error

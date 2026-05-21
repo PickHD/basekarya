@@ -5,6 +5,7 @@ import "time"
 type Department struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	Name      string    `gorm:"not null" json:"name"`
+	CompanyID uint      `gorm:"index;not null" json:"company_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -13,6 +14,7 @@ type Shift struct {
 	Name      string    `gorm:"not null" json:"name"`
 	StartTime string    `gorm:"not null" json:"start_time"`
 	EndTime   string    `gorm:"not null" json:"end_time"`
+	CompanyID uint      `gorm:"index;not null" json:"company_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -21,6 +23,7 @@ type LeaveType struct {
 	Name         string    `gorm:"unique;not null" json:"name"`
 	DefaultQuota int       `json:"default_quota"`
 	IsDeducted   bool      `gorm:"default:true" json:"is_deducted"`
+	CompanyID    uint      `gorm:"index;not null" json:"company_id"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }

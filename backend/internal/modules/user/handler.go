@@ -119,14 +119,14 @@ func (h *Handler) CreateEmployee(ctx echo.Context) error {
 		return response.NewResponses[any](ctx, http.StatusBadRequest, "Invalid Request", nil, err, nil)
 	}
 
-	err := h.service.CreateEmployee(ctx.Request().Context(), &req)
+	result, err := h.service.CreateEmployee(ctx.Request().Context(), &req)
 	if err != nil {
 		logger.Errorw("failed to create employee: ", err)
 
 		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to create employee", err.Error(), err, nil)
 	}
 
-	return response.NewResponses[any](ctx, http.StatusCreated, "Employee created successfully", nil, nil, nil)
+	return response.NewResponses(ctx, http.StatusCreated, "Employee created successfully", result, nil, nil)
 }
 
 func (h *Handler) UpdateEmployee(ctx echo.Context) error {

@@ -32,12 +32,12 @@ func NewRepository(db *gorm.DB) Repository {
 }
 
 func (r *repository) CreateRequisition(ctx context.Context, req *JobRequisition) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Create(req).Error
 }
 
 func (r *repository) FindRequisitionByID(ctx context.Context, id uint) (*JobRequisition, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var req JobRequisition
 	err := db.
 		Preload("Requester.Employee").
@@ -55,7 +55,7 @@ func (r *repository) FindAllRequisitions(ctx context.Context, filter *Requisitio
 	var total int64
 
 	db := utils.GetDBFromContext(ctx, r.db)
-	q := db.Model(&JobRequisition{})
+	q := utils.TenantScope(ctx, db.Model(&JobRequisition{}))
 
 	if filter.Status != "" {
 		q = q.Where("status = ?", filter.Status)
@@ -89,7 +89,7 @@ func (r *repository) FindAllRequisitions(ctx context.Context, filter *Requisitio
 }
 
 func (r *repository) UpdateRequisitionStatus(ctx context.Context, id uint, status string, approvedBy *uint, rejectionReason string) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	updates := map[string]interface{}{
 		"status":           status,
 		"approved_by":      approvedBy,
@@ -99,17 +99,17 @@ func (r *repository) UpdateRequisitionStatus(ctx context.Context, id uint, statu
 }
 
 func (r *repository) SoftDeleteRequisition(ctx context.Context, id uint) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Delete(&JobRequisition{}, id).Error
 }
 
 func (r *repository) CreateApplicant(ctx context.Context, applicant *Applicant) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Create(applicant).Error
 }
 
 func (r *repository) FindApplicantByID(ctx context.Context, id uint) (*Applicant, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var applicant Applicant
 	err := db.
 		Preload("JobRequisition").
@@ -124,7 +124,7 @@ func (r *repository) FindApplicantByID(ctx context.Context, id uint) (*Applicant
 }
 
 func (r *repository) FindApplicantsByRequisitionID(ctx context.Context, requisitionID uint) ([]Applicant, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var applicants []Applicant
 	err := db.
 		Where("job_requisition_id = ?", requisitionID).
@@ -134,7 +134,7 @@ func (r *repository) FindApplicantsByRequisitionID(ctx context.Context, requisit
 }
 
 func (r *repository) UpdateApplicantStage(ctx context.Context, id uint, stage string, stageOrder int, notes, rejectionReason string) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	updates := map[string]interface{}{
 		"stage":            stage,
 		"stage_order":      stageOrder,
@@ -145,12 +145,12 @@ func (r *repository) UpdateApplicantStage(ctx context.Context, id uint, stage st
 }
 
 func (r *repository) CreateStageHistory(ctx context.Context, history *ApplicantStageHistory) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Create(history).Error
 }
 
 func (r *repository) CountApplicantsByRequisitionAndStage(ctx context.Context, requisitionID uint, stage string) (int64, error) {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var count int64
 	err := db.Model(&Applicant{}).
 		Where("job_requisition_id = ? AND stage = ?", requisitionID, stage).
@@ -159,6 +159,6 @@ func (r *repository) CountApplicantsByRequisitionAndStage(ctx context.Context, r
 }
 
 func (r *repository) SoftDeleteApplicant(ctx context.Context, id uint) error {
-	db := utils.GetDBFromContext(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Delete(&Applicant{}, id).Error
 }

@@ -64,7 +64,7 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 		employeeIds[i] = emp.ID
 	}
 
-	existingPayrollMap, err := s.repo.GetExistingEmployeeID(req.Month, req.Year)
+	existingPayrollMap, err := s.repo.GetExistingEmployeeID(ctx, req.Month, req.Year)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch existing employee id: %w", err)
 	}
@@ -199,7 +199,7 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 	}
 
 	// bulk insert payrolls
-	if err := s.repo.CreateBulk(&payrollsToInsert); err != nil {
+	if err := s.repo.CreateBulk(ctx, &payrollsToInsert); err != nil {
 		logger.Errorf("Failed create bulk payrolls %w", err)
 
 		successCount = 0
@@ -214,7 +214,7 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 }
 
 func (s *service) GetList(ctx context.Context, filter *PayrollFilter) ([]PayrollListResponse, *response.Meta, error) {
-	data, total, err := s.repo.FindAll(filter)
+	data, total, err := s.repo.FindAll(ctx, filter)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -248,7 +248,7 @@ func (s *service) GetList(ctx context.Context, filter *PayrollFilter) ([]Payroll
 }
 
 func (s *service) GetDetail(ctx context.Context, id uint) (*PayrollDetailResponse, error) {
-	payroll, err := s.repo.FindByID(id)
+	payroll, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -292,7 +292,7 @@ func (s *service) GetDetail(ctx context.Context, id uint) (*PayrollDetailRespons
 }
 
 func (s *service) GeneratePayslipPDF(ctx context.Context, id uint) (*gopdf.GoPdf, *Payroll, error) {
-	payroll, err := s.repo.FindByID(id)
+	payroll, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -521,7 +521,7 @@ func (s *service) GeneratePayslipPDF(ctx context.Context, id uint) (*gopdf.GoPdf
 
 func (s *service) MarkAsPaid(ctx context.Context, id uint) error {
 	return s.transactionManager.RunInTransaction(ctx, func(ctx context.Context) error {
-		payroll, err := s.repo.FindByID(id)
+		payroll, err := s.repo.FindByID(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -568,6 +568,7 @@ func (s *service) MarkAsPaid(ctx context.Context, id uint) error {
 
 		go func() {
 			_ = s.notification.SendNotification(
+				ctx,
 				payroll.Employee.UserID,
 				string(constants.NotificationTypePayrollPaid),
 				"Payroll Sudah dibayarkan",

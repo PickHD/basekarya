@@ -1,6 +1,9 @@
 package auth
 
 import (
+	"basekarya-backend/internal/modules/company"
+	"basekarya-backend/internal/modules/rbac"
+	"basekarya-backend/internal/modules/user"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/utils"
 	"context"
@@ -11,26 +14,33 @@ import (
 
 type Service interface {
 	Login(ctx context.Context, username, password string) (*LoginResponse, error)
+	RegisterCompany(ctx context.Context, req *RegisterCompanyRequest) (*RegisterCompanyResponse, error)
 	SendOrResendOTP(ctx context.Context, req *SendOrResendOTPRequest) error
 	VerifyOTP(ctx context.Context, req *VerifyOTPRequest) (*VerifyOTPResponse, error)
 	ResetPassword(ctx context.Context, req *ResetPasswordRequest) error
 }
 
 type service struct {
-	user   UserProvider
-	hasher Hasher
-	token  TokenProvider
-	cache  CacheProvider
-	email  EmailProvider
+	user    UserProvider
+	hasher  Hasher
+	token   TokenProvider
+	cache   CacheProvider
+	email   EmailProvider
+	company CompanyProvider
+	role    RoleProvider
+	master  MasterProvider
 }
 
-func NewService(user UserProvider, hasher Hasher, token TokenProvider, cache CacheProvider, email EmailProvider) Service {
+func NewService(user UserProvider, hasher Hasher, token TokenProvider, cache CacheProvider, email EmailProvider, company CompanyProvider, role RoleProvider, master MasterProvider) Service {
 	return &service{
-		user:   user,
-		hasher: hasher,
-		token:  token,
-		cache:  cache,
-		email:  email,
+		user:    user,
+		hasher:  hasher,
+		token:   token,
+		cache:   cache,
+		email:   email,
+		company: company,
+		role:    role,
+		master:  master,
 	}
 }
 
@@ -45,7 +55,7 @@ func (s *service) Login(ctx context.Context, username, password string) (*LoginR
 	}
 
 	var employeeID *uint
-	if foundUser.Employee != nil && foundUser.Role != nil && foundUser.Role.Name != string(constants.UserRoleSuperadmin) {
+	if foundUser.Employee != nil && foundUser.Role != nil && foundUser.Role.Name != "PLATFORM_ADMIN" {
 		employeeID = &foundUser.Employee.ID
 	}
 
@@ -56,7 +66,7 @@ func (s *service) Login(ctx context.Context, username, password string) (*LoginR
 		}
 	}
 
-	tokenString, err := s.token.GenerateToken(foundUser.ID, foundUser.Role.Name, employeeID, permissions)
+	tokenString, err := s.token.GenerateToken(foundUser.ID, foundUser.CompanyID, foundUser.IsPlatformAdmin, foundUser.Role.Name, employeeID, permissions)
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +74,86 @@ func (s *service) Login(ctx context.Context, username, password string) (*LoginR
 	return &LoginResponse{
 		Token:              tokenString,
 		MustChangePassword: foundUser.MustChangePassword,
+	}, nil
+}
+
+func (s *service) RegisterCompany(ctx context.Context, req *RegisterCompanyRequest) (*RegisterCompanyResponse, error) {
+	existing, _ := s.user.FindByUsername(ctx, req.AdminEmail)
+	if existing != nil && existing.ID != 0 {
+		return nil, errors.New("email already registered")
+	}
+
+	planID, err := s.company.FindPlanIDBySlug(ctx, req.PlanSlug)
+	if err != nil || planID == 0 {
+		return nil, errors.New("invalid plan selected")
+	}
+
+	subscriptionStatus := constants.SubStatusActive
+	if req.PlanSlug != "free" {
+		subscriptionStatus = constants.SubStatusPendingPayment
+	}
+
+	newCompany := &company.Company{
+		Name:               req.CompanyName,
+		PhoneNumber:        req.PhoneNumber,
+		Email:              req.AdminEmail,
+		SubscriptionPlanID: &planID,
+		SubscriptionStatus: subscriptionStatus,
+	}
+	if err := s.company.CreateCompany(ctx, newCompany); err != nil {
+		return nil, errors.New("failed to create company")
+	}
+
+	if err := s.master.SeedDefaults(ctx, newCompany.ID); err != nil {
+		return nil, errors.New("failed to seed master data")
+	}
+
+	superadminRole := &rbac.Role{
+		Name:      "SUPERADMIN",
+		CompanyID: newCompany.ID,
+	}
+	if err := s.role.Create(ctx, superadminRole); err != nil {
+		return nil, errors.New("failed to create superadmin role")
+	}
+
+	employeeRole := &rbac.Role{
+		Name:      "EMPLOYEE",
+		CompanyID: newCompany.ID,
+	}
+	if err := s.role.Create(ctx, employeeRole); err != nil {
+		return nil, errors.New("failed to create employee role")
+	}
+
+	allowedGroups := buildAllowedGroups(req.PlanSlug)
+	permissionIDs, err := s.role.FindPermissionIDsByGroupNames(ctx, allowedGroups)
+	if err != nil {
+		return nil, errors.New("failed to get permissions")
+	}
+	if err := s.role.AssignPermissions(ctx, superadminRole.ID, permissionIDs, newCompany.ID); err != nil {
+		return nil, errors.New("failed to assign permissions")
+	}
+
+	hashPass, err := s.hasher.HashPassword(req.Password)
+	if err != nil {
+		return nil, errors.New("failed to hash password")
+	}
+
+	newUser := &user.User{
+		Username:           utils.GenerateUsername(req.AdminName),
+		PasswordHash:       hashPass,
+		RoleID:             superadminRole.ID,
+		CompanyID:          newCompany.ID,
+		MustChangePassword: false,
+		IsActive:           true,
+	}
+	if err := s.user.CreateUser(ctx, newUser); err != nil {
+		return nil, errors.New("failed to create admin user")
+	}
+
+	_ = s.cache.FlushDB(context.Background())
+
+	return &RegisterCompanyResponse{
+		Username: newUser.Username,
 	}, nil
 }
 
@@ -123,10 +213,23 @@ func (s *service) ResetPassword(ctx context.Context, req *ResetPasswordRequest) 
 		return err
 	}
 
-	err = s.cache.Del(ctx, req.Code)
-	if err != nil {
-		return err
+	return nil
+}
+
+func buildAllowedGroups(planSlug string) []string {
+	groups := make([]string, len(constants.AlwaysAvailableGroups))
+	copy(groups, constants.AlwaysAvailableGroups)
+
+	planModules, ok := constants.PlanModules[planSlug]
+	if !ok {
+		return groups
 	}
 
-	return nil
+	for _, mod := range planModules {
+		if modGroups, exists := constants.ModulePermissionGroups[mod]; exists {
+			groups = append(groups, modGroups...)
+		}
+	}
+
+	return groups
 }

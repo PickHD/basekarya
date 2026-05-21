@@ -13,15 +13,14 @@ export default function ForgotPasswordPage() {
             <div className="p-3 bg-blue-600 rounded-lg">
               <Building2 className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              BaseKarya
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight">BaseKarya</h1>
           </div>
           <blockquote className="space-y-2 border-l-4 border-blue-600 pl-6">
             <p className="text-lg font-medium leading-relaxed">
-              "Sistem manajemen sumber daya manusia yang terintegrasi, aman, dan efisien untuk mendukung operasional perusahaan Anda."
+              "Sistem manajemen sumber daya manusia yang terintegrasi, aman, dan
+              efisien untuk mendukung operasional perusahaan Anda."
             </p>
-            <footer className="text-sm text-slate-400">BaseKarya v2.8</footer>
+            <footer className="text-sm text-slate-400">BaseKarya v2.10</footer>
           </blockquote>
         </div>
       </div>
@@ -31,7 +30,7 @@ export default function ForgotPasswordPage() {
           <ForgotPasswordForm />
 
           <p className="px-8 text-center text-sm text-slate-500 w-full mt-auto">
-            BaseKarya v2.9 &copy; 2026.
+            BaseKarya v2.10 &copy; 2026.
           </p>
         </div>
       </div>

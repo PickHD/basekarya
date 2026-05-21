@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { toast } from "sonner";
 import type {
@@ -9,6 +9,8 @@ import type {
   VerifyOTPPayload,
   VerifyOTPResponse,
   ResetPasswordPayload,
+  RegisterPayload,
+  RegisterResponse,
 } from "@/features/auth/types";
 
 export const useLogin = () => {
@@ -149,5 +151,45 @@ export const useResetPassword = () => {
         description: description,
       });
     },
+  });
+};
+
+export const useRegister = () => {
+  return useMutation({
+    mutationFn: async (payload: RegisterPayload) => {
+      const { data } = await api.post<RegisterResponse>("/auth/register", payload);
+      return data;
+    },
+    onError: (error: any) => {
+      const responseData = error.response?.data;
+      let title = "Registrasi Gagal";
+      let description = responseData?.message || "Gagal mendaftar";
+
+      if (responseData?.error) {
+        if (responseData.error.errors && Array.isArray(responseData.error.errors)) {
+          title = "Validation Failed";
+          description = responseData.error.errors
+            .map((err: any) => err.message)
+            .join(", ");
+        } else if (responseData.error.message) {
+          description = responseData.error.message;
+        } else if (typeof responseData.error === "string") {
+          description = responseData.error;
+        }
+      }
+
+      toast.error(title, { description });
+    },
+  });
+};
+
+export const useSubscriptionPlans = () => {
+  return useQuery({
+    queryKey: ["subscription-plans"],
+    queryFn: async () => {
+      const { data } = await api.get("/subscriptions/plans");
+      return data;
+    },
+    staleTime: 1000 * 60 * 30,
   });
 };

@@ -16,27 +16,29 @@ import {
   GraduationCap,
   Wallet,
   TrendingUp,
+  Crown,
+  Building2,
 } from "lucide-react";
 import type { MenuItem } from "./types";
 import { PERMISSIONS } from "./permissions";
 
 export const menuItems: MenuItem[] = [
-  // Menu Utama
   {
     title: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
     permission: PERMISSIONS.VIEW_SELF_ATTENDANCE,
     group: "Menu Utama",
+    hideForPlatformAdmin: true,
   },
 
-  // Kehadiran
   {
     title: "History Attendance",
     href: "/history",
     icon: History,
     permission: [PERMISSIONS.VIEW_SELF_ATTENDANCE],
     group: "Kehadiran",
+    hideForPlatformAdmin: true,
   },
   {
     title: "Attendance Recap",
@@ -44,6 +46,7 @@ export const menuItems: MenuItem[] = [
     icon: FileSpreadsheet,
     permission: PERMISSIONS.EXPORT_ATTENDANCE,
     group: "Kehadiran",
+    hideForPlatformAdmin: true,
   },
   {
     title: "Overtime",
@@ -51,15 +54,16 @@ export const menuItems: MenuItem[] = [
     icon: Clock,
     permission: [PERMISSIONS.VIEW_OVERTIME, PERMISSIONS.VIEW_SELF_OVERTIME],
     group: "Kehadiran",
+    hideForPlatformAdmin: true,
   },
 
-  // Pengajuan
   {
     title: "Leave Request",
     href: "/leave",
     icon: CalendarDays,
     permission: [PERMISSIONS.VIEW_LEAVE, PERMISSIONS.VIEW_SELF_LEAVE],
     group: "Pengajuan",
+    hideForPlatformAdmin: true,
   },
   {
     title: "Loan",
@@ -67,6 +71,7 @@ export const menuItems: MenuItem[] = [
     icon: CreditCard,
     permission: [PERMISSIONS.VIEW_LOAN, PERMISSIONS.VIEW_SELF_LOAN],
     group: "Pengajuan",
+    hideForPlatformAdmin: true,
   },
   {
     title: "Reimbursement",
@@ -74,15 +79,17 @@ export const menuItems: MenuItem[] = [
     icon: Receipt,
     permission: [PERMISSIONS.VIEW_REIMBURSEMENT, PERMISSIONS.VIEW_SELF_REIMBURSEMENT],
     group: "Pengajuan",
+    hideForPlatformAdmin: true,
   },
 
-  // Keuangan
   {
     title: "Finance",
     href: "/finance",
     icon: Wallet,
     permission: PERMISSIONS.VIEW_FINANCE,
     group: "Keuangan",
+    hideForPlatformAdmin: true,
+    requiredModule: "finance",
   },
   {
     title: "Finance Dashboard",
@@ -90,15 +97,17 @@ export const menuItems: MenuItem[] = [
     icon: TrendingUp,
     permission: PERMISSIONS.VIEW_FINANCE_DASHBOARD,
     group: "Keuangan",
+    hideForPlatformAdmin: true,
+    requiredModule: "finance",
   },
 
-  // Karyawan
   {
     title: "Employees",
     href: "/admin/employees",
     icon: Users,
     permission: PERMISSIONS.VIEW_EMPLOYEE,
     group: "Karyawan",
+    hideForPlatformAdmin: true,
   },
   {
     title: "Contracts",
@@ -106,6 +115,8 @@ export const menuItems: MenuItem[] = [
     icon: FileText,
     permission: PERMISSIONS.VIEW_CONTRACT,
     group: "Karyawan",
+    hideForPlatformAdmin: true,
+    requiredModule: "contract",
   },
   {
     title: "Payrolls",
@@ -113,15 +124,18 @@ export const menuItems: MenuItem[] = [
     icon: Calculator,
     permission: PERMISSIONS.VIEW_PAYROLL,
     group: "Karyawan",
+    hideForPlatformAdmin: true,
+    requiredModule: "payroll",
   },
 
-  // Rekrutmen
   {
     title: "Recruitment",
     href: "/admin/requisitions",
     icon: Briefcase,
     permission: PERMISSIONS.VIEW_REQUISITION,
     group: "Rekrutmen",
+    hideForPlatformAdmin: true,
+    requiredModule: "recruitment",
   },
   {
     title: "Onboarding",
@@ -129,6 +143,8 @@ export const menuItems: MenuItem[] = [
     icon: GraduationCap,
     permission: PERMISSIONS.VIEW_ONBOARDING,
     group: "Rekrutmen",
+    hideForPlatformAdmin: true,
+    requiredModule: "onboarding",
   },
   {
     title: "Onboarding Templates",
@@ -136,15 +152,17 @@ export const menuItems: MenuItem[] = [
     icon: GraduationCap,
     permission: PERMISSIONS.MANAGE_ONBOARDING_TEMPLATE,
     group: "Rekrutmen",
+    hideForPlatformAdmin: true,
+    requiredModule: "onboarding",
   },
 
-  // Pengaturan
   {
     title: "Company Settings",
     href: "/admin/company-settings",
     icon: Settings,
     permission: PERMISSIONS.VIEW_COMPANY,
     group: "Pengaturan",
+    hideForPlatformAdmin: true,
   },
   {
     title: "Roles & Permissions",
@@ -152,6 +170,7 @@ export const menuItems: MenuItem[] = [
     icon: ShieldAlert,
     permission: PERMISSIONS.VIEW_ROLE,
     group: "Pengaturan",
+    hideForPlatformAdmin: true,
   },
   {
     title: "Announcements",
@@ -159,5 +178,34 @@ export const menuItems: MenuItem[] = [
     icon: Megaphone,
     permission: PERMISSIONS.CREATE_ANNOUNCEMENT,
     group: "Pengaturan",
+    hideForPlatformAdmin: true,
+  },
+  {
+    title: "Dashboard",
+    href: "/admin/platform-dashboard",
+    icon: LayoutDashboard,
+    group: "Platform",
+    platformAdminOnly: true,
+  },
+  {
+    title: "Companies",
+    href: "/admin/companies",
+    icon: Building2,
+    group: "Platform",
+    platformAdminOnly: true,
+  },
+  {
+    title: "Subscriptions",
+    href: "/admin/subscriptions",
+    icon: Crown,
+    group: "Platform",
+    platformAdminOnly: true,
+  },
+  {
+    title: "Request History",
+    href: "/admin/subscription-history",
+    icon: History,
+    group: "Platform",
+    platformAdminOnly: true,
   },
 ];
