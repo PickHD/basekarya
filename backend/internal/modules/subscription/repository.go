@@ -34,18 +34,18 @@ func (r *repository) FindPlanByID(ctx context.Context, id uint) (*SubscriptionPl
 }
 
 func (r *repository) CreateRequest(ctx context.Context, req *SubscriptionRequest) error {
-	return r.db.Create(req).Error
+	return r.db.WithContext(ctx).Create(req).Error
 }
 
 func (r *repository) FindPendingRequestByCompanyID(ctx context.Context, companyID uint) (*SubscriptionRequest, error) {
 	var req SubscriptionRequest
-	err := r.db.Where("company_id = ? AND status = ?", companyID, constants.SubReqStatusPending).First(&req).Error
+	err := r.db.WithContext(ctx).Where("company_id = ? AND status = ?", companyID, constants.SubReqStatusPending).First(&req).Error
 	return &req, err
 }
 
 func (r *repository) FindRequestByID(ctx context.Context, id uint) (*SubscriptionRequest, error) {
 	var req SubscriptionRequest
-	err := r.db.First(&req, id).Error
+	err := r.db.WithContext(ctx).First(&req, id).Error
 	return &req, err
 }
 
@@ -75,7 +75,7 @@ func (r *repository) FindAllPendingRequests(ctx context.Context) ([]Subscription
 }
 
 func (r *repository) UpdateRequest(ctx context.Context, req *SubscriptionRequest) error {
-	return r.db.Save(req).Error
+	return r.db.WithContext(ctx).Save(req).Error
 }
 
 func (r *repository) FindAllRequests(ctx context.Context) ([]SubscriptionRequestResponse, error) {

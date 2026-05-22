@@ -36,7 +36,7 @@ func (r *repository) CreateBatch(ctx context.Context, notifications []*Notificat
 }
 
 func (r *repository) FindByID(ctx context.Context, id uint) (*Notification, error) {
-	db := utils.TenantScope(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var notification Notification
 	err := db.
 		First(&notification, id).Error
@@ -45,7 +45,7 @@ func (r *repository) FindByID(ctx context.Context, id uint) (*Notification, erro
 }
 
 func (r *repository) FindAllByUserID(ctx context.Context, userID uint) ([]Notification, error) {
-	db := utils.TenantScope(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	var logs []Notification
 
 	query := db.Model(&Notification{}).
@@ -61,7 +61,7 @@ func (r *repository) FindAllByUserID(ctx context.Context, userID uint) ([]Notifi
 }
 
 func (r *repository) MarkAsRead(ctx context.Context, id uint) error {
-	db := utils.TenantScope(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	err := db.Model(&Notification{}).Where("id = ?", id).Update("is_read", true).Error
 	if err != nil {
 		return err
@@ -71,7 +71,7 @@ func (r *repository) MarkAsRead(ctx context.Context, id uint) error {
 }
 
 func (r *repository) DeleteReadOlderThan(ctx context.Context, days int) error {
-	db := utils.TenantScope(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	cutoffDate := time.Now().AddDate(0, 0, -days)
 	err := db.Unscoped().
 		Where("is_read = ? AND created_at < ?", true, cutoffDate).

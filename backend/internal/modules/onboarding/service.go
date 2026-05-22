@@ -216,7 +216,7 @@ func (s *service) CreateWorkflow(ctx context.Context, req *CreateWorkflowRequest
 			itUsers, _ := s.user.FindApprovalUsers(context.Background(), constants.UPDATE_ONBOARDING_TASK)
 			if len(itUsers) > 0 {
 			_ = s.notification.BlastNotification(
-				ctx,
+				utils.DetachContext(ctx),
 				itUsers,
 					string(constants.NotificationTypeOnboardingTask),
 					"New Onboarding Tasks",

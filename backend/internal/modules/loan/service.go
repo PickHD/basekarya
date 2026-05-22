@@ -74,7 +74,7 @@ func (s *service) Create(ctx context.Context, req *LoanRequest) error {
 
 		go func() {
 			_ = s.notification.BlastNotification(
-				ctx,
+				utils.DetachContext(ctx),
 				approvalUserIDs,
 				string(constants.NotificationTypeLoanApprovalReq),
 				"Pengajuan Kasbon Baru",
@@ -196,7 +196,7 @@ func (s *service) ProcessAction(ctx context.Context, req *ActionRequest) error {
 
 		go func() {
 			_ = s.notification.SendNotification(
-				ctx,
+				utils.DetachContext(ctx),
 				data.UserID,
 				string(notificationType),
 				notificationTitle,

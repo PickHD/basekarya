@@ -67,3 +67,14 @@ func TenantScope(ctx context.Context, db *gorm.DB) *gorm.DB {
 	}
 	return db.Where("company_id = ?", companyID)
 }
+
+// DetachContext returns a new context with tenant values preserved but
+// without any transaction reference. Use this when spawning goroutines
+// that need to perform DB operations independently of the parent transaction.
+func DetachContext(ctx context.Context) context.Context {
+	detached := context.Background()
+	detached = context.WithValue(detached, constants.CompanyIDContextKey, GetCompanyIDFromCtx(ctx))
+	detached = context.WithValue(detached, constants.IsPlatformAdminContextKey, IsPlatformAdminFromCtx(ctx))
+	detached = context.WithValue(detached, constants.UserIDContextKey, GetUserIDFromCtx(ctx))
+	return detached
+}

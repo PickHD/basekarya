@@ -112,7 +112,7 @@ func (s *service) Apply(ctx context.Context, req *ApplyRequest) error {
 
 		go func() {
 			_ = s.notification.BlastNotification(
-				ctx,
+				utils.DetachContext(ctx),
 				approvalUserIDs,
 				string(constants.NotificationTypeLeaveApprovalReq),
 				"Pengajuan Cuti Baru",
@@ -168,7 +168,8 @@ func (s *service) RequestAction(ctx context.Context, req *LeaveActionRequest) er
 					status = constants.AttendanceStatusSick
 				}
 
-				attendance := attendance.Attendance{
+				att := attendance.Attendance{
+					CompanyID:          utils.GetCompanyIDFromCtx(ctx),
 					EmployeeID:         leaveRequest.EmployeeID,
 					ShiftID:            leaveRequest.Employee.ShiftID,
 					Date:               currentDate,
@@ -182,7 +183,7 @@ func (s *service) RequestAction(ctx context.Context, req *LeaveActionRequest) er
 					LateDurationMinute: 0,
 					IsSuspicious:       false,
 				}
-				attendanceRecords = append(attendanceRecords, attendance)
+				attendanceRecords = append(attendanceRecords, att)
 
 				currentDate = currentDate.AddDate(0, 0, 1)
 			}
@@ -215,7 +216,7 @@ func (s *service) RequestAction(ctx context.Context, req *LeaveActionRequest) er
 		// send notification to requester
 		go func() {
 			_ = s.notification.SendNotification(
-				ctx,
+				utils.DetachContext(ctx),
 				leaveRequest.User.ID,
 				string(notificationType),
 				notificationTitle,
