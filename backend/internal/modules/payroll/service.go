@@ -207,7 +207,6 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 	if err := s.repo.CreateBulk(ctx, &payrollsToInsert); err != nil {
 		logger.Errorf("Failed create bulk payrolls %w", err)
 
-		successCount = 0
 		return nil, err
 	}
 
