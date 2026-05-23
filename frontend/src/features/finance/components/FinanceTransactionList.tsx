@@ -33,16 +33,22 @@ import { FinanceCategoryManager } from "./FinanceCategoryManager";
 
 export const FinanceTransactionList = () => {
   const { hasPermission } = usePermissions();
-  const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
 
-  const { data, isLoading } = useFinanceTransactions({
-    page,
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useFinanceTransactions({
     limit: 10,
     status: statusFilter,
     type: typeFilter,
   });
+
+  const allTransactions = data?.pages.flatMap((page) => page.data) ?? [];
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -137,7 +143,6 @@ export const FinanceTransactionList = () => {
                   value={typeFilter}
                   onChange={(e) => {
                     setTypeFilter(e.target.value);
-                    setPage(1);
                   }}
                 >
                   <option value="">All Types</option>
@@ -152,7 +157,6 @@ export const FinanceTransactionList = () => {
                   value={statusFilter}
                   onChange={(e) => {
                     setStatusFilter(e.target.value);
-                    setPage(1);
                   }}
                 >
                   <option value="">All Status</option>
@@ -173,7 +177,7 @@ export const FinanceTransactionList = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 gap-4 md:hidden">
-                {data?.data.map((item) => (
+                {allTransactions.map((item) => (
                   <div
                     key={item.id}
                     className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-3"
@@ -236,7 +240,7 @@ export const FinanceTransactionList = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {data?.data.map((item) => (
+                    {allTransactions.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">
                           {item.creator_name || "-"}
@@ -262,7 +266,7 @@ export const FinanceTransactionList = () => {
                         </TableCell>
                       </TableRow>
                     ))}
-                    {data?.data.length === 0 && (
+                    {allTransactions.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-8 text-slate-500">
                           Tidak ada data transaksi.
@@ -273,16 +277,11 @@ export const FinanceTransactionList = () => {
                 </Table>
               </div>
 
-              {data?.meta && (
+              {hasNextPage && (
                 <PaginationControls
-                  meta={{
-                    limit: 10,
-                    page: data.meta.page,
-                    total_page: data.meta.total_page,
-                    total_data: data.meta.total_data,
-                  }}
-                  onPageChange={setPage}
-                  isLoading={isLoading}
+                  meta={{ limit: 10, has_next: hasNextPage }}
+                  onLoadMore={() => fetchNextPage()}
+                  isLoading={isFetchingNextPage}
                 />
               )}
             </>

@@ -113,9 +113,9 @@ export function EmployeeFormDialog({
         form.reset({
           full_name: employeeToEdit.full_name,
           nik: employeeToEdit.nik,
-          department_id: employeeToEdit.department_name === "Umum" ? "1" : "2",
-          role_id: employeeToEdit.role_id,
-          shift_id: "1",
+          department_id: employeeToEdit.department_id ? String(employeeToEdit.department_id) : "",
+          role_id: employeeToEdit.role_id ? String(employeeToEdit.role_id) : "",
+          shift_id: employeeToEdit.shift_id ? String(employeeToEdit.shift_id) : "",
           base_salary: employeeToEdit.base_salary,
           email: employeeToEdit.email,
           position: employeeToEdit.position,

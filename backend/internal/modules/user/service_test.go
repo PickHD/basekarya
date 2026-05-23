@@ -578,7 +578,7 @@ func TestService_UpdateEmployee(t *testing.T) {
 		name       string
 		id         uint
 		req        *UpdateEmployeeRequest
-		setupMocks func(*mockRepo)
+		setupMocks func(*mockRepo, *mockCache)
 		wantErr    bool
 		errMsg     string
 	}{
@@ -589,11 +589,30 @@ func TestService_UpdateEmployee(t *testing.T) {
 				FullName: "John Updated",
 				Position: "Senior Developer",
 			},
-			setupMocks: func(repo *mockRepo) {
+			setupMocks: func(repo *mockRepo, cache *mockCache) {
 				repo.On("FindEmployeeByID", mock.Anything, uint(1)).Return(&Employee{
-					ID: 1, FullName: "John Doe", Position: "Developer",
+					ID: 1, FullName: "John Doe", Position: "Developer", UserID: 10,
 				}, nil)
 				repo.On("UpdateEmployee", mock.Anything, mock.AnythingOfType("*user.Employee")).Return(nil)
+				cache.On("Del", mock.Anything, "user:10").Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "success with role update",
+			id:   1,
+			req: &UpdateEmployeeRequest{
+				FullName: "John Updated",
+				RoleID:   2,
+			},
+			setupMocks: func(repo *mockRepo, cache *mockCache) {
+				repo.On("FindEmployeeByID", mock.Anything, uint(1)).Return(&Employee{
+					ID: 1, FullName: "John Doe", Position: "Developer", UserID: 10,
+					User: User{ID: 10, RoleID: 1},
+				}, nil)
+				repo.On("UpdateEmployee", mock.Anything, mock.AnythingOfType("*user.Employee")).Return(nil)
+				repo.On("UpdateUser", mock.Anything, mock.AnythingOfType("*user.User")).Return(nil)
+				cache.On("Del", mock.Anything, "user:10").Return(nil)
 			},
 			wantErr: false,
 		},
@@ -601,7 +620,7 @@ func TestService_UpdateEmployee(t *testing.T) {
 			name: "error employee not found",
 			id:   99,
 			req:  &UpdateEmployeeRequest{FullName: "Test"},
-			setupMocks: func(repo *mockRepo) {
+			setupMocks: func(repo *mockRepo, cache *mockCache) {
 				repo.On("FindEmployeeByID", mock.Anything, uint(99)).Return(nil, errors.New("not found"))
 			},
 			wantErr: true,
@@ -611,7 +630,7 @@ func TestService_UpdateEmployee(t *testing.T) {
 			name: "error update fails",
 			id:   1,
 			req:  &UpdateEmployeeRequest{FullName: "John Updated"},
-			setupMocks: func(repo *mockRepo) {
+			setupMocks: func(repo *mockRepo, cache *mockCache) {
 				repo.On("FindEmployeeByID", mock.Anything, uint(1)).Return(&Employee{
 					ID: 1, FullName: "John Doe",
 				}, nil)
@@ -624,8 +643,8 @@ func TestService_UpdateEmployee(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _, _, _ := newTestUserService()
-			tt.setupMocks(repo)
+			svc, repo, _, _, cache, _, _, _ := newTestUserService()
+			tt.setupMocks(repo, cache)
 
 			err := svc.UpdateEmployee(ctx, tt.id, tt.req)
 

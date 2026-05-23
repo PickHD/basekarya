@@ -324,51 +324,55 @@ func TestRepo_FindAllTransactions(t *testing.T) {
 	}
 
 	tests := []struct {
-		name      string
-		filter    TransactionFilter
-		wantCount int
-		wantTotal int64
-		wantErr   bool
+		name       string
+		filter     TransactionFilter
+		wantCount  int
+		wantCursor bool
+		wantErr    bool
 	}{
 		{
-			name:      "all transactions",
-			filter:    TransactionFilter{Page: 1, Limit: 10},
-			wantCount: 3,
-			wantTotal: 3,
-			wantErr:   false,
+			name:       "all transactions",
+			filter:     TransactionFilter{Limit: 10},
+			wantCount:  3,
+			wantCursor: false,
+			wantErr:    false,
 		},
 		{
-			name:      "filter by type",
-			filter:    TransactionFilter{Type: "INCOME", Page: 1, Limit: 10},
-			wantCount: 3,
-			wantTotal: 3,
-			wantErr:   false,
+			name:       "filter by type",
+			filter:     TransactionFilter{Type: "INCOME", Limit: 10},
+			wantCount:  3,
+			wantCursor: false,
+			wantErr:    false,
 		},
 		{
-			name:      "filter by status pending",
-			filter:    TransactionFilter{Status: "PENDING", Page: 1, Limit: 10},
-			wantCount: 3,
-			wantTotal: 3,
-			wantErr:   false,
+			name:       "filter by status pending",
+			filter:     TransactionFilter{Status: "PENDING", Limit: 10},
+			wantCount:  3,
+			wantCursor: false,
+			wantErr:    false,
 		},
 		{
-			name:      "paginated",
-			filter:    TransactionFilter{Page: 1, Limit: 2},
-			wantCount: 2,
-			wantTotal: 3,
-			wantErr:   false,
+			name:       "paginated with next cursor",
+			filter:     TransactionFilter{Limit: 2},
+			wantCount:  2,
+			wantCursor: true,
+			wantErr:    false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			txs, total, err := repo.FindAllTransactions(ctx, tt.filter)
+			txs, nextCursor, err := repo.FindAllTransactions(ctx, tt.filter)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 				assert.Len(t, txs, tt.wantCount)
-				assert.Equal(t, tt.wantTotal, total)
+				if tt.wantCursor {
+					assert.NotNil(t, nextCursor)
+				} else {
+					assert.Nil(t, nextCursor)
+				}
 			}
 		})
 	}

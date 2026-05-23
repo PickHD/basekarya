@@ -1,6 +1,7 @@
 package finance
 
 import (
+	"basekarya-backend/pkg/response"
 	"basekarya-backend/pkg/utils"
 	"context"
 
@@ -10,7 +11,7 @@ import (
 type Repository interface {
 	CreateTransaction(ctx context.Context, tx *FinanceTransaction) error
 	FindTransactionByID(ctx context.Context, id uint) (*FinanceTransaction, error)
-	FindAllTransactions(ctx context.Context, filter TransactionFilter) ([]FinanceTransaction, int64, error)
+	FindAllTransactions(ctx context.Context, filter TransactionFilter) ([]FinanceTransaction, *response.Cursor, error)
 	UpdateTransaction(ctx context.Context, tx *FinanceTransaction) error
 
 	CreateCategory(ctx context.Context, cat *FinanceCategory) error
@@ -53,10 +54,9 @@ func (r *repository) FindTransactionByID(ctx context.Context, id uint) (*Finance
 	return &tx, nil
 }
 
-func (r *repository) FindAllTransactions(ctx context.Context, filter TransactionFilter) ([]FinanceTransaction, int64, error) {
+func (r *repository) FindAllTransactions(ctx context.Context, filter TransactionFilter) ([]FinanceTransaction, *response.Cursor, error) {
 	db := utils.GetDBFromContext(ctx, r.db)
 	var transactions []FinanceTransaction
-	var total int64
 
 	query := utils.TenantScope(ctx, db.Model(&FinanceTransaction{})).
 		Joins("JOIN users ON users.id = finance_transactions.created_by").
@@ -85,18 +85,41 @@ func (r *repository) FindAllTransactions(ctx context.Context, filter Transaction
 		query = query.Where("finance_transactions.transaction_date <= ?", filter.EndDate)
 	}
 
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
+	if filter.Limit > 0 {
+		query = query.Limit(filter.Limit + 1)
+
+		if filter.Cursor != "" {
+			var decoded *response.Cursor
+			err := response.DecodeCursor(filter.Cursor, &decoded)
+			if err == nil && decoded != nil {
+				query = query.Where(
+					"(finance_transactions.created_at < ?) OR (finance_transactions.created_at = ? AND finance_transactions.id < ?)",
+					decoded.SortValue, decoded.SortValue, decoded.ID,
+				)
+			}
+		}
 	}
 
-	offset := (filter.Page - 1) * filter.Limit
 	err := query.
-		Limit(filter.Limit).
-		Offset(offset).
-		Order("finance_transactions.created_at DESC").
+		Order("finance_transactions.created_at DESC, finance_transactions.id DESC").
 		Find(&transactions).Error
 
-	return transactions, total, err
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var nextCursor *response.Cursor
+	if filter.Limit > 0 && len(transactions) > filter.Limit {
+		transactions = transactions[:filter.Limit]
+		lastItem := transactions[len(transactions)-1]
+
+		nextCursor = &response.Cursor{
+			ID:        lastItem.ID,
+			SortValue: lastItem.CreatedAt,
+		}
+	}
+
+	return transactions, nextCursor, nil
 }
 
 func (r *repository) UpdateTransaction(ctx context.Context, tx *FinanceTransaction) error {

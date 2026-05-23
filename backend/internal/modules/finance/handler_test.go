@@ -91,7 +91,7 @@ func TestHandler_GetAllTransactions(t *testing.T) {
 	}{
 		{
 			name:        "success",
-			queryParams: "?page=1&limit=10",
+			queryParams: "?limit=10",
 			setupMocks: func(svc *mockService) {
 				svc.On("GetTransactions", mock.Anything, mock.AnythingOfType("finance.TransactionFilter")).
 					Return([]TransactionListResponse{}, (*response.Meta)(nil), nil)
@@ -100,7 +100,7 @@ func TestHandler_GetAllTransactions(t *testing.T) {
 		},
 		{
 			name:        "service error",
-			queryParams: "?page=1&limit=10",
+			queryParams: "?limit=10",
 			setupMocks: func(svc *mockService) {
 				svc.On("GetTransactions", mock.Anything, mock.AnythingOfType("finance.TransactionFilter")).
 					Return([]TransactionListResponse(nil), (*response.Meta)(nil), errors.New("db error"))

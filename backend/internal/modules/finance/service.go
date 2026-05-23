@@ -154,7 +154,7 @@ func (s *service) GetTransactionDetail(ctx context.Context, id uint) (*Transacti
 }
 
 func (s *service) GetTransactions(ctx context.Context, filter TransactionFilter) ([]TransactionListResponse, *response.Meta, error) {
-	transactions, total, err := s.repo.FindAllTransactions(ctx, filter)
+	transactions, nextCursor, err := s.repo.FindAllTransactions(ctx, filter)
 	if err != nil {
 		return []TransactionListResponse{}, nil, nil
 	}
@@ -188,7 +188,8 @@ func (s *service) GetTransactions(ctx context.Context, filter TransactionFilter)
 		})
 	}
 
-	meta := response.NewMetaOffset(filter.Page, filter.Limit, total)
+	hasNext := nextCursor != nil
+	meta := response.NewMetaCursor(filter.Limit, hasNext, nextCursor)
 	return list, meta, nil
 }
 
@@ -255,8 +256,7 @@ func (s *service) ProcessAction(ctx context.Context, req *ActionRequest) error {
 }
 
 func (s *service) ExportTransactions(ctx context.Context, filter TransactionFilter) ([]byte, error) {
-	filter.Page = 1
-	filter.Limit = 999999
+	filter.Limit = 0
 
 	transactions, _, err := s.repo.FindAllTransactions(ctx, filter)
 	if err != nil {

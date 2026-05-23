@@ -9,6 +9,7 @@ import (
 	"basekarya-backend/internal/modules/user"
 	"basekarya-backend/internal/testutil"
 	"basekarya-backend/pkg/constants"
+	"basekarya-backend/pkg/response"
 
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
@@ -203,7 +204,7 @@ func TestService_GetTransactions(t *testing.T) {
 	}{
 		{
 			name:   "success with data",
-			filter: TransactionFilter{Page: 1, Limit: 10},
+			filter: TransactionFilter{Limit: 10},
 			setupMocks: func(repo *mockRepo) {
 				repo.On("FindAllTransactions", mock.Anything, mock.AnythingOfType("finance.TransactionFilter")).Return([]FinanceTransaction{
 					{
@@ -212,25 +213,25 @@ func TestService_GetTransactions(t *testing.T) {
 						FinanceCategory: FinanceCategory{Name: "Salary"},
 						ReferenceNumber: sql.NullString{Valid: false},
 					},
-				}, int64(1), nil)
+				}, (*response.Cursor)(nil), nil)
 			},
 			wantLen: 1,
 			wantErr: false,
 		},
 		{
 			name:   "success empty",
-			filter: TransactionFilter{Page: 1, Limit: 10},
+			filter: TransactionFilter{Limit: 10},
 			setupMocks: func(repo *mockRepo) {
-				repo.On("FindAllTransactions", mock.Anything, mock.AnythingOfType("finance.TransactionFilter")).Return([]FinanceTransaction{}, int64(0), nil)
+				repo.On("FindAllTransactions", mock.Anything, mock.AnythingOfType("finance.TransactionFilter")).Return([]FinanceTransaction{}, (*response.Cursor)(nil), nil)
 			},
 			wantLen: 0,
 			wantErr: false,
 		},
 		{
 			name:   "repo error returns empty",
-			filter: TransactionFilter{Page: 1, Limit: 10},
+			filter: TransactionFilter{Limit: 10},
 			setupMocks: func(repo *mockRepo) {
-				repo.On("FindAllTransactions", mock.Anything, mock.AnythingOfType("finance.TransactionFilter")).Return([]FinanceTransaction(nil), int64(0), errors.New("db error"))
+				repo.On("FindAllTransactions", mock.Anything, mock.AnythingOfType("finance.TransactionFilter")).Return([]FinanceTransaction(nil), (*response.Cursor)(nil), errors.New("db error"))
 			},
 			wantLen: 0,
 			wantErr: false,
@@ -389,7 +390,7 @@ func TestService_ExportTransactions(t *testing.T) {
 	}{
 		{
 			name:   "success",
-			filter: TransactionFilter{Page: 1, Limit: 10},
+			filter: TransactionFilter{Limit: 0},
 			setupMocks: func(repo *mockRepo, excel *mockExcel) {
 				repo.On("FindAllTransactions", mock.Anything, mock.AnythingOfType("finance.TransactionFilter")).Return([]FinanceTransaction{
 					{
@@ -400,16 +401,16 @@ func TestService_ExportTransactions(t *testing.T) {
 						ReferenceNumber: sql.NullString{Valid: false},
 						CreatedAt:       time.Now(),
 					},
-				}, int64(1), nil)
+				}, (*response.Cursor)(nil), nil)
 				excel.On("GenerateSimpleExcel", "Finance Transactions", mock.Anything, mock.Anything).Return([]byte("fake-excel"), nil)
 			},
 			wantErr: false,
 		},
 		{
 			name:   "error repo fails",
-			filter: TransactionFilter{Page: 1, Limit: 10},
+			filter: TransactionFilter{Limit: 0},
 			setupMocks: func(repo *mockRepo, excel *mockExcel) {
-				repo.On("FindAllTransactions", mock.Anything, mock.AnythingOfType("finance.TransactionFilter")).Return([]FinanceTransaction(nil), int64(0), errors.New("db error"))
+				repo.On("FindAllTransactions", mock.Anything, mock.AnythingOfType("finance.TransactionFilter")).Return([]FinanceTransaction(nil), (*response.Cursor)(nil), errors.New("db error"))
 			},
 			wantErr: true,
 		},

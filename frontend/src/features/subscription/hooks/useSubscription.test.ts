@@ -26,7 +26,9 @@ describe("useRequestUpgrade", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("should request upgrade and show success toast", async () => {
-    (api.post as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { message: "ok" } });
+    (api.post as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { message: "ok" },
+    });
 
     const { wrapper } = createQueryWrapper();
     const { result } = renderHook(() => useRequestUpgrade(), { wrapper });
@@ -35,7 +37,8 @@ describe("useRequestUpgrade", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(toast.success).toHaveBeenCalledWith("Permintaan upgrade terkirim", {
-      description: "Tim kami akan menghubungi Anda untuk konfirmasi pembayaran.",
+      description:
+        "Tim kami akan menghubungi Anda untuk konfirmasi pembayaran.",
     });
   });
 
@@ -73,12 +76,14 @@ describe("useReviewRequest", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("should review request and show success toast", async () => {
-    (api.put as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { message: "ok" } });
+    (api.put as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { message: "ok" },
+    });
 
     const { wrapper } = createQueryWrapper();
     const { result } = renderHook(() => useReviewRequest(), { wrapper });
 
-    result.current.mutate({ id: 1, payload: { status: "approved" } });
+    result.current.mutate({ id: 1, payload: { status: "APPROVED" } });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(toast.success).toHaveBeenCalledWith("Berhasil", {
@@ -142,7 +147,9 @@ describe("useUpdateCompanyStatus", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("should update company status", async () => {
-    (api.put as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { message: "ok" } });
+    (api.put as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { message: "ok" },
+    });
 
     const { wrapper } = createQueryWrapper();
     const { result } = renderHook(() => useUpdateCompanyStatus(), { wrapper });

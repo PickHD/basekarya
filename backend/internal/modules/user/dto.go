@@ -43,7 +43,9 @@ type EmployeeListResponse struct {
 	FullName       string  `json:"full_name"`
 	NIK            string  `json:"nik"`
 	Username       string  `json:"username"`
+	DepartmentID   uint    `json:"department_id"`
 	DepartmentName string  `json:"department_name"`
+	ShiftID        uint    `json:"shift_id"`
 	ShiftName      string  `json:"shift_name"`
 	RoleID         uint    `json:"role_id"`
 	BaseSalary     float64 `json:"base_salary"`
