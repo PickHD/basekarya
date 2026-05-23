@@ -53,7 +53,7 @@ export interface TransactionFilter {
   status?: string;
   start_date?: string;
   end_date?: string;
-  page?: number;
+  cursor?: string;
   limit?: number;
 }
 

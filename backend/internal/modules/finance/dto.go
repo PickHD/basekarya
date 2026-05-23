@@ -11,7 +11,7 @@ type TransactionFilter struct {
 	Status    string
 	StartDate string
 	EndDate   string
-	Page      int
+	Cursor    string
 	Limit     int
 }
 

@@ -23,9 +23,13 @@ func (m *mockRepo) FindTransactionByID(ctx context.Context, id uint) (*FinanceTr
 	return args.Get(0).(*FinanceTransaction), args.Error(1)
 }
 
-func (m *mockRepo) FindAllTransactions(ctx context.Context, filter TransactionFilter) ([]FinanceTransaction, int64, error) {
+func (m *mockRepo) FindAllTransactions(ctx context.Context, filter TransactionFilter) ([]FinanceTransaction, *response.Cursor, error) {
 	args := m.Called(ctx, filter)
-	return args.Get(0).([]FinanceTransaction), args.Get(1).(int64), args.Error(2)
+	var cursor *response.Cursor
+	if args.Get(1) != nil {
+		cursor = args.Get(1).(*response.Cursor)
+	}
+	return args.Get(0).([]FinanceTransaction), cursor, args.Error(2)
 }
 
 func (m *mockRepo) UpdateTransaction(ctx context.Context, tx *FinanceTransaction) error {

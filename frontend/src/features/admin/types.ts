@@ -3,7 +3,9 @@ export interface Employee {
   full_name: string;
   nik: string;
   username: string;
+  department_id: number;
   department_name: string;
+  shift_id: number;
   shift_name: string;
   role_id: string;
   base_salary: number;

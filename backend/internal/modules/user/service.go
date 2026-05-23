@@ -184,13 +184,17 @@ func (s *service) GetAllEmployees(ctx context.Context, page, limit int, search s
 		deptName := "-"
 		shiftName := "-"
 		baseSalary := 0.0
+		var deptID uint
+		var shiftID uint
 
 		if u.Employee != nil {
 			if u.Employee.Department != nil {
 				deptName = u.Employee.Department.Name
+				deptID = u.Employee.DepartmentID
 			}
 			if u.Employee.Shift != nil {
 				shiftName = u.Employee.Shift.Name
+				shiftID = u.Employee.ShiftID
 			}
 			if u.Employee.BaseSalary != 0 {
 				baseSalary = u.Employee.BaseSalary
@@ -201,7 +205,9 @@ func (s *service) GetAllEmployees(ctx context.Context, page, limit int, search s
 				FullName:       u.Employee.FullName,
 				NIK:            u.Employee.NIK,
 				Username:       u.Username,
+				DepartmentID:   deptID,
 				DepartmentName: deptName,
+				ShiftID:        shiftID,
 				ShiftName:      shiftName,
 				RoleID:         u.Role.ID,
 				BaseSalary:     baseSalary,
@@ -304,7 +310,20 @@ func (s *service) UpdateEmployee(ctx context.Context, id uint, req *UpdateEmploy
 		emp.Position = req.Position
 	}
 
-	return s.repo.UpdateEmployee(ctx, emp)
+	if err := s.repo.UpdateEmployee(ctx, emp); err != nil {
+		return err
+	}
+
+	if req.RoleID > 0 && emp.User.ID > 0 {
+		emp.User.RoleID = req.RoleID
+		if err := s.repo.UpdateUser(ctx, &emp.User); err != nil {
+			return err
+		}
+	}
+
+	_ = s.cache.Del(ctx, fmt.Sprintf(constants.USER_CACHE_KEY, emp.UserID))
+
+	return nil
 }
 
 func (s *service) DeleteEmployee(ctx context.Context, id uint) error {

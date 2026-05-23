@@ -7,19 +7,22 @@ import type {
   CreateTransactionPayload,
   TransactionActionPayload,
 } from "@/features/finance/types";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export const useFinanceTransactions = (filter: TransactionFilter) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["finance-transactions", filter],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = "" }) => {
       const { data } = await api.get<{ data: FinanceTransaction[]; meta: Meta }>("/finances/transactions", {
-        params: filter,
+        params: { ...filter, cursor: pageParam || undefined },
       });
       return data;
     },
-    placeholderData: (prev) => prev,
+    initialPageParam: "",
+    getNextPageParam: (lastPage) => {
+      return lastPage.meta?.next_cursor || undefined;
+    },
   });
 };
 

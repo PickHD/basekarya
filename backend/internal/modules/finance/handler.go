@@ -50,11 +50,8 @@ func (h *Handler) GetAllTransactions(ctx echo.Context) error {
 	status := ctx.QueryParam("status")
 	startDate := ctx.QueryParam("start_date")
 	endDate := ctx.QueryParam("end_date")
-	page, _ := strconv.Atoi(ctx.QueryParam("page"))
+	cursor := ctx.QueryParam("cursor")
 	limit, _ := strconv.Atoi(ctx.QueryParam("limit"))
-	if page < 1 {
-		page = 1
-	}
 	if limit < 1 {
 		limit = 10
 	}
@@ -64,7 +61,7 @@ func (h *Handler) GetAllTransactions(ctx echo.Context) error {
 		Status:    status,
 		StartDate: startDate,
 		EndDate:   endDate,
-		Page:      page,
+		Cursor:    cursor,
 		Limit:     limit,
 	}
 

@@ -29,18 +29,18 @@ import { toast } from "sonner";
 describe("useFinanceTransactions", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("should fetch transactions with filter", async () => {
+  it("should fetch transactions with filter using infinite query", async () => {
     const mockData = { data: [{ id: 1, amount: 500000 }], meta: { limit: 10 } };
     (api.get as ReturnType<typeof vi.fn>).mockResolvedValue({ data: mockData });
 
     const { wrapper } = createQueryWrapper();
     const { result } = renderHook(
-      () => useFinanceTransactions({ page: 1, limit: 10 }),
+      () => useFinanceTransactions({ limit: 10 }),
       { wrapper }
     );
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual(mockData);
+    expect(result.current.data?.pages[0]).toEqual(mockData);
   });
 });
 
