@@ -79,7 +79,7 @@ func (s *service) Create(ctx context.Context, req *ReimbursementRequest) error {
 
 		go func() {
 			_ = s.notification.BlastNotification(
-				ctx,
+				utils.DetachContext(ctx),
 				approvalUserIDs,
 				string(constants.NotificationTypeReimburseApprovalReq),
 				"Pengajuan Reimbursement Baru",
@@ -197,7 +197,7 @@ func (s *service) ProcessAction(ctx context.Context, req *ActionRequest) error {
 		// send notification to requester
 		go func() {
 			_ = s.notification.SendNotification(
-				ctx,
+				utils.DetachContext(ctx),
 				data.User.ID,
 				string(notificationType),
 				notificationTitle,

@@ -28,7 +28,7 @@ func NewRepository(db *gorm.DB) Repository {
 }
 
 func (r *repository) Upsert(ctx context.Context, contract *Contract) error {
-	return utils.TenantScope(ctx, r.db).WithContext(ctx).Clauses(clause.OnConflict{
+	return utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db)).Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "employee_id"}},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"contract_type",
@@ -45,7 +45,7 @@ func (r *repository) Upsert(ctx context.Context, contract *Contract) error {
 
 func (r *repository) FindByID(ctx context.Context, id uint) (*Contract, error) {
 	var contract Contract
-	if err := utils.TenantScope(ctx, r.db).WithContext(ctx).Preload("Employee").First(&contract, id).Error; err != nil {
+	if err := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db)).Preload("Employee").First(&contract, id).Error; err != nil {
 		return nil, err
 	}
 	return &contract, nil
@@ -53,7 +53,7 @@ func (r *repository) FindByID(ctx context.Context, id uint) (*Contract, error) {
 
 func (r *repository) FindByEmployeeID(ctx context.Context, employeeID uint) (*Contract, error) {
 	var contract Contract
-	if err := utils.TenantScope(ctx, r.db).WithContext(ctx).Preload("Employee").Where("employee_id = ?", employeeID).First(&contract).Error; err != nil {
+	if err := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db)).Preload("Employee").Where("employee_id = ?", employeeID).First(&contract).Error; err != nil {
 		return nil, err
 	}
 	return &contract, nil
@@ -62,7 +62,7 @@ func (r *repository) FindByEmployeeID(ctx context.Context, employeeID uint) (*Co
 func (r *repository) FindAll(ctx context.Context, filter *ContractFilter) ([]Contract, int64, error) {
 	var contracts []Contract
 	var total int64
-	query := utils.TenantScope(ctx, r.db.Model(&Contract{})).WithContext(ctx).Preload("Employee")
+	query := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db).Model(&Contract{})).Preload("Employee")
 
 	if filter.ContractType != "" {
 		query = query.Where("contracts.contract_type = ?", filter.ContractType)
@@ -91,7 +91,7 @@ func (r *repository) FindAll(ctx context.Context, filter *ContractFilter) ([]Con
 
 func (r *repository) FindExpiringContracts(ctx context.Context, withinDays int) ([]Contract, error) {
 	var contracts []Contract
-	err := utils.TenantScope(ctx, r.db).WithContext(ctx).
+	err := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db)).
 		Preload("Employee").
 		Where("contract_type = ? AND end_date <= DATE_ADD(NOW(), INTERVAL ? DAY) AND end_date >= CURDATE() AND alerted_at IS NULL", "PKWT", withinDays).
 		Find(&contracts).Error
@@ -102,9 +102,9 @@ func (r *repository) MarkAlerted(ctx context.Context, ids []uint) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	return utils.TenantScope(ctx, r.db).WithContext(ctx).Model(&Contract{}).Where("id IN ?", ids).Update("alerted_at", gorm.Expr("NOW()")).Error
+	return utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db)).Model(&Contract{}).Where("id IN ?", ids).Update("alerted_at", gorm.Expr("NOW()")).Error
 }
 
 func (r *repository) SoftDelete(ctx context.Context, id uint) error {
-	return utils.TenantScope(ctx, r.db).WithContext(ctx).Delete(&Contract{}, id).Error
+	return utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db)).Delete(&Contract{}, id).Error
 }

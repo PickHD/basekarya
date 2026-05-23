@@ -91,7 +91,7 @@ func (s *service) CreateTransaction(ctx context.Context, req *CreateTransactionR
 
 		go func() {
 			_ = s.notification.BlastNotification(
-				ctx,
+				utils.DetachContext(ctx),
 				approvalUserIDs,
 				string(constants.NotificationTypeFinanceApprovalReq),
 				"Pengajuan Transaksi Keuangan Baru",
@@ -241,7 +241,7 @@ func (s *service) ProcessAction(ctx context.Context, req *ActionRequest) error {
 
 		go func() {
 			_ = s.notification.SendNotification(
-				ctx,
+				utils.DetachContext(ctx),
 				data.CreatedBy,
 				string(notificationType),
 				notificationTitle,

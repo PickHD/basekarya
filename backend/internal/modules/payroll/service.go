@@ -568,7 +568,7 @@ func (s *service) MarkAsPaid(ctx context.Context, id uint) error {
 
 		go func() {
 			_ = s.notification.SendNotification(
-				ctx,
+				utils.DetachContext(ctx),
 				payroll.Employee.UserID,
 				string(constants.NotificationTypePayrollPaid),
 				"Payroll Sudah dibayarkan",

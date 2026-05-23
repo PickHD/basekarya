@@ -77,8 +77,8 @@ func seedMasterData(tx *gorm.DB) error {
 }
 
 func seedRolesAndAdmin(tx *gorm.DB, cfg *config.Config, hasher Hasher) (*rbac.Role, error) {
-	platformRole := rbac.Role{Name: "PLATFORM_ADMIN", CompanyID: 0}
-	if err := tx.Where(rbac.Role{Name: "PLATFORM_ADMIN"}).FirstOrCreate(&platformRole).Error; err != nil {
+	platformRole := rbac.Role{Name: string(constants.UserRolePlatformAdmin), CompanyID: 0}
+	if err := tx.Where(rbac.Role{Name: string(constants.UserRolePlatformAdmin)}).FirstOrCreate(&platformRole).Error; err != nil {
 		return nil, err
 	}
 

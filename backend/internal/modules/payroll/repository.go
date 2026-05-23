@@ -26,7 +26,7 @@ func NewRepository(db *gorm.DB) Repository {
 }
 
 func (r *repository) CreateBulk(ctx context.Context, payroll *[]Payroll) error {
-	db := utils.TenantScope(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	return db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.CreateInBatches(payroll, 100).Error; err != nil {
 			return err
@@ -40,7 +40,7 @@ func (r *repository) FindAll(ctx context.Context, filter *PayrollFilter) ([]Payr
 	var payrolls []Payroll
 	var total int64
 
-	query := utils.TenantScope(ctx, r.db.Model(&Payroll{})).
+	query := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db).Model(&Payroll{})).
 		Joins("JOIN employees ON employees.id = payrolls.employee_id").
 		Preload("Employee")
 
@@ -71,7 +71,7 @@ func (r *repository) FindAll(ctx context.Context, filter *PayrollFilter) ([]Payr
 
 func (r *repository) FindByID(ctx context.Context, id uint) (*Payroll, error) {
 	var payroll Payroll
-	db := utils.TenantScope(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	err := db.
 		Preload("Employee").
 		Preload("Details").
@@ -89,7 +89,7 @@ func (r *repository) GetExistingEmployeeID(ctx context.Context, month, year int)
 	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.Local)
 	endDate := startDate.AddDate(0, 1, -1)
 
-	db := utils.TenantScope(ctx, r.db)
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 	err := db.Model(&Payroll{}).
 		Where("period_date BETWEEN ? AND ?", startDate, endDate).
 		Pluck("employee_id", &existingID).Error

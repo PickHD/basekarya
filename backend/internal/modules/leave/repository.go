@@ -112,7 +112,8 @@ func (r *repository) ApproveRequest(ctx context.Context, requestID uint, approve
 	}
 
 	if len(attendanceRecords) > 0 {
-		if err := db.Clauses(clause.OnConflict{
+		attendanceDB := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
+		if err := attendanceDB.Clauses(clause.OnConflict{
 			Columns: []clause.Column{{Name: "employee_id"}, {Name: "date"}},
 			DoUpdates: clause.AssignmentColumns([]string{
 				"shift_id",
@@ -137,7 +138,8 @@ func (r *repository) ApproveRequest(ctx context.Context, requestID uint, approve
 			return err
 		}
 
-		if err := db.Model(&LeaveBalance{}).
+		balanceDB := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
+		if err := balanceDB.Model(&LeaveBalance{}).
 			Where("employee_id = ? AND leave_type_id = ? AND year = ?", req.EmployeeID, req.LeaveTypeID, time.Now().Year()).
 			Updates(map[string]interface{}{
 				"quota_used": gorm.Expr("quota_used + ?", days),

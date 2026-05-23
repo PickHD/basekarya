@@ -82,7 +82,7 @@ func (s *service) Create(ctx context.Context, req *OvertimeRequest) error {
 
 		go func() {
 			_ = s.notification.BlastNotification(
-				ctx,
+				utils.DetachContext(ctx),
 				approvalUserIDs,
 				string(constants.NotificationTypeOvertimeApprovalReq),
 				"Pengajuan Lembur Baru",
@@ -204,7 +204,7 @@ func (s *service) ProcessAction(ctx context.Context, req *ActionRequest) error {
 
 		go func() {
 			_ = s.notification.SendNotification(
-				ctx,
+				utils.DetachContext(ctx),
 				data.UserID,
 				notificationType,
 				notificationTitle,

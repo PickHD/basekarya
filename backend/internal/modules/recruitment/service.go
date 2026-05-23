@@ -106,7 +106,7 @@ func (s *service) SubmitRequisition(ctx context.Context, id uint, requesterID ui
 
 		go func() {
 			_ = s.notification.BlastNotification(
-				ctx,
+				utils.DetachContext(ctx),
 				approverIDs,
 				string(constants.NotificationTypeRequisitionApprovalReq),
 				"Pengajuan Lowongan Baru",
@@ -153,7 +153,7 @@ func (s *service) RequisitionAction(ctx context.Context, id uint, approverID uin
 
 		go func() {
 			_ = s.notification.SendNotification(
-				ctx,
+				utils.DetachContext(ctx),
 				jr.RequesterID,
 				string(constants.NotificationTypeRequisitionApprovalReq),
 				fmt.Sprintf("Requisition %s", strings.Title(strings.ToLower(newStatus))),
