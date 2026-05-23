@@ -146,15 +146,15 @@ func (c *Client) WritePump() {
 	ticker := time.NewTicker(constants.PingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.Conn.Close()
+		_ = c.Conn.Close()
 	}()
 
 	for {
 		select {
 		case message, ok := <-c.Send:
-			c.Conn.SetWriteDeadline(time.Now().Add(constants.WriteWait))
+			_ = c.Conn.SetWriteDeadline(time.Now().Add(constants.WriteWait))
 			if !ok {
-				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				_ = c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
@@ -163,19 +163,19 @@ func (c *Client) WritePump() {
 				return
 			}
 
-			w.Write(message)
+			_, _ = w.Write(message)
 
 			n := len(c.Send)
 			for i := 0; i < n; i++ {
-				w.Write([]byte{'\n'})
-				w.Write(<-c.Send)
+				_, _ = w.Write([]byte{'\n'})
+				_, _ = w.Write(<-c.Send)
 			}
 
 			if err := w.Close(); err != nil {
 				return
 			}
 		case <-ticker.C:
-			c.Conn.SetWriteDeadline(time.Now().Add(constants.WriteWait))
+			_ = c.Conn.SetWriteDeadline(time.Now().Add(constants.WriteWait))
 			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
@@ -186,13 +186,13 @@ func (c *Client) WritePump() {
 func (c *Client) ReadPump() {
 	defer func() {
 		c.Hub.Unregister <- c
-		c.Conn.Close()
+		_ = c.Conn.Close()
 	}()
 
 	c.Conn.SetReadLimit(512)
-	c.Conn.SetReadDeadline(time.Now().Add(constants.PongWait))
+	_ = c.Conn.SetReadDeadline(time.Now().Add(constants.PongWait))
 	c.Conn.SetPongHandler(func(string) error {
-		c.Conn.SetReadDeadline(time.Now().Add(constants.PongWait))
+		_ = c.Conn.SetReadDeadline(time.Now().Add(constants.PongWait))
 		return nil
 	})
 

@@ -139,7 +139,7 @@ func (h *Handler) parseAndValidateFormData(ctx echo.Context, userID uint) (*Reim
 	}
 
 	if fileHeader.Size > 5*1024*1024 {
-		return nil, fmt.Errorf("File size exceeds 5MB limit")
+		return nil, fmt.Errorf("file size exceeds 5MB limit")
 	}
 
 	return &ReimbursementRequest{

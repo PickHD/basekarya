@@ -48,8 +48,8 @@ func (m *MinioStorageProvider) UploadFileMultipart(ctx context.Context, file *mu
 	}
 	defer src.Close()
 
-	var uploadReader io.Reader = src
-	var uploadSize int64 = file.Size
+	uploadReader := io.Reader(src)
+	uploadSize := file.Size
 	contentType := file.Header.Get("Content-Type")
 
 	// Before upload, resize image & turn down the quality image till 75%
@@ -83,8 +83,8 @@ func (m *MinioStorageProvider) UploadFileMultipart(ctx context.Context, file *mu
 }
 
 func (m *MinioStorageProvider) UploadFileByte(ctx context.Context, objectName string, reader io.Reader, size int64, contentType string) (string, error) {
-	var uploadReader io.Reader = reader
-	var uploadSize int64 = size
+	uploadReader := io.Reader(reader)
+	uploadSize := size
 
 	// Before upload, resize image & turn down the quality image till 75%
 	if strings.HasPrefix(contentType, "image/") {

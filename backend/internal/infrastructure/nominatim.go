@@ -52,7 +52,7 @@ func (n *NominatimFetcher) GetAddressFromCoords(lat, long float64) string {
 
 		var result nominatimResponse
 		decodeErr := json.NewDecoder(resp.Body).Decode(&result)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		if decodeErr != nil {
 			logger.Errorw("failed decode JSON", decodeErr)

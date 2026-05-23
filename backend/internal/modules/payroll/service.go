@@ -89,7 +89,7 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 		return nil, fmt.Errorf("failed to fetch bulk overtime amounts: %w", err)
 	}
 
-	successCount := 0
+	var successCount int
 	periodDate := time.Date(req.Year, time.Month(req.Month), 1, 0, 0, 0, 0, time.Local)
 
 	var payrollsToInsert []Payroll

@@ -313,9 +313,8 @@ func (s *service) GenerateExcel(ctx context.Context, filter *FilterParams) ([]by
 	}
 
 	f := s.excel.NewFile()
-	sheet := "Sheet1"
-	f.SetSheetName("Sheet1", "Attendance Recap")
-	sheet = "Attendance Recap"
+	sheet := "Attendance Recap"
+	f.SetSheetName("Sheet1", sheet)
 
 	styleLeave, _ := f.NewStyle(&excelize.Style{
 		Fill: excelize.Fill{Type: "pattern", Color: []string{"#DDEBF7"}, Pattern: 1},
