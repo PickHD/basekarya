@@ -103,10 +103,6 @@ func (r *repository) Update(ctx context.Context, loan *Loan) error {
 
 func (r *repository) GetBulkActiveLoansByEmployeeIds(ctx context.Context, ids []uint) (map[uint]Loan, error) {
 	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
-	type Result struct {
-		EmployeeID uint
-		Loan       Loan
-	}
 	var loans []Loan
 
 	err := db.Model(&Loan{}).

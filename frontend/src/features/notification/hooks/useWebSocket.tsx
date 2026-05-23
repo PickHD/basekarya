@@ -121,6 +121,7 @@ export const useWebSocket = () => {
               break;
           }
         } catch {
+          // ignore non-JSON messages
         }
       };
 

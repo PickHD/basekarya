@@ -17,7 +17,7 @@ describe("useScrollAnimation", () => {
 
     rerender();
 
-    const observerInstances = (globalThis.IntersectionObserver as unknown as typeof IntersectionObserver & { __instances: InstanceType<typeof IntersectionObserver>[] }).__instances;
+    void (globalThis.IntersectionObserver as unknown as typeof IntersectionObserver & { __instances: InstanceType<typeof IntersectionObserver>[] }).__instances;
   });
 
   it("should accept custom threshold", () => {

@@ -6,7 +6,7 @@ import tseslint from "typescript-eslint";
 import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([
-  globalIgnores(["dist"]),
+  globalIgnores(["dist", "coverage"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
@@ -21,6 +21,11 @@ export default defineConfig([
     },
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
+      "react-hooks/preserve-manual-memoization": "off",
+      "react-hooks/incompatible-library": "off",
+      "react-hooks/static-components": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
     },
   },
 ]);

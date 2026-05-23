@@ -14,6 +14,9 @@ import (
 	"basekarya-backend/pkg/logger"
 	"basekarya-backend/pkg/response"
 	"basekarya-backend/pkg/utils"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type Service interface {
@@ -156,7 +159,7 @@ func (s *service) RequisitionAction(ctx context.Context, id uint, approverID uin
 				utils.DetachContext(ctx),
 				jr.RequesterID,
 				string(constants.NotificationTypeRequisitionApprovalReq),
-				fmt.Sprintf("Requisition %s", strings.Title(strings.ToLower(newStatus))),
+				fmt.Sprintf("Requisition %s", cases.Title(language.Und).String(strings.ToLower(newStatus))),
 				fmt.Sprintf("Your requisition '%s' has been %s.", jr.Title, newStatus),
 				id,
 			)

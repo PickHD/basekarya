@@ -16,7 +16,9 @@ Object.defineProperty(globalThis, "IntersectionObserver", {
       this.elements.push(element);
     }
 
-    unobserve(_element: Element) {}
+    unobserve(_element: Element) {
+      void _element;
+    }
 
     disconnect() {
       this.elements = [];

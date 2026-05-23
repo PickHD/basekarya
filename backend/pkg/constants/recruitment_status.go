@@ -19,9 +19,9 @@ const (
 
 // Applicant stages
 const (
-	ApplicantStageScreening  = "SCREENING"
-	ApplicantStageInterview  = "INTERVIEW"
-	ApplicantStageOffering   = "OFFERING"
-	ApplicantStageHired      = "HIRED"
-	ApplicantStageRejected   = "REJECTED"
+	ApplicantStageScreening = "SCREENING"
+	ApplicantStageInterview = "INTERVIEW"
+	ApplicantStageOffering  = "OFFERING"
+	ApplicantStageHired     = "HIRED"
+	ApplicantStageRejected  = "REJECTED"
 )
