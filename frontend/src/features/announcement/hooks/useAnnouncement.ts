@@ -14,7 +14,7 @@ export const usePublishAnnouncement = () => {
     },
     onError: (error: any) => {
       const responseData = error.response?.data;
-      let title = "Gagal";
+      const title = "Gagal";
       let description = responseData?.message || "Gagal mempublish pengumuman";
 
       if (responseData?.error) {

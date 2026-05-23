@@ -21,20 +21,8 @@ interface Props {
   canComplete: boolean;
 }
 
-export function OnboardingDetailDialog({ open, onOpenChange, workflowId, canComplete }: Props) {
-  const { data: workflow, isLoading } = useOnboardingWorkflowDetail(workflowId);
-  const { mutate: completeTask } = useCompleteTask();
-  const [completing, setCompleting] = useState<number | null>(null);
-
-  const handleComplete = (taskId: number) => {
-    setCompleting(taskId);
-    completeTask(
-      { id: taskId, notes: "" },
-      { onSettled: () => setCompleting(null) }
-    );
-  };
-
-  const TaskList = ({ tasks }: { tasks: OnboardingTask[] }) => (
+function TaskList({ tasks, canComplete, completing, handleComplete }: { tasks: OnboardingTask[]; canComplete: boolean; completing: number | null; handleComplete: (id: number) => void }) {
+  return (
     <div className="space-y-2">
       {tasks.length === 0 && (
         <p className="text-sm text-slate-400 py-4 text-center">No tasks in this category.</p>
@@ -92,6 +80,20 @@ export function OnboardingDetailDialog({ open, onOpenChange, workflowId, canComp
       ))}
     </div>
   );
+}
+
+export function OnboardingDetailDialog({ open, onOpenChange, workflowId, canComplete }: Props) {
+  const { data: workflow, isLoading } = useOnboardingWorkflowDetail(workflowId);
+  const { mutate: completeTask } = useCompleteTask();
+  const [completing, setCompleting] = useState<number | null>(null);
+
+  const handleComplete = (taskId: number) => {
+    setCompleting(taskId);
+    completeTask(
+      { id: taskId, notes: "" },
+      { onSettled: () => setCompleting(null) }
+    );
+  };
 
   const totalTasks = workflow
     ? (workflow.it_tasks?.length ?? 0) + (workflow.hr_tasks?.length ?? 0) + (workflow.other_tasks?.length ?? 0)
@@ -178,13 +180,13 @@ export function OnboardingDetailDialog({ open, onOpenChange, workflowId, canComp
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="it" className="mt-4">
-                <TaskList tasks={workflow.it_tasks ?? []} />
+                <TaskList tasks={workflow.it_tasks ?? []} canComplete={canComplete} completing={completing} handleComplete={handleComplete} />
               </TabsContent>
               <TabsContent value="hr" className="mt-4">
-                <TaskList tasks={workflow.hr_tasks ?? []} />
+                <TaskList tasks={workflow.hr_tasks ?? []} canComplete={canComplete} completing={completing} handleComplete={handleComplete} />
               </TabsContent>
               <TabsContent value="other" className="mt-4">
-                <TaskList tasks={workflow.other_tasks ?? []} />
+                <TaskList tasks={workflow.other_tasks ?? []} canComplete={canComplete} completing={completing} handleComplete={handleComplete} />
               </TabsContent>
             </Tabs>
 

@@ -147,8 +147,8 @@ export function AttendanceDialog({
     return () => clearInterval(interval);
   }, [isModelLoaded, step, open]);
 
-  useEffect(() => {
-    if (!open) {
+  const handleOpenChange = useCallback((nextOpen: boolean) => {
+    if (!nextOpen) {
       setStep("scan");
       setImgSrc(null);
       setErrorMsg(null);
@@ -156,7 +156,8 @@ export function AttendanceDialog({
       setIsValidFace(false);
       setLocation(null);
     }
-  }, [open]);
+    onOpenChange(nextOpen);
+  }, [onOpenChange]);
 
   const fallbackToIpAndMap = useCallback(async () => {
     try {
@@ -243,7 +244,7 @@ export function AttendanceDialog({
     type === "check-in" ? "Clock In Attendance" : "Clock Out Attendance";
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

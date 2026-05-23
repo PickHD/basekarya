@@ -5,6 +5,7 @@ import App from "./App.tsx";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+// eslint-disable-next-line react-refresh/only-export-components
 const ReactQueryDevtoolsWrapper = React.lazy(() =>
   import("@tanstack/react-query-devtools").then((mod) => ({
     default: mod.ReactQueryDevtools,
