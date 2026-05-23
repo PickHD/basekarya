@@ -15,14 +15,34 @@ import (
 
 func setupOvertimeTestDB(t *testing.T) *testutil.TestDB {
 	t.Helper()
+
 	tdb := testutil.NewTestDB(
 		&rbac.Role{},
 		&master.Department{},
 		&master.Shift{},
 		&user.User{},
 		&user.Employee{},
-		&Overtime{},
 	)
+
+	err := tdb.DB.Exec(`CREATE TABLE IF NOT EXISTS overtimes (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		created_at DATETIME,
+		updated_at DATETIME,
+		deleted_at DATETIME,
+		user_id INTEGER NOT NULL,
+		company_id INTEGER NOT NULL,
+		employee_id INTEGER NOT NULL,
+		approved_by INTEGER,
+		date DATE NOT NULL,
+		start_time TIME NOT NULL,
+		end_time TIME NOT NULL,
+		duration_minutes INTEGER NOT NULL,
+		reason TEXT,
+		status TEXT DEFAULT 'PENDING',
+		rejection_reason TEXT
+	)`).Error
+	require.NoError(t, err)
+
 	t.Cleanup(tdb.Close)
 	return tdb
 }
