@@ -3,6 +3,6 @@ package constants
 type UserRole string
 
 const (
-	UserRoleSuperadmin UserRole = "SUPERADMIN"
-	UserRoleEmployee   UserRole = "EMPLOYEE"
+	UserRolePlatformAdmin UserRole = "PLATFORM_ADMIN"
+	UserRoleEmployee      UserRole = "EMPLOYEE"
 )
