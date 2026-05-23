@@ -33,7 +33,7 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	golang.org/x/image v0.36.0 // indirect
+	golang.org/x/image v0.38.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )
 
@@ -86,5 +86,5 @@ require (
 	golang.org/x/crypto v0.48.0
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
-	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/text v0.35.0 // indirect
 )
