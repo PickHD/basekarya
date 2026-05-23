@@ -1,6 +1,10 @@
 # BaseKarya
 
 A modern, full-stack Human Resource Information System with a React frontend and Go backend.
+
+![CI](https://github.com/PickHD/basekarya/actions/workflows/ci.yml/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/PickHD/basekarya/blob/main/LICENSE)
+
 <img width="2428" height="1202" alt="image" src="https://github.com/user-attachments/assets/2c54e865-2c6d-47cc-8cc1-881a688a22eb" />
 
 
@@ -57,16 +61,24 @@ docker compose down
 
 ## Features
 
-- Secure authentication with JWT
+- Secure authentication with JWT & role-based access control (RBAC)
+- Multi-tenant SaaS architecture with subscription-based module gating
 - Comprehensive Employee Management (Admin)
-- Attendance tracking and summary 
-- Company profile & structing configuration
+- Attendance tracking with face recognition and geolocation
+- Company profile & organizational configuration
 - Real-time Notifications via WebSockets
 - Automated Payroll generation and email delivery
-- Employee Reimbursement tracking & workflow
-- File upload and management
+- Employee Reimbursement tracking & approval workflow
+- Leave management with auto balance generation
+- Overtime tracking with configurable rates
+- Loan/kasbon management with installment deductions
+- Finance & accounting (transactions, categories, dashboard)
+- Recruitment pipeline (requisitions, applicants)
+- Employee onboarding workflows & templates
+- Contract management with expiry notifications
+- File upload and management (MinIO S3-compatible)
 - Database migrations
-- Clean architecture
+- Clean architecture (handler/service/repository)
 - Docker-based deployment
 - Responsive UI with dark mode
 - **NGINX reverse proxy** with:
@@ -74,6 +86,39 @@ docker compose down
   - Gzip compression
   - WebSocket support for hot reload
   - Load balancing capabilities
+
+## Testing
+
+### Backend (Go)
+
+```bash
+make test-be             # Run all tests
+cd backend && go test ./... -cover -coverprofile=coverage.out   # With coverage
+```
+
+### Frontend (React + Vitest)
+
+```bash
+make test-fe             # Run all tests
+cd frontend && pnpm test:coverage   # With coverage
+```
+
+### Test Coverage
+
+| Module | Tests | Description |
+|--------|-------|-------------|
+| Backend | 410+ | Unit tests across all modules (auth, user, payroll, attendance, leave, etc.) |
+| Frontend | 188 | Hook and utility tests across 25 feature modules |
+
+## CI/CD
+
+GitHub Actions runs on every push/PR to `main` or `develop`:
+
+- **Backend**: Build + test + coverage report (`go test -cover`)
+- **Frontend**: Install + test + coverage report (Vitest with v8 coverage)
+- **Dependabot**: Weekly dependency update checks for Go, npm, Docker, and GitHub Actions
+
+Coverage reports appear in the **Actions > Summary** tab. Artifacts are uploaded for detailed HTML/LCOV reports.
 
 ## Project Structure
 
@@ -83,6 +128,10 @@ basekarya/
 ├── frontend/        # React frontend application
 ├── gateway/         # NGINX reverse proxy configuration
 │   └── nginx.conf   # NGINX configuration with routing rules
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml       # CI pipeline (test + coverage)
+│   │   └── dependabot.yml  # Weekly dependency updates
 ├── docker-compose.yml
 ├── Makefile
 └── .env.example
@@ -98,6 +147,9 @@ make run           # Run both locally
 make run-be        # Run backend only
 make run-fe        # Run frontend only
 make migrate-up    # Run database migrations
+make test          # Run all tests (backend + frontend)
+make test-be       # Run backend tests
+make test-fe       # Run frontend tests
 ```
 
 ## Local Development
