@@ -4,9 +4,9 @@ A modern, full-stack Human Resource Information System with a React frontend and
 
 ![CI](https://github.com/PickHD/basekarya/actions/workflows/ci.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/PickHD/basekarya/blob/main/LICENSE)
+[![Maintainability](https://qlty.sh/gh/PickHD/projects/basekarya/maintainability.svg)](https://qlty.sh/gh/PickHD/projects/basekarya)
 
 <img width="2428" height="1202" alt="image" src="https://github.com/user-attachments/assets/2c54e865-2c6d-47cc-8cc1-881a688a22eb" />
-
 
 ## Quick Start
 
@@ -105,10 +105,10 @@ cd frontend && pnpm test:coverage   # With coverage
 
 ### Test Coverage
 
-| Module | Tests | Description |
-|--------|-------|-------------|
-| Backend | 410+ | Unit tests across all modules (auth, user, payroll, attendance, leave, etc.) |
-| Frontend | 188 | Hook and utility tests across 25 feature modules |
+| Module   | Tests | Description                                                                  |
+| -------- | ----- | ---------------------------------------------------------------------------- |
+| Backend  | 410+  | Unit tests across all modules (auth, user, payroll, attendance, leave, etc.) |
+| Frontend | 188   | Hook and utility tests across 25 feature modules                             |
 
 ## CI/CD
 
