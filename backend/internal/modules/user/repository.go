@@ -163,7 +163,7 @@ func (r *repository) FindAllEmployeeActive(ctx context.Context) ([]Employee, err
 	if err := utils.TenantScope(ctx, db.Model(&Employee{})).
 		Joins("User").
 		Joins("JOIN roles on roles.id = User.role_id").
-		Where("User.is_active = ? AND roles.name = ?", true, string(constants.UserRoleEmployee)).
+		Where("User.is_active = ? AND roles.name NOT IN ?", true, []string{string(constants.UserRolePlatformAdmin), "SUPERADMIN"}).
 		Preload("User").
 		Preload("User.Role").
 		Preload("Department").

@@ -1,6 +1,9 @@
 package config
 
 import (
+	"crypto/rand"
+	"fmt"
+	"math/big"
 	"os"
 )
 
@@ -78,6 +81,20 @@ type EmailConfig struct {
 }
 
 func Load() *Config {
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		panic("JWT_SECRET environment variable is required")
+	}
+
+	superadminUsername := os.Getenv("SUPERADMIN_USERNAME")
+	if superadminUsername == "" {
+		panic("SUPERADMIN_USERNAME environment variable is required")
+	}
+	superadminPassword := os.Getenv("SUPERADMIN_PASSWORD")
+	if superadminPassword == "" {
+		panic("SUPERADMIN_PASSWORD environment variable is required")
+	}
+
 	config := &Config{
 		Database: DatabaseConfig{
 			Host:     getEnv("MYSQL_HOST", "localhost"),
@@ -88,7 +105,7 @@ func Load() *Config {
 			SSLMode:  getEnv("MYSQL_SSLMODE", "disable"),
 		},
 		JWT: JWTConfig{
-			Secret:    getEnv("JWT_SECRET", "your-super-secret-jwt-key"),
+			Secret:    jwtSecret,
 			ExpiresIn: getEnvInt("JWT_EXPIRES_IN_HOUR", 24),
 		},
 		Server: ServerConfig{
@@ -115,8 +132,8 @@ func Load() *Config {
 			NominatimUrl: getEnv("NOMINATIM_URL", ""),
 		},
 		CredentialConfig: CredentialConfig{
-			SuperadminUsername: getEnv("SUPERADMIN_USERNAME", ""),
-			SuperadminPassword: getEnv("SUPERADMIN_PASSWORD", ""),
+			SuperadminUsername: superadminUsername,
+			SuperadminPassword: superadminPassword,
 		},
 		Redis: RedisConfig{
 			Addr:     getEnv("REDIS_ADDR", ""),
@@ -170,4 +187,22 @@ func parseInt(s string) int {
 		}
 	}
 	return result
+}
+
+func GenerateRandomPassword(length int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%"
+	result := make([]byte, length)
+	for i := range result {
+		n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		result[i] = charset[n.Int64()]
+	}
+	return string(result)
+}
+
+func MustGetEnv(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		panic(fmt.Sprintf("%s environment variable is required", key))
+	}
+	return value
 }

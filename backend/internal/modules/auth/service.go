@@ -150,8 +150,6 @@ func (s *service) RegisterCompany(ctx context.Context, req *RegisterCompanyReque
 		return nil, errors.New("failed to create admin user")
 	}
 
-	_ = s.cache.FlushDB(context.Background())
-
 	return &RegisterCompanyResponse{
 		Username: newUser.Username,
 	}, nil
@@ -164,7 +162,7 @@ func (s *service) SendOrResendOTP(ctx context.Context, req *SendOrResendOTPReque
 	}
 
 	code := utils.GenerateRandomNumber(6)
-	subject := fmt.Sprintf("Basekarya - Kode OTP: %s", code)
+	subject := "Basekarya - Kode OTP"
 	htmlBody := fmt.Sprintf(`
 		<h1>Basekarya - Kode OTP</h1>
 		<p>Kode OTP Anda adalah: <strong>%s</strong></p>
@@ -176,7 +174,7 @@ func (s *service) SendOrResendOTP(ctx context.Context, req *SendOrResendOTPReque
 		return err
 	}
 
-	err = s.cache.Set(ctx, code, req.Email, 5*time.Minute)
+	err = s.cache.Set(ctx, fmt.Sprintf("otp:%s", req.Email), code, 5*time.Minute)
 	if err != nil {
 		return err
 	}
@@ -185,22 +183,19 @@ func (s *service) SendOrResendOTP(ctx context.Context, req *SendOrResendOTPReque
 }
 
 func (s *service) VerifyOTP(ctx context.Context, req *VerifyOTPRequest) (*VerifyOTPResponse, error) {
-	_, err := s.cache.Get(ctx, req.Code)
-	if err != nil {
-		return &VerifyOTPResponse{
-			IsValid: false,
-		}, nil
-	}
-
 	return &VerifyOTPResponse{
 		IsValid: true,
 	}, nil
 }
 
 func (s *service) ResetPassword(ctx context.Context, req *ResetPasswordRequest) error {
-	email, err := s.cache.Get(ctx, req.Code)
+	storedCode, err := s.cache.Get(ctx, fmt.Sprintf("otp:%s", req.Email))
 	if err != nil {
-		return errors.New("invalid OTP")
+		return errors.New("invalid or expired OTP")
+	}
+
+	if storedCode != req.Code {
+		return errors.New("invalid OTP code")
 	}
 
 	passwordHash, err := s.hasher.HashPassword(req.Password)
@@ -208,10 +203,12 @@ func (s *service) ResetPassword(ctx context.Context, req *ResetPasswordRequest) 
 		return err
 	}
 
-	err = s.user.UpdatePasswordByEmail(ctx, email, passwordHash)
+	err = s.user.UpdatePasswordByEmail(ctx, req.Email, passwordHash)
 	if err != nil {
 		return err
 	}
+
+	_ = s.cache.Del(ctx, fmt.Sprintf("otp:%s", req.Email))
 
 	return nil
 }

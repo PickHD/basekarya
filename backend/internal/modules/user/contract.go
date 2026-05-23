@@ -28,3 +28,7 @@ type CacheProvider interface {
 type SubscriptionProvider interface {
 	CheckEmployeeLimit(ctx context.Context) (bool, error)
 }
+
+type EmailProvider interface {
+	Send(to, subject, htmlBody string) error
+}

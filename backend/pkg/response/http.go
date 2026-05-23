@@ -41,6 +41,8 @@ func NewResponses[T any](ctx echo.Context, statusCode int, message string, data 
 	if err != nil {
 		if he, ok := err.(*echo.HTTPError); ok {
 			errVal = he.Message
+		} else if statusCode >= 500 {
+			errVal = "internal server error"
 		} else {
 			errVal = err.Error()
 		}

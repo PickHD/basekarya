@@ -1,7 +1,7 @@
 include .env
 export
 
-.PHONY: help build run build-be run-be build-fe run-fe run-docker migrate-create migrate-up migrate-down clean-be clean-fe test seed
+.PHONY: help build run build-be run-be build-fe run-fe run-docker migrate-create migrate-up migrate-down clean-be clean-fe test-fe test-be test seed
 
 # Variables
 APP_NAME := basekarya-app
@@ -26,7 +26,9 @@ help:
 	@echo "  migrate-down- Rollback database migrations"
 	@echo "  clean-be    - Clean build backend artifacts"
 	@echo "  clean-fe    - Clean build frontend artifacts"
-	@echo "  test        - Run tests"
+	@echo "  test-fe     - Run tests frontend only"
+	@echo "  test-be     - Run tests backend only"
+	@echo "  test        - Run tests both backend and frontend"
 	@echo "  seed        - Run seeds databases"
 
 # Build both services
@@ -89,9 +91,16 @@ clean-fe:
 	@cd frontend && rm -rf $(BUILD_DIR_FE)
 
 # Run tests
-test:
-	@echo "Running tests..."
+test-be:
+	@echo "Running tests backend..."
 	@cd backend && go test -v ./...
+
+test-fe:
+	@echo "Running tests frontend..."
+	@cd frontend && pnpm test
+
+test: test-be test-fe
+	@echo "Test complete!"
 
 # Run seeds
 seed:

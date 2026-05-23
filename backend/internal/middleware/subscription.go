@@ -42,14 +42,14 @@ func (m *SubscriptionMiddleware) RequireModule(moduleName string) echo.Middlewar
 				Where("companies.id = ?", companyID).
 				Scan(&featuresJSON).Error
 
-			if err != nil || featuresJSON == "" {
-				return next(ctx)
-			}
+		if err != nil || featuresJSON == "" {
+			return response.NewResponses[any](ctx, http.StatusForbidden, "subscription plan not found", nil, nil, nil)
+		}
 
-			var features planFeatures
-			if err := json.Unmarshal([]byte(featuresJSON), &features); err != nil {
-				return next(ctx)
-			}
+		var features planFeatures
+		if err := json.Unmarshal([]byte(featuresJSON), &features); err != nil {
+			return response.NewResponses[any](ctx, http.StatusForbidden, "failed to parse subscription features", nil, nil, nil)
+		}
 
 			for _, mod := range features.Modules {
 				if mod == moduleName {

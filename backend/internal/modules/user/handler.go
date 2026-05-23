@@ -123,7 +123,7 @@ func (h *Handler) CreateEmployee(ctx echo.Context) error {
 	if err != nil {
 		logger.Errorw("failed to create employee: ", err)
 
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to create employee", err.Error(), err, nil)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to create employee", nil, err, nil)
 	}
 
 	return response.NewResponses(ctx, http.StatusCreated, "Employee created successfully", result, nil, nil)
@@ -140,7 +140,7 @@ func (h *Handler) UpdateEmployee(ctx echo.Context) error {
 	if err != nil {
 		logger.Errorw("failed to update employee: ", err)
 
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to update", err.Error(), err, nil)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to update", nil, err, nil)
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Employee updated successfully", nil, nil, nil)
@@ -152,7 +152,7 @@ func (h *Handler) DeleteEmployee(ctx echo.Context) error {
 	if err != nil {
 		logger.Errorw("failed to delete employee: ", err)
 
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to delete", err.Error(), err, nil)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to delete", nil, err, nil)
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Employee deleted successfully", nil, nil, nil)

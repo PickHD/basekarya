@@ -24,6 +24,14 @@ func (m *mockRepo) FindByID(ctx context.Context, id uint) (*Notification, error)
 	return args.Get(0).(*Notification), args.Error(1)
 }
 
+func (m *mockRepo) FindByIDAndUserID(ctx context.Context, id uint, userID uint) (*Notification, error) {
+	args := m.Called(ctx, id, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*Notification), args.Error(1)
+}
+
 func (m *mockRepo) FindAllByUserID(ctx context.Context, userID uint) ([]Notification, error) {
 	args := m.Called(ctx, userID)
 	if args.Get(0) == nil {
@@ -54,8 +62,8 @@ func (m *mockService) GetList(ctx context.Context, userID uint) ([]NotificationL
 	return args.Get(0).([]NotificationListResponse), args.Error(1)
 }
 
-func (m *mockService) MarkAsRead(ctx context.Context, id uint) error {
-	return m.Called(ctx, id).Error(0)
+func (m *mockService) MarkAsRead(ctx context.Context, id uint, userID uint) error {
+	return m.Called(ctx, id, userID).Error(0)
 }
 
 func (m *mockService) DeleteReadOlderThan(days int) error {

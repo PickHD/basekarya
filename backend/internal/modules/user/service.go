@@ -1,6 +1,7 @@
 package user
 
 import (
+	"basekarya-backend/internal/config"
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/response"
@@ -35,10 +36,11 @@ type service struct {
 	leaveGenerator     LeaveBalanceGenerator
 	transactionManager infrastructure.TransactionManager
 	subscription       SubscriptionProvider
+	email              EmailProvider
 }
 
-func NewService(repo Repository, bcrypt Hasher, storage StorageProvider, cache CacheProvider, leaveGenerator LeaveBalanceGenerator, transactionManager infrastructure.TransactionManager, subscription SubscriptionProvider) Service {
-	return &service{repo, bcrypt, storage, cache, leaveGenerator, transactionManager, subscription}
+func NewService(repo Repository, bcrypt Hasher, storage StorageProvider, cache CacheProvider, leaveGenerator LeaveBalanceGenerator, transactionManager infrastructure.TransactionManager, subscription SubscriptionProvider, email EmailProvider) Service {
+	return &service{repo, bcrypt, storage, cache, leaveGenerator, transactionManager, subscription, email}
 }
 
 func (s *service) GetProfile(userID uint) (*UserProfileResponse, error) {
@@ -237,7 +239,11 @@ func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest
 	err := s.transactionManager.RunInTransaction(ctx, func(ctx context.Context) error {
 		generatedUsername = utils.GenerateUsername(req.FullName)
 
-		hashPass, _ := s.bcrypt.HashPassword("BaseKarya2024")
+		plainPassword := config.GenerateRandomPassword(12)
+		hashPass, err := s.bcrypt.HashPassword(plainPassword)
+		if err != nil {
+			return err
+		}
 
 		role, err := s.repo.FindRoleByID(ctx, req.RoleID)
 		if err != nil {
@@ -270,6 +276,26 @@ func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest
 
 		if err := s.repo.CreateEmployee(ctx, &newEmp); err != nil {
 			return err
+		}
+
+		if req.Email != "" {
+			go func() {
+				subject := "Basekarya - Akun Karyawan Baru"
+				htmlBody := fmt.Sprintf(`
+					<h2>Selamat datang di Basekarya!</h2>
+					<p>Halo <strong>%s</strong>,</p>
+					<p>Akun karyawan Anda telah dibuat. Berikut kredensial login Anda:</p>
+					<table style="border-collapse: collapse; margin: 16px 0;">
+						<tr><td style="padding: 8px 16px; border: 1px solid #ddd; background: #f9f9f9; font-weight: bold;">Username</td><td style="padding: 8px 16px; border: 1px solid #ddd;">%s</td></tr>
+						<tr><td style="padding: 8px 16px; border: 1px solid #ddd; background: #f9f9f9; font-weight: bold;">Password</td><td style="padding: 8px 16px; border: 1px solid #ddd;">%s</td></tr>
+					</table>
+					<p style="color: #e74c3c; font-weight: bold;">Penting: Segera ubah password Anda setelah login pertama.</p>
+					<br>
+					<p>Terima kasih,</p>
+					<p><strong>HR Team</strong></p>
+				`, req.FullName, generatedUsername, plainPassword)
+				_ = s.email.Send(req.Email, subject, htmlBody)
+			}()
 		}
 
 		return s.leaveGenerator.GenerateInitialBalance(ctx, newEmp.ID)

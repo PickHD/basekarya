@@ -204,7 +204,25 @@ func (m *mockService) FindApprovalUsers(ctx context.Context, permissionApprovalN
 	return args.Get(0).([]uint), args.Error(1)
 }
 
-func newTestUserService() (Service, *mockRepo, *mockHasher, *mockStorage, *mockCache, *mockLeaveGen, *testutil.MockTransactionManager, *mockSubscription) {
+type mockEmail struct{ mock.Mock }
+
+func (m *mockEmail) Send(to, subject, htmlBody string) error {
+	if !m.isMethodCallable("Send") {
+		return nil
+	}
+	return m.Called(to, subject, htmlBody).Error(0)
+}
+
+func (m *mockEmail) isMethodCallable(method string) bool {
+	for _, call := range m.ExpectedCalls {
+		if call.Method == method {
+			return true
+		}
+	}
+	return false
+}
+
+func newTestUserService() (Service, *mockRepo, *mockHasher, *mockStorage, *mockCache, *mockLeaveGen, *testutil.MockTransactionManager, *mockSubscription, *mockEmail) {
 	repo := new(mockRepo)
 	hasher := new(mockHasher)
 	storage := new(mockStorage)
@@ -212,7 +230,8 @@ func newTestUserService() (Service, *mockRepo, *mockHasher, *mockStorage, *mockC
 	leaveGen := new(mockLeaveGen)
 	tm := testutil.NewMockTransactionManager()
 	sub := new(mockSubscription)
+	email := new(mockEmail)
 
-	svc := NewService(repo, hasher, storage, cache, leaveGen, tm, sub)
-	return svc, repo, hasher, storage, cache, leaveGen, tm, sub
+	svc := NewService(repo, hasher, storage, cache, leaveGen, tm, sub, email)
+	return svc, repo, hasher, storage, cache, leaveGen, tm, sub, email
 }

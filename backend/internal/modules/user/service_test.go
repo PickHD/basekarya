@@ -113,7 +113,7 @@ func TestService_GetProfile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, cache, _, _, _ := newTestUserService()
+			svc, repo, _, _, cache, _, _, _, _ := newTestUserService()
 			tt.setupMocks(repo, cache)
 
 			resp, err := svc.GetProfile(tt.userID)
@@ -216,7 +216,7 @@ func TestService_UpdateProfile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, storage, cache, _, _, _ := newTestUserService()
+			svc, repo, _, storage, cache, _, _, _, _ := newTestUserService()
 			tt.setupMocks(repo, storage, cache)
 
 			err := svc.UpdateProfile(ctx, tt.userID, tt.req, nil)
@@ -329,7 +329,7 @@ func TestService_ChangePassword(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, hasher, _, cache, _, _, _ := newTestUserService()
+			svc, repo, hasher, _, cache, _, _, _, _ := newTestUserService()
 			tt.setupMocks(repo, hasher, cache)
 
 			err := svc.ChangePassword(ctx, tt.userID, tt.req)
@@ -407,7 +407,7 @@ func TestService_GetAllEmployees(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _, _, _ := newTestUserService()
+			svc, repo, _, _, _, _, _, _, _ := newTestUserService()
 			tt.setupMocks(repo)
 
 			list, meta, err := svc.GetAllEmployees(ctx, tt.page, tt.limit, tt.search)
@@ -431,7 +431,7 @@ func TestService_CreateEmployee(t *testing.T) {
 	tests := []struct {
 		name       string
 		req        *CreateEmployeeRequest
-		setupMocks func(*mockRepo, *mockHasher, *mockLeaveGen, *mockSubscription)
+		setupMocks func(*mockRepo, *mockHasher, *mockLeaveGen, *mockSubscription, *mockEmail)
 		wantErr    bool
 		errMsg     string
 	}{
@@ -447,9 +447,32 @@ func TestService_CreateEmployee(t *testing.T) {
 				Email:        "jane@example.com",
 				Position:     "Designer",
 			},
-			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription) {
+			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription, email *mockEmail) {
 				sub.On("CheckEmployeeLimit", mock.Anything).Return(true, nil)
-				hasher.On("HashPassword", "BaseKarya2024").Return("hashedpass", nil)
+				hasher.On("HashPassword", mock.AnythingOfType("string")).Return("hashedpass", nil)
+				repo.On("FindRoleByID", mock.Anything, uint(1)).Return(&rbac.Role{ID: 1, Name: "EMPLOYEE"}, nil)
+				repo.On("CreateUser", mock.Anything, mock.AnythingOfType("*user.User")).Return(nil)
+				repo.On("CreateEmployee", mock.Anything, mock.AnythingOfType("*user.Employee")).Return(nil)
+				leaveGen.On("GenerateInitialBalance", mock.Anything, mock.Anything).Return(nil)
+				email.On("Send", "jane@example.com", "Basekarya - Akun Karyawan Baru", mock.AnythingOfType("string")).Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "success without email",
+			req: &CreateEmployeeRequest{
+				FullName:     "No Email",
+				NIK:          "EMP003",
+				DepartmentID: 1,
+				ShiftID:      1,
+				RoleID:       1,
+				BaseSalary:   5000000,
+				Email:        "",
+				Position:     "Designer",
+			},
+			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription, email *mockEmail) {
+				sub.On("CheckEmployeeLimit", mock.Anything).Return(true, nil)
+				hasher.On("HashPassword", mock.AnythingOfType("string")).Return("hashedpass", nil)
 				repo.On("FindRoleByID", mock.Anything, uint(1)).Return(&rbac.Role{ID: 1, Name: "EMPLOYEE"}, nil)
 				repo.On("CreateUser", mock.Anything, mock.AnythingOfType("*user.User")).Return(nil)
 				repo.On("CreateEmployee", mock.Anything, mock.AnythingOfType("*user.Employee")).Return(nil)
@@ -464,7 +487,7 @@ func TestService_CreateEmployee(t *testing.T) {
 				DepartmentID: 1, ShiftID: 1, RoleID: 1,
 				BaseSalary: 5000000, Email: "jane@example.com", Position: "Designer",
 			},
-			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription) {
+			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription, email *mockEmail) {
 				sub.On("CheckEmployeeLimit", mock.Anything).Return(false, nil)
 			},
 			wantErr: true,
@@ -477,7 +500,7 @@ func TestService_CreateEmployee(t *testing.T) {
 				DepartmentID: 1, ShiftID: 1, RoleID: 1,
 				BaseSalary: 5000000, Email: "jane@example.com", Position: "Designer",
 			},
-			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription) {
+			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription, email *mockEmail) {
 				sub.On("CheckEmployeeLimit", mock.Anything).Return(false, errors.New("subscription error"))
 			},
 			wantErr: true,
@@ -490,9 +513,9 @@ func TestService_CreateEmployee(t *testing.T) {
 				DepartmentID: 1, ShiftID: 1, RoleID: 99,
 				BaseSalary: 5000000, Email: "jane@example.com", Position: "Designer",
 			},
-			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription) {
+			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription, email *mockEmail) {
 				sub.On("CheckEmployeeLimit", mock.Anything).Return(true, nil)
-				hasher.On("HashPassword", "BaseKarya2024").Return("hashedpass", nil)
+				hasher.On("HashPassword", mock.AnythingOfType("string")).Return("hashedpass", nil)
 				repo.On("FindRoleByID", mock.Anything, uint(99)).Return(nil, errors.New("not found"))
 			},
 			wantErr: true,
@@ -505,9 +528,9 @@ func TestService_CreateEmployee(t *testing.T) {
 				DepartmentID: 1, ShiftID: 1, RoleID: 1,
 				BaseSalary: 5000000, Email: "jane@example.com", Position: "Designer",
 			},
-			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription) {
+			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription, email *mockEmail) {
 				sub.On("CheckEmployeeLimit", mock.Anything).Return(true, nil)
-				hasher.On("HashPassword", "BaseKarya2024").Return("hashedpass", nil)
+				hasher.On("HashPassword", mock.AnythingOfType("string")).Return("hashedpass", nil)
 				repo.On("FindRoleByID", mock.Anything, uint(1)).Return(&rbac.Role{ID: 1}, nil)
 				repo.On("CreateUser", mock.Anything, mock.AnythingOfType("*user.User")).Return(errors.New("db error"))
 			},
@@ -521,9 +544,9 @@ func TestService_CreateEmployee(t *testing.T) {
 				DepartmentID: 1, ShiftID: 1, RoleID: 1,
 				BaseSalary: 5000000, Email: "jane@example.com", Position: "Designer",
 			},
-			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription) {
+			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription, email *mockEmail) {
 				sub.On("CheckEmployeeLimit", mock.Anything).Return(true, nil)
-				hasher.On("HashPassword", "BaseKarya2024").Return("hashedpass", nil)
+				hasher.On("HashPassword", mock.AnythingOfType("string")).Return("hashedpass", nil)
 				repo.On("FindRoleByID", mock.Anything, uint(1)).Return(&rbac.Role{ID: 1}, nil)
 				repo.On("CreateUser", mock.Anything, mock.AnythingOfType("*user.User")).Return(nil)
 				repo.On("CreateEmployee", mock.Anything, mock.AnythingOfType("*user.Employee")).Return(errors.New("db error"))
@@ -538,9 +561,9 @@ func TestService_CreateEmployee(t *testing.T) {
 				DepartmentID: 1, ShiftID: 1, RoleID: 1,
 				BaseSalary: 5000000, Email: "jane@example.com", Position: "Designer",
 			},
-			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription) {
+			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription, email *mockEmail) {
 				sub.On("CheckEmployeeLimit", mock.Anything).Return(true, nil)
-				hasher.On("HashPassword", "BaseKarya2024").Return("hashedpass", nil)
+				hasher.On("HashPassword", mock.AnythingOfType("string")).Return("hashedpass", nil)
 				repo.On("FindRoleByID", mock.Anything, uint(1)).Return(&rbac.Role{ID: 1}, nil)
 				repo.On("CreateUser", mock.Anything, mock.AnythingOfType("*user.User")).Return(nil)
 				repo.On("CreateEmployee", mock.Anything, mock.AnythingOfType("*user.Employee")).Return(nil)
@@ -553,8 +576,8 @@ func TestService_CreateEmployee(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, hasher, _, _, leaveGen, _, sub := newTestUserService()
-			tt.setupMocks(repo, hasher, leaveGen, sub)
+			svc, repo, hasher, _, _, leaveGen, _, sub, email := newTestUserService()
+			tt.setupMocks(repo, hasher, leaveGen, sub, email)
 
 			resp, err := svc.CreateEmployee(ctx, tt.req)
 
@@ -643,7 +666,7 @@ func TestService_UpdateEmployee(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, cache, _, _, _ := newTestUserService()
+			svc, repo, _, _, cache, _, _, _, _ := newTestUserService()
 			tt.setupMocks(repo, cache)
 
 			err := svc.UpdateEmployee(ctx, tt.id, tt.req)
@@ -704,7 +727,7 @@ func TestService_DeleteEmployee(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _, _, _ := newTestUserService()
+			svc, repo, _, _, _, _, _, _, _ := newTestUserService()
 			tt.setupMocks(repo)
 
 			err := svc.DeleteEmployee(ctx, tt.id)

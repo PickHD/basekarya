@@ -2,7 +2,7 @@ package auth
 
 type LoginRequest struct {
 	Username string `json:"username" validate:"required,min=3,max=50"`
-	Password string `json:"password" validate:"required"`
+	Password string `json:"password" validate:"required,min=1,max=72"`
 }
 
 type LoginResponse struct {
@@ -23,8 +23,9 @@ type VerifyOTPResponse struct {
 }
 
 type ResetPasswordRequest struct {
+	Email    string `json:"email" validate:"required,email"`
 	Code     string `json:"code" validate:"required,len=6"`
-	Password string `json:"password" validate:"required"`
+	Password string `json:"password" validate:"required,min=6,max=72"`
 }
 
 type RegisterCompanyRequest struct {

@@ -13,7 +13,7 @@ type Service interface {
 		Title string,
 		Message string, relatedID uint) error
 	GetList(ctx context.Context, userID uint) ([]NotificationListResponse, error)
-	MarkAsRead(ctx context.Context, id uint) error
+	MarkAsRead(ctx context.Context, id uint, userID uint) error
 	DeleteReadOlderThan(days int) error
 	BlastNotification(ctx context.Context, userIDs []uint,
 		Type string,
@@ -97,8 +97,8 @@ func (s *service) GetList(ctx context.Context, userID uint) ([]NotificationListR
 	return responses, nil
 }
 
-func (s *service) MarkAsRead(ctx context.Context, id uint) error {
-	_, err := s.repo.FindByID(ctx, id)
+func (s *service) MarkAsRead(ctx context.Context, id uint, userID uint) error {
+	_, err := s.repo.FindByIDAndUserID(ctx, id, userID)
 	if err != nil {
 		return err
 	}

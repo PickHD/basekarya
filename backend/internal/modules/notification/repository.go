@@ -12,6 +12,7 @@ type Repository interface {
 	Create(ctx context.Context, notification *Notification) error
 	CreateBatch(ctx context.Context, notifications []*Notification) error
 	FindByID(ctx context.Context, id uint) (*Notification, error)
+	FindByIDAndUserID(ctx context.Context, id uint, userID uint) (*Notification, error)
 	FindAllByUserID(ctx context.Context, userID uint) ([]Notification, error)
 	MarkAsRead(ctx context.Context, id uint) error
 	DeleteReadOlderThan(ctx context.Context, days int) error
@@ -40,6 +41,16 @@ func (r *repository) FindByID(ctx context.Context, id uint) (*Notification, erro
 	var notification Notification
 	err := db.
 		First(&notification, id).Error
+
+	return &notification, err
+}
+
+func (r *repository) FindByIDAndUserID(ctx context.Context, id uint, userID uint) (*Notification, error) {
+	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
+	var notification Notification
+	err := db.
+		Where("id = ? AND user_id = ?", id, userID).
+		First(&notification).Error
 
 	return &notification, err
 }

@@ -6,7 +6,9 @@ import (
 	"basekarya-backend/pkg/response"
 	"basekarya-backend/pkg/utils"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
@@ -21,11 +23,28 @@ func NewHandler(wsHub *infrastructure.Hub, service Service) *Handler {
 	return &Handler{wsHub, service}
 }
 
+func getAllowedOrigins() []string {
+	origins := os.Getenv("CORS_ALLOWED_ORIGINS")
+	if origins == "" {
+		return []string{"http://localhost:5173"}
+	}
+	return strings.Split(origins, ",")
+}
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return true
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			return false
+		}
+		for _, allowed := range getAllowedOrigins() {
+			if strings.TrimSpace(allowed) == origin {
+				return true
+			}
+		}
+		return false
 	},
 }
 
@@ -33,7 +52,7 @@ func (h *Handler) HandleWebSocket(ctx echo.Context) error {
 	userContext, err := utils.GetUserContext(ctx)
 	if err != nil {
 		logger.Errorw("[WS] Failed to get user context", err)
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "failed to get user context", nil, err, nil)
 	}
 
 	conn, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
@@ -60,19 +79,24 @@ func (h *Handler) GetAll(ctx echo.Context) error {
 	if err != nil {
 		logger.Errorw("get notifications failed: ", err)
 
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "failed to get notifications", nil, err, nil)
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Get Notification List Success", data, nil, nil)
 }
 
 func (h *Handler) MarkAsRead(ctx echo.Context) error {
+	userContext, err := utils.GetUserContext(ctx)
+	if err != nil {
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "failed to get user context", nil, err, nil)
+	}
+
 	id, _ := strconv.Atoi(ctx.Param("id"))
-	err := h.service.MarkAsRead(ctx.Request().Context(), uint(id))
+	err = h.service.MarkAsRead(ctx.Request().Context(), uint(id), userContext.UserID)
 	if err != nil {
 		logger.Errorw("failed to mark as read notification: ", err)
 
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to mark as read", err.Error(), err, nil)
+		return response.NewResponses[any](ctx, http.StatusNotFound, "notification not found", nil, err, nil)
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Mark as read notification successfully", nil, nil, nil)
