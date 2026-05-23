@@ -72,7 +72,7 @@ func TestService_MarkAsRead(t *testing.T) {
 		{
 			name: "success",
 			setupMocks: func(repo *mockRepo) {
-				repo.On("FindByID", mock.Anything, uint(1)).Return(&Notification{ID: 1, IsRead: false}, nil)
+				repo.On("FindByIDAndUserID", mock.Anything, uint(1), uint(1)).Return(&Notification{ID: 1, IsRead: false}, nil)
 				repo.On("MarkAsRead", mock.Anything, uint(1)).Return(nil)
 			},
 			wantErr: false,
@@ -80,7 +80,7 @@ func TestService_MarkAsRead(t *testing.T) {
 		{
 			name: "not found",
 			setupMocks: func(repo *mockRepo) {
-				repo.On("FindByID", mock.Anything, uint(99)).Return(nil, errors.New("not found"))
+				repo.On("FindByIDAndUserID", mock.Anything, uint(99), uint(1)).Return(nil, errors.New("not found"))
 			},
 			wantErr: true,
 		},
@@ -97,7 +97,7 @@ func TestService_MarkAsRead(t *testing.T) {
 			if tt.name == "not found" {
 				id = 99
 			}
-			err := svc.MarkAsRead(ctx, id)
+			err := svc.MarkAsRead(ctx, id, 1)
 
 			if tt.wantErr {
 				require.Error(t, err)

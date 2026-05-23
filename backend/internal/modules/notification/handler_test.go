@@ -74,16 +74,24 @@ func TestHandler_GetAll(t *testing.T) {
 
 func TestHandler_MarkAsRead(t *testing.T) {
 	tests := []struct {
-		name       string
-		pathParams map[string]string
-		setupMocks func(*mockService)
-		wantStatus int
+		name         string
+		pathParams   map[string]string
+		setupMocks   func(*mockService)
+		setupContext func(*testutil.APITest)
+		wantStatus   int
 	}{
 		{
 			name:       "success",
 			pathParams: map[string]string{"id": "1"},
 			setupMocks: func(svc *mockService) {
-				svc.On("MarkAsRead", mock.Anything, uint(1)).Return(nil)
+				svc.On("MarkAsRead", mock.Anything, uint(1), uint(1)).Return(nil)
+			},
+			setupContext: func(at *testutil.APITest) {
+				at.WithAuthContext(&infrastructure.MyClaims{
+					UserID:      1,
+					CompanyID:   1,
+					Permissions: []string{constants.VIEW_EMPLOYEE},
+				})
 			},
 			wantStatus: http.StatusOK,
 		},
@@ -91,9 +99,16 @@ func TestHandler_MarkAsRead(t *testing.T) {
 			name:       "not found",
 			pathParams: map[string]string{"id": "99"},
 			setupMocks: func(svc *mockService) {
-				svc.On("MarkAsRead", mock.Anything, uint(99)).Return(errors.New("not found"))
+				svc.On("MarkAsRead", mock.Anything, uint(99), uint(1)).Return(errors.New("not found"))
 			},
-			wantStatus: http.StatusInternalServerError,
+			setupContext: func(at *testutil.APITest) {
+				at.WithAuthContext(&infrastructure.MyClaims{
+					UserID:      1,
+					CompanyID:   1,
+					Permissions: []string{constants.VIEW_EMPLOYEE},
+				})
+			},
+			wantStatus: http.StatusNotFound,
 		},
 	}
 
@@ -105,6 +120,7 @@ func TestHandler_MarkAsRead(t *testing.T) {
 
 			at := testutil.NewAPITest(t, http.MethodPost, "/api/notifications/:id/read", nil)
 			at.WithPathParams(tt.pathParams)
+			tt.setupContext(at)
 
 			rec, err := at.Execute(handler.MarkAsRead)
 

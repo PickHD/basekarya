@@ -449,7 +449,7 @@ func TestService_CreateEmployee(t *testing.T) {
 			},
 			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription) {
 				sub.On("CheckEmployeeLimit", mock.Anything).Return(true, nil)
-				hasher.On("HashPassword", "BaseKarya2024").Return("hashedpass", nil)
+				hasher.On("HashPassword", mock.AnythingOfType("string")).Return("hashedpass", nil)
 				repo.On("FindRoleByID", mock.Anything, uint(1)).Return(&rbac.Role{ID: 1, Name: "EMPLOYEE"}, nil)
 				repo.On("CreateUser", mock.Anything, mock.AnythingOfType("*user.User")).Return(nil)
 				repo.On("CreateEmployee", mock.Anything, mock.AnythingOfType("*user.Employee")).Return(nil)
@@ -492,7 +492,7 @@ func TestService_CreateEmployee(t *testing.T) {
 			},
 			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription) {
 				sub.On("CheckEmployeeLimit", mock.Anything).Return(true, nil)
-				hasher.On("HashPassword", "BaseKarya2024").Return("hashedpass", nil)
+				hasher.On("HashPassword", mock.AnythingOfType("string")).Return("hashedpass", nil)
 				repo.On("FindRoleByID", mock.Anything, uint(99)).Return(nil, errors.New("not found"))
 			},
 			wantErr: true,
@@ -507,7 +507,7 @@ func TestService_CreateEmployee(t *testing.T) {
 			},
 			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription) {
 				sub.On("CheckEmployeeLimit", mock.Anything).Return(true, nil)
-				hasher.On("HashPassword", "BaseKarya2024").Return("hashedpass", nil)
+				hasher.On("HashPassword", mock.AnythingOfType("string")).Return("hashedpass", nil)
 				repo.On("FindRoleByID", mock.Anything, uint(1)).Return(&rbac.Role{ID: 1}, nil)
 				repo.On("CreateUser", mock.Anything, mock.AnythingOfType("*user.User")).Return(errors.New("db error"))
 			},
@@ -523,7 +523,7 @@ func TestService_CreateEmployee(t *testing.T) {
 			},
 			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription) {
 				sub.On("CheckEmployeeLimit", mock.Anything).Return(true, nil)
-				hasher.On("HashPassword", "BaseKarya2024").Return("hashedpass", nil)
+				hasher.On("HashPassword", mock.AnythingOfType("string")).Return("hashedpass", nil)
 				repo.On("FindRoleByID", mock.Anything, uint(1)).Return(&rbac.Role{ID: 1}, nil)
 				repo.On("CreateUser", mock.Anything, mock.AnythingOfType("*user.User")).Return(nil)
 				repo.On("CreateEmployee", mock.Anything, mock.AnythingOfType("*user.Employee")).Return(errors.New("db error"))
@@ -540,7 +540,7 @@ func TestService_CreateEmployee(t *testing.T) {
 			},
 			setupMocks: func(repo *mockRepo, hasher *mockHasher, leaveGen *mockLeaveGen, sub *mockSubscription) {
 				sub.On("CheckEmployeeLimit", mock.Anything).Return(true, nil)
-				hasher.On("HashPassword", "BaseKarya2024").Return("hashedpass", nil)
+				hasher.On("HashPassword", mock.AnythingOfType("string")).Return("hashedpass", nil)
 				repo.On("FindRoleByID", mock.Anything, uint(1)).Return(&rbac.Role{ID: 1}, nil)
 				repo.On("CreateUser", mock.Anything, mock.AnythingOfType("*user.User")).Return(nil)
 				repo.On("CreateEmployee", mock.Anything, mock.AnythingOfType("*user.Employee")).Return(nil)

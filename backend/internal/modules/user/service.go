@@ -1,6 +1,7 @@
 package user
 
 import (
+	"basekarya-backend/internal/config"
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/response"
@@ -237,7 +238,10 @@ func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest
 	err := s.transactionManager.RunInTransaction(ctx, func(ctx context.Context) error {
 		generatedUsername = utils.GenerateUsername(req.FullName)
 
-		hashPass, _ := s.bcrypt.HashPassword("BaseKarya2024")
+		hashPass, err := s.bcrypt.HashPassword(config.GenerateRandomPassword(12))
+		if err != nil {
+			return err
+		}
 
 		role, err := s.repo.FindRoleByID(ctx, req.RoleID)
 		if err != nil {

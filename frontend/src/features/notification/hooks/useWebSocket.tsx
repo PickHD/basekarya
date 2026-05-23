@@ -7,6 +7,7 @@ import {
   useMarkAsRead,
 } from "@/features/notification/hooks/useNotification";
 import { useQueryClient } from "@tanstack/react-query";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 const RECONNECT_INTERVAL = 3000;
 
@@ -39,8 +40,7 @@ export const useWebSocket = () => {
         url.searchParams.append("token", token);
 
         return url.toString();
-      } catch (e) {
-        console.error("Invalid URL:", e);
+      } catch {
         return "";
       }
     };
@@ -55,7 +55,6 @@ export const useWebSocket = () => {
       socketRef.current = socket;
 
       socket.onopen = () => {
-        console.log("[WS] Connected");
         setIsConnected(true);
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
@@ -65,7 +64,6 @@ export const useWebSocket = () => {
 
       socket.onmessage = (event) => {
         try {
-          console.log("Get messages: ", event.data);
           const payload = JSON.parse(event.data) as NotificationPayload;
 
           if (!payload.type) return;
@@ -87,8 +85,8 @@ export const useWebSocket = () => {
             },
           );
 
-          const title = payload.title || payload.title || "Notification";
-          const message = payload.message || payload.message || "";
+          const title = payload.title || "Notification";
+          const message = sanitizeHtml(payload.message || "");
 
           const toastMessage = (
             <div className="flex flex-col w-full">
@@ -122,24 +120,20 @@ export const useWebSocket = () => {
               toast(toastMessage);
               break;
           }
-        } catch (err) {
-          console.error("[WS] Parse Error:", err);
+        } catch {
         }
       };
 
       socket.onclose = () => {
-        console.log("[WS] Disconnected");
         setIsConnected(false);
         socketRef.current = null;
 
         reconnectTimeoutRef.current = setTimeout(() => {
-          console.log("[WS] Attempting Reconnect...");
           connect();
         }, RECONNECT_INTERVAL);
       };
 
-      socket.onerror = (error) => {
-        console.error("[WS] Error:", error);
+      socket.onerror = () => {
         socket.close();
       };
     }

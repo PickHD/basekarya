@@ -2,7 +2,10 @@ package routes
 
 import (
 	"basekarya-backend/internal/bootstrap"
+	customMiddleware "basekarya-backend/internal/middleware"
 	"basekarya-backend/pkg/utils"
+	"os"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -24,8 +27,9 @@ func newRouter(container *bootstrap.Container) *Router {
 
 func (r *Router) setupMiddleware() {
 	r.app.Use(middleware.Recover())
+	r.app.Use(customMiddleware.SecurityHeaders())
 	r.app.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:8080", "http://127.0.0.1:8080"},
+		AllowOrigins: strings.Split(getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:5173"), ","),
 		AllowMethods: []string{echo.GET, echo.PUT, echo.POST, echo.DELETE},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 	}))
@@ -76,4 +80,11 @@ func ServeHTTP(container *bootstrap.Container) *echo.Echo {
 	router.setupRoutes()
 
 	return router.app
+}
+
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }

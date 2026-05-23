@@ -120,5 +120,5 @@ func TestSubscriptionMiddleware_RequireModule_CompanyNoPlan(t *testing.T) {
 
 	rec, err := at.Execute(handler)
 	require.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusForbidden, rec.Code)
 }

@@ -184,6 +184,7 @@ func TestHandler_ResetPassword(t *testing.T) {
 		{
 			name: "success",
 			body: ResetPasswordRequest{
+				Email:    "test@email.com",
 				Code:     "123456",
 				Password: "newpass123",
 			},
@@ -195,13 +196,14 @@ func TestHandler_ResetPassword(t *testing.T) {
 		{
 			name: "invalid otp",
 			body: ResetPasswordRequest{
+				Email:    "test@email.com",
 				Code:     "000000",
 				Password: "newpass123",
 			},
 			setupMocks: func(svc *mockService) {
 				svc.On("ResetPassword", mock.Anything, mock.AnythingOfType("*auth.ResetPasswordRequest")).Return(errors.New("invalid OTP"))
 			},
-			wantStatus: http.StatusInternalServerError,
+			wantStatus: http.StatusBadRequest,
 		},
 		{
 			name:       "missing fields",
@@ -263,7 +265,7 @@ func TestHandler_RegisterCompany(t *testing.T) {
 			setupMocks: func(svc *mockService) {
 				svc.On("RegisterCompany", mock.Anything, mock.AnythingOfType("*auth.RegisterCompanyRequest")).Return(nil, errors.New("email already registered"))
 			},
-			wantStatus: http.StatusInternalServerError,
+			wantStatus: http.StatusBadRequest,
 		},
 		{
 			name: "missing required fields",

@@ -30,7 +30,7 @@ func (h *Handler) Login(ctx echo.Context) error {
 	if err != nil {
 		logger.Errorw("Login failed : ", err)
 
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "login failed", nil, err, nil)
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Login Success", resp, nil, nil)
@@ -50,7 +50,7 @@ func (h *Handler) ForgotPassword(ctx echo.Context) error {
 	if err != nil {
 		logger.Errorw("Forgot Password failed : ", err)
 
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "failed to send OTP", nil, err, nil)
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Forgot Password Success", nil, nil, nil)
@@ -70,7 +70,7 @@ func (h *Handler) ResendOTP(ctx echo.Context) error {
 	if err != nil {
 		logger.Errorw("Resend OTP failed : ", err)
 
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "failed to resend OTP", nil, err, nil)
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Resend OTP Success", nil, nil, nil)
@@ -90,7 +90,7 @@ func (h *Handler) VerifyOTP(ctx echo.Context) error {
 	if err != nil {
 		logger.Errorw("Verify OTP failed : ", err)
 
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "failed to verify OTP", nil, err, nil)
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Verify OTP Success", resp, nil, nil)
@@ -110,7 +110,7 @@ func (h *Handler) ResetPassword(ctx echo.Context) error {
 	if err != nil {
 		logger.Errorw("Reset Password failed : ", err)
 
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusBadRequest, err.Error(), nil, err, nil)
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Reset Password Success", nil, nil, nil)
@@ -129,7 +129,7 @@ func (h *Handler) RegisterCompany(ctx echo.Context) error {
 	resp, err := h.service.RegisterCompany(ctx.Request().Context(), &req)
 	if err != nil {
 		logger.Errorw("Register company failed: ", err)
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusBadRequest, err.Error(), nil, err, nil)
 	}
 
 	return response.NewResponses[any](ctx, http.StatusCreated, "Company registered successfully", resp, nil, nil)

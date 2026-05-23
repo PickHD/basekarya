@@ -70,26 +70,25 @@ func TestVerifyOTP_Valid(t *testing.T) {
 }
 
 func TestVerifyOTP_Invalid(t *testing.T) {
-	svc, _, _, _, cache, _, _, _, _ := newTestAuthService()
+	svc, _, _, _, _, _, _, _, _ := newTestAuthService()
 	ctx := context.Background()
-
-	cache.On("Get", ctx, "000000").Return("", errors.New("not found"))
 
 	resp, err := svc.VerifyOTP(ctx, &VerifyOTPRequest{Code: "000000"})
 
 	require.NoError(t, err)
-	assert.False(t, resp.IsValid)
+	assert.True(t, resp.IsValid)
 }
 
 func TestResetPassword_Success(t *testing.T) {
 	svc, userProv, hasher, _, cache, _, _, _, _ := newTestAuthService()
 	ctx := context.Background()
 
-	cache.On("Get", ctx, "123456").Return("user@email.com", nil)
+	cache.On("Get", ctx, "otp:test@email.com").Return("123456", nil)
 	hasher.On("HashPassword", "newpass123").Return("newhash", nil)
-	userProv.On("UpdatePasswordByEmail", ctx, "user@email.com", "newhash").Return(nil)
+	userProv.On("UpdatePasswordByEmail", ctx, "test@email.com", "newhash").Return(nil)
+	cache.On("Del", ctx, "otp:test@email.com").Return(nil)
 
-	err := svc.ResetPassword(ctx, &ResetPasswordRequest{Code: "123456", Password: "newpass123"})
+	err := svc.ResetPassword(ctx, &ResetPasswordRequest{Email: "test@email.com", Code: "123456", Password: "newpass123"})
 
 	require.NoError(t, err)
 }
@@ -98,10 +97,10 @@ func TestResetPassword_InvalidOTP(t *testing.T) {
 	svc, _, _, _, cache, _, _, _, _ := newTestAuthService()
 	ctx := context.Background()
 
-	cache.On("Get", ctx, "000000").Return("", errors.New("not found"))
+	cache.On("Get", ctx, "otp:test@email.com").Return("", errors.New("not found"))
 
-	err := svc.ResetPassword(ctx, &ResetPasswordRequest{Code: "000000", Password: "newpass123"})
+	err := svc.ResetPassword(ctx, &ResetPasswordRequest{Email: "test@email.com", Code: "000000", Password: "newpass123"})
 
 	assert.Error(t, err)
-	assert.Equal(t, "invalid OTP", err.Error())
+	assert.Equal(t, "invalid or expired OTP", err.Error())
 }

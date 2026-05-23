@@ -11,6 +11,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import type { NotificationPayload } from "@/features/notification/types";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 export const NotificationBell = () => {
   const { isConnected, notifications, unreadCount, markAsRead } =
@@ -88,8 +89,8 @@ export const NotificationBell = () => {
             ) : (
               <ul className="divide-y divide-gray-100 dark:divide-gray-800">
                 {notifications.map((notif) => {
-                  const title = notif.title || notif.title;
-                  const message = notif.message || notif.message;
+                  const title = notif.title;
+                  const message = sanitizeHtml(notif.message || "");
                   const isRead = notif.is_read;
 
                   return (
@@ -166,7 +167,7 @@ export const NotificationBell = () => {
           </DialogHeader>
           <div 
             className="py-4 whitespace-pre-wrap text-base text-gray-700 dark:text-gray-300 prose prose-sm sm:prose-base dark:prose-invert max-w-none break-words"
-            dangerouslySetInnerHTML={{ __html: selectedNotif?.message || "" }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedNotif?.message || "") }}
           />
         </DialogContent>
       </Dialog>

@@ -135,7 +135,10 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 		netSalary := totalAllowance - totalDeduction
 
 		// construct object
+		companyID := utils.GetCompanyIDFromCtx(ctx)
+
 		payroll := Payroll{
+			CompanyID:      companyID,
 			EmployeeID:     emp.ID,
 			PeriodDate:     periodDate,
 			BaseSalary:     baseSalary,
@@ -147,44 +150,46 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 		}
 
 		payroll.Details = append(payroll.Details, PayrollDetail{
-			Title:  "Base Salary",
-			Type:   constants.DetailTypeAllowance,
-			Amount: baseSalary,
+			CompanyID: companyID,
+			Title:     "Base Salary",
+			Type:      constants.DetailTypeAllowance,
+			Amount:    baseSalary,
 		})
 
 		// check if reimburse amount not zero
 		if reimburseAmount > 0 {
 			payroll.Details = append(payroll.Details, PayrollDetail{
-				Title:  "Reimbursement",
-				Type:   constants.DetailTypeAllowance,
-				Amount: reimburseAmount,
+				CompanyID: companyID,
+				Title:     "Reimbursement",
+				Type:      constants.DetailTypeAllowance,
+				Amount:    reimburseAmount,
 			})
 		}
 
-		// check if overtime amount not zero
 		if overtimeAmount > 0 {
 			payroll.Details = append(payroll.Details, PayrollDetail{
-				Title:  fmt.Sprintf("Uang Lembur (%d jam %d menit)", totalOvertimeMinutes/60, totalOvertimeMinutes%60),
-				Type:   constants.DetailTypeAllowance,
-				Amount: overtimeAmount,
+				CompanyID: companyID,
+				Title:     fmt.Sprintf("Uang Lembur (%d jam %d menit)", totalOvertimeMinutes/60, totalOvertimeMinutes%60),
+				Type:      constants.DetailTypeAllowance,
+				Amount:    overtimeAmount,
 			})
 		}
 
-		// check if late penalty amount not zero
 		if latePenaltyAmount > 0 {
 			payroll.Details = append(payroll.Details, PayrollDetail{
-				Title:  fmt.Sprintf("Potongan Terlambat (%d menit)", totalLateMinutes),
-				Type:   constants.DetailTypeDeduction,
-				Amount: latePenaltyAmount,
+				CompanyID: companyID,
+				Title:     fmt.Sprintf("Potongan Terlambat (%d menit)", totalLateMinutes),
+				Type:      constants.DetailTypeDeduction,
+				Amount:    latePenaltyAmount,
 			})
 		}
 
-		// check if loan amount not zero
 		if loanAmount > 0 {
 			payroll.Details = append(payroll.Details, PayrollDetail{
-				Title:  "Potongan Kasbon",
-				Type:   constants.DetailTypeDeduction,
-				Amount: loanAmount,
+				CompanyID: companyID,
+				Title:     "Potongan Kasbon",
+				Type:      constants.DetailTypeDeduction,
+				Amount:    loanAmount,
 			})
 		}
 

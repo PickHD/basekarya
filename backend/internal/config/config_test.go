@@ -22,6 +22,15 @@ func TestLoad_Defaults(t *testing.T) {
 		os.Unsetenv(k)
 	}
 
+	os.Setenv("JWT_SECRET", "test-secret")
+	os.Setenv("SUPERADMIN_USERNAME", "superadmin")
+	os.Setenv("SUPERADMIN_PASSWORD", "superpass")
+	t.Cleanup(func() {
+		os.Unsetenv("JWT_SECRET")
+		os.Unsetenv("SUPERADMIN_USERNAME")
+		os.Unsetenv("SUPERADMIN_PASSWORD")
+	})
+
 	cfg := Load()
 
 	if cfg.Database.Host != "localhost" {
@@ -42,8 +51,8 @@ func TestLoad_Defaults(t *testing.T) {
 	if cfg.Database.SSLMode != "disable" {
 		t.Errorf("expected Database.SSLMode disable, got %s", cfg.Database.SSLMode)
 	}
-	if cfg.JWT.Secret != "your-super-secret-jwt-key" {
-		t.Errorf("expected JWT.Secret your-super-secret-jwt-key, got %s", cfg.JWT.Secret)
+	if cfg.JWT.Secret != "test-secret" {
+		t.Errorf("expected JWT.Secret test-secret, got %s", cfg.JWT.Secret)
 	}
 	if cfg.JWT.ExpiresIn != 24 {
 		t.Errorf("expected JWT.ExpiresIn 24, got %d", cfg.JWT.ExpiresIn)
@@ -81,6 +90,8 @@ func TestLoad_EnvVars(t *testing.T) {
 	os.Setenv("LOG_LEVEL", "info")
 	os.Setenv("MINIO_IS_SECURE", "true")
 	os.Setenv("SMTP_PORT", "587")
+	os.Setenv("SUPERADMIN_USERNAME", "superadmin")
+	os.Setenv("SUPERADMIN_PASSWORD", "superpass")
 	t.Cleanup(func() {
 		os.Unsetenv("MYSQL_HOST")
 		os.Unsetenv("MYSQL_PORT")
@@ -91,6 +102,8 @@ func TestLoad_EnvVars(t *testing.T) {
 		os.Unsetenv("LOG_LEVEL")
 		os.Unsetenv("MINIO_IS_SECURE")
 		os.Unsetenv("SMTP_PORT")
+		os.Unsetenv("SUPERADMIN_USERNAME")
+		os.Unsetenv("SUPERADMIN_PASSWORD")
 	})
 
 	cfg := Load()

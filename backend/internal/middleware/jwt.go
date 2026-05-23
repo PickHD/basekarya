@@ -35,7 +35,7 @@ func (m *AuthMiddleware) VerifyToken(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 		}
 
-		if tokenString == "" {
+		if tokenString == "" && ctx.Path() == "/api/v1/ws" {
 			tokenString = ctx.QueryParam("token")
 		}
 
@@ -85,7 +85,11 @@ func (m *AuthMiddleware) GrantAnyPermission(permissions ...string) echo.Middlewa
 		return func(ctx echo.Context) error {
 			userContext, err := utils.GetUserContext(ctx)
 			if err != nil {
-				return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+				return response.NewResponses[any](ctx, http.StatusInternalServerError, "failed to get user context", nil, err, nil)
+			}
+
+			if userContext.IsPlatformAdmin {
+				return next(ctx)
 			}
 
 			hasPermission := false

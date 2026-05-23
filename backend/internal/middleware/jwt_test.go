@@ -69,10 +69,11 @@ func TestAuthMiddleware_VerifyToken_QueryParamToken(t *testing.T) {
 	authMW, jwtProvider := newTestAuthMiddleware(t)
 	token := testutil.GenerateTestToken(t, jwtProvider, 1, 1, false, "ADMIN", []string{"read"})
 
-	req := httptest.NewRequest(http.MethodGet, "/test?token="+token, nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/ws?token="+token, nil)
 	rec := httptest.NewRecorder()
 	e := echo.New()
 	ctx := e.NewContext(req, rec)
+	ctx.SetPath("/api/v1/ws")
 
 	handler := authMW.VerifyToken(okHandler)
 	err := handler(ctx)

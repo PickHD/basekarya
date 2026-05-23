@@ -64,8 +64,8 @@ func TestNewResponses_ErrorStatus(t *testing.T) {
 	if resp.Error == nil {
 		t.Error("expected error to be set")
 	}
-	if resp.Error != "something went wrong" {
-		t.Errorf("expected 'something went wrong', got %v", resp.Error)
+	if resp.Error != "internal server error" {
+		t.Errorf("expected 'internal server error', got %v", resp.Error)
 	}
 	if resp.Meta != nil {
 		t.Errorf("expected nil meta for error status, got %v", resp.Meta)

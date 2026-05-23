@@ -29,7 +29,7 @@ type UpdateProfileRequest struct {
 	BankAccountNumber string `form:"bank_account_number" json:"bank_account_number" validate:"omitempty,min=3"`
 	BankAccountHolder string `form:"bank_account_holder" json:"bank_account_holder" validate:"omitempty,min=3"`
 	NPWP              string `form:"npwp" json:"npwp" validate:"omitempty,min=12"`
-	Email             string `form:"email" json:"email" validate:"omitempty"`
+	Email             string `form:"email" json:"email" validate:"omitempty,email"`
 }
 
 type ChangePasswordRequest struct {
@@ -60,7 +60,7 @@ type CreateEmployeeRequest struct {
 	ShiftID      uint    `json:"shift_id" validate:"required"`
 	RoleID       uint    `json:"role_id" validate:"required"`
 	BaseSalary   float64 `json:"base_salary" validate:"required"`
-	Email        string  `json:"email" validate:"required"`
+	Email        string  `json:"email" validate:"required,email"`
 	Position     string  `json:"position" validate:"required,min=3,max=100"`
 }
 
@@ -75,6 +75,6 @@ type UpdateEmployeeRequest struct {
 	ShiftID      uint    `json:"shift_id"`
 	RoleID       uint    `json:"role_id"`
 	BaseSalary   float64 `json:"base_salary"`
-	Email        string  `json:"email"`
+	Email        string  `json:"email" validate:"omitempty,email"`
 	Position     string  `json:"position"`
 }
