@@ -111,7 +111,7 @@ func NewContainer() (*Container, error) {
 	masterSvc := master.NewService(masterRepo, redis)
 	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo, notificationSvc, transactionManager, httpClient.GetClient(), email, loanRepo, overtimeRepo)
 	leaveSvc := leave.NewService(leaveRepo, storage, notificationSvc, userRepo, transactionManager, excel)
-	userSvc := user.NewService(userRepo, bcrypt, storage, redis, leaveSvc, transactionManager, subscriptionMW)
+	userSvc := user.NewService(userRepo, bcrypt, storage, redis, leaveSvc, transactionManager, subscriptionMW, email)
 	reimburseSvc := reimbursement.NewService(reimburseRepo, storage, notificationSvc, userRepo, transactionManager, excel)
 	companySvc := company.NewService(companyRepo, redis, storage)
 	loanSvc := loan.NewService(loanRepo, notificationSvc, userRepo, transactionManager, excel)

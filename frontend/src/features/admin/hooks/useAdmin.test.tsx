@@ -6,7 +6,10 @@ import {
   useEmployeeMutations,
   useDashboardStats,
 } from "@/features/admin/hooks/useAdmin";
-import { useDepartments, useShifts } from "@/features/admin/hooks/useMasterData";
+import {
+  useDepartments,
+  useShifts,
+} from "@/features/admin/hooks/useMasterData";
 
 vi.mock("@/lib/axios", () => ({
   api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -27,7 +30,9 @@ describe("useAllEmployees", () => {
     (api.get as ReturnType<typeof vi.fn>).mockResolvedValue({ data: mockData });
 
     const { wrapper } = createQueryWrapper();
-    const { result } = renderHook(() => useAllEmployees(1, "john"), { wrapper });
+    const { result } = renderHook(() => useAllEmployees(1, "john"), {
+      wrapper,
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(api.get).toHaveBeenCalledWith("/employees", {
@@ -39,7 +44,7 @@ describe("useAllEmployees", () => {
 describe("useEmployeeMutations", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("should create employee and show toast with username", async () => {
+  it("should create employee and show toast", async () => {
     (api.post as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: { data: { username: "john123" } },
     });
@@ -60,8 +65,7 @@ describe("useEmployeeMutations", () => {
 
     await waitFor(() => expect(result.current.createMutation.isSuccess).toBe(true));
     expect(toast.success).toHaveBeenCalledWith("Employee created", {
-      description: "Username: john123 | Password default: BaseKarya2024",
-      duration: 8000,
+      duration: 1000,
     });
   });
 
@@ -76,39 +80,49 @@ describe("useEmployeeMutations", () => {
     result.current.createMutation.mutate({
       full_name: "John",
       email: "john@test.com",
-      phone: "081234567890",
       department_id: 1,
       shift_id: 1,
-      role_ids: [1],
-      join_date: "2024-01-01",
-      salary: 5000000,
+      base_salary: 5000000,
     });
 
-    await waitFor(() => expect(result.current.createMutation.isSuccess).toBe(true));
+    await waitFor(() =>
+      expect(result.current.createMutation.isSuccess).toBe(true),
+    );
     expect(toast.success).toHaveBeenCalledWith("Employee created successfully");
   });
 
   it("should update employee", async () => {
-    (api.put as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { message: "ok" } });
+    (api.put as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { message: "ok" },
+    });
 
     const { wrapper } = createQueryWrapper();
     const { result } = renderHook(() => useEmployeeMutations(), { wrapper });
 
-    result.current.updateMutation.mutate({ id: 1, data: { full_name: "Jane" } });
+    result.current.updateMutation.mutate({
+      id: 1,
+      data: { full_name: "Jane" },
+    });
 
-    await waitFor(() => expect(result.current.updateMutation.isSuccess).toBe(true));
+    await waitFor(() =>
+      expect(result.current.updateMutation.isSuccess).toBe(true),
+    );
     expect(toast.success).toHaveBeenCalledWith("Employee updated successfully");
   });
 
   it("should delete employee", async () => {
-    (api.delete as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { message: "ok" } });
+    (api.delete as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { message: "ok" },
+    });
 
     const { wrapper } = createQueryWrapper();
     const { result } = renderHook(() => useEmployeeMutations(), { wrapper });
 
     result.current.deleteMutation.mutate(1);
 
-    await waitFor(() => expect(result.current.deleteMutation.isSuccess).toBe(true));
+    await waitFor(() =>
+      expect(result.current.deleteMutation.isSuccess).toBe(true),
+    );
     expect(toast.success).toHaveBeenCalledWith("Employee deleted");
   });
 
@@ -131,7 +145,9 @@ describe("useEmployeeMutations", () => {
       salary: 5000000,
     });
 
-    await waitFor(() => expect(result.current.createMutation.isError).toBe(true));
+    await waitFor(() =>
+      expect(result.current.createMutation.isError).toBe(true),
+    );
     expect(toast.error).toHaveBeenCalled();
   });
 });
@@ -141,7 +157,9 @@ describe("useDashboardStats (admin)", () => {
 
   it("should fetch dashboard stats", async () => {
     const mockStats = { total_employees: 50, present_today: 45 };
-    (api.get as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { data: mockStats } });
+    (api.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { data: mockStats },
+    });
 
     const { wrapper } = createQueryWrapper();
     const { result } = renderHook(() => useDashboardStats(), { wrapper });
@@ -156,7 +174,9 @@ describe("useDepartments", () => {
 
   it("should fetch departments", async () => {
     const mockData = [{ id: 1, name: "Engineering" }];
-    (api.get as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { data: mockData } });
+    (api.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { data: mockData },
+    });
 
     const { wrapper } = createQueryWrapper();
     const { result } = renderHook(() => useDepartments(), { wrapper });
@@ -171,7 +191,9 @@ describe("useShifts", () => {
 
   it("should fetch shifts", async () => {
     const mockData = [{ id: 1, name: "Morning" }];
-    (api.get as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { data: mockData } });
+    (api.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { data: mockData },
+    });
 
     const { wrapper } = createQueryWrapper();
     const { result } = renderHook(() => useShifts(), { wrapper });

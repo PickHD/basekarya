@@ -111,8 +111,7 @@ export const useEmployeeMutations = () => {
       const username = response.data?.data?.username;
       if (username) {
         toast.success("Employee created", {
-          description: `Username: ${username} | Password default: BaseKarya2024`,
-          duration: 8000,
+          duration: 1000,
         });
       } else {
         toast.success("Employee created successfully");
