@@ -90,7 +90,7 @@ func (s *service) GetTemplates(ctx context.Context) ([]TemplateResponse, error) 
 	if err != nil {
 		return nil, err
 	}
-	var result []TemplateResponse
+	result := make([]TemplateResponse, 0, len(templates))
 	for _, t := range templates {
 		result = append(result, toTemplateResponse(t))
 	}

@@ -5,6 +5,7 @@ import (
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/internal/middleware"
 	"basekarya-backend/internal/modules/announcement"
+	"basekarya-backend/internal/modules/asset"
 	"basekarya-backend/internal/modules/attendance"
 	"basekarya-backend/internal/modules/auth"
 	"basekarya-backend/internal/modules/company"
@@ -55,6 +56,7 @@ type Container struct {
 	RecruitmentHandler   *recruitment.Handler
 	OnboardingHandler    *onboarding.Handler
 	FinanceHandler       *finance.Handler
+	AssetHandler         *asset.Handler
 	SubscriptionHandler  *subscription.Handler
 
 	AuthMiddleware        *middleware.AuthMiddleware
@@ -101,6 +103,7 @@ func NewContainer() (*Container, error) {
 	recruitmentRepo := recruitment.NewRepository(db.GetDB())
 	onboardingRepo := onboarding.NewRepository(db.GetDB())
 	financeRepo := finance.NewRepository(db.GetDB())
+	astRepo := asset.NewRepository(db.GetDB())
 	subscriptionRepo := subscription.NewRepository(db.GetDB())
 	subscriptionMW := middleware.NewSubscriptionMiddleware(db.GetDB())
 
@@ -121,6 +124,7 @@ func NewContainer() (*Container, error) {
 	contractSvc := contract.NewService(contractRepo, storage, notificationSvc, userRepo, excel)
 	onboardingSvc := onboarding.NewService(onboardingRepo, notificationSvc, userSvc, email, companyRepo, rbacRepo, masterRepo, transactionManager)
 	recruitmentSvc := recruitment.NewService(recruitmentRepo, storage, notificationSvc, userRepo, onboardingSvc, transactionManager)
+	astSvc := asset.NewService(astRepo, notificationSvc, userRepo, transactionManager, excel)
 	financeSvc := finance.NewService(financeRepo, notificationSvc, userRepo, transactionManager, excel)
 	subscriptionSvc := subscription.NewService(subscriptionRepo, companyRepo, rbacRepo, userRepo, redis)
 
@@ -141,6 +145,7 @@ func NewContainer() (*Container, error) {
 	contractHandler := contract.NewHandler(contractSvc)
 	recruitmentHandler := recruitment.NewHandler(recruitmentSvc)
 	onboardingHandler := onboarding.NewHandler(onboardingSvc)
+	assetHandler := asset.NewHandler(astSvc)
 	financeHandler := finance.NewHandler(financeSvc)
 	subscriptionHandler := subscription.NewHandler(subscriptionSvc)
 
@@ -182,6 +187,7 @@ func NewContainer() (*Container, error) {
 		RecruitmentHandler:   recruitmentHandler,
 		OnboardingHandler:    onboardingHandler,
 		FinanceHandler:       financeHandler,
+		AssetHandler:         assetHandler,
 		SubscriptionHandler:  subscriptionHandler,
 
 		AuthMiddleware:        authMiddleware,

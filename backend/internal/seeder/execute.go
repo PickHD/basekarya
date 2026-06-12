@@ -1,6 +1,7 @@
 package seeder
 
 import (
+	"errors"
 	"strings"
 
 	"basekarya-backend/internal/config"
@@ -57,8 +58,21 @@ func seedMasterData(tx *gorm.DB) error {
 	}
 
 	regularShift := master.Shift{Name: "Regular", StartTime: "09:00:00", EndTime: "18:00:00", CompanyID: 1}
-	if err := tx.FirstOrCreate(&regularShift, master.Shift{Name: "Regular"}).Error; err != nil {
+	var existingShift master.Shift
+	err := tx.Where("name = ?", regularShift.Name).First(&existingShift).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err := tx.Create(&regularShift).Error; err != nil {
+			return err
+		}
+	} else if err != nil {
 		return err
+	} else {
+		if err := tx.Model(&existingShift).Updates(map[string]interface{}{
+			"start_time": regularShift.StartTime,
+			"end_time":   regularShift.EndTime,
+		}).Error; err != nil {
+			return err
+		}
 	}
 
 	leaveTypes := []master.LeaveType{
@@ -68,8 +82,21 @@ func seedMasterData(tx *gorm.DB) error {
 	}
 
 	for _, lt := range leaveTypes {
-		if err := tx.Where(master.LeaveType{Name: lt.Name}).FirstOrCreate(&lt).Error; err != nil {
+		var existing master.LeaveType
+		err := tx.Where("name = ?", lt.Name).First(&existing).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if err := tx.Create(&lt).Error; err != nil {
+				return err
+			}
+		} else if err != nil {
 			return err
+		} else {
+			if err := tx.Model(&existing).Updates(map[string]interface{}{
+				"default_quota": lt.DefaultQuota,
+				"is_deducted":   lt.IsDeducted,
+			}).Error; err != nil {
+				return err
+			}
 		}
 	}
 
@@ -82,34 +109,37 @@ func seedRolesAndAdmin(tx *gorm.DB, cfg *config.Config, hasher Hasher) (*rbac.Ro
 		return nil, err
 	}
 
-	newAdmin := user.User{
-		Username:        cfg.CredentialConfig.SuperadminUsername,
-		CompanyID:       0,
-		IsPlatformAdmin: true,
-	}
 	hashPass, err := hasher.HashPassword(cfg.CredentialConfig.SuperadminPassword)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := tx.Where(user.User{Username: newAdmin.Username}).
-		Attrs(user.User{
+	var existingAdmin user.User
+	err = tx.Where("username = ?", cfg.CredentialConfig.SuperadminUsername).First(&existingAdmin).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		newAdmin := user.User{
+			Username:           cfg.CredentialConfig.SuperadminUsername,
 			PasswordHash:       hashPass,
 			RoleID:             platformRole.ID,
 			CompanyID:          0,
 			IsPlatformAdmin:    true,
 			MustChangePassword: false,
 			IsActive:           true,
-		}).
-		FirstOrCreate(&newAdmin).Error; err != nil {
+		}
+		if err := tx.Create(&newAdmin).Error; err != nil {
+			return nil, err
+		}
+	} else if err != nil {
 		return nil, err
-	}
-
-	if newAdmin.CompanyID != 0 {
-		newAdmin.CompanyID = 0
-		newAdmin.RoleID = platformRole.ID
-		newAdmin.IsPlatformAdmin = true
-		if err := tx.Save(&newAdmin).Error; err != nil {
+	} else {
+		if err := tx.Model(&existingAdmin).Updates(map[string]interface{}{
+			"password_hash":        hashPass,
+			"role_id":              platformRole.ID,
+			"company_id":           0,
+			"is_platform_admin":    true,
+			"must_change_password": false,
+			"is_active":            true,
+		}).Error; err != nil {
 			return nil, err
 		}
 	}
@@ -138,6 +168,7 @@ func seedPermissions(tx *gorm.DB, roleSuperadmin *rbac.Role) error {
 		{"Recruitment", []string{constants.VIEW_REQUISITION, constants.CREATE_REQUISITION, constants.APPROVAL_REQUISITION, constants.VIEW_APPLICANT, constants.CREATE_APPLICANT, constants.UPDATE_APPLICANT}},
 		{"Onboarding", []string{constants.VIEW_ONBOARDING, constants.MANAGE_ONBOARDING_TEMPLATE, constants.UPDATE_ONBOARDING_TASK}},
 		{"Finance", []string{constants.VIEW_FINANCE, constants.CREATE_FINANCE, constants.APPROVAL_FINANCE, constants.EXPORT_FINANCE, constants.MANAGE_FINANCE_CATEGORY, constants.VIEW_FINANCE_DASHBOARD}},
+		{"Asset", []string{constants.MANAGE_ASSET, constants.VIEW_ASSET, constants.VIEW_SELF_ASSET, constants.CREATE_ASSET, constants.APPROVAL_ASSET, constants.EXPORT_ASSET}},
 	}
 
 	var permissionIDs []uint
@@ -179,19 +210,29 @@ func seedSubscriptionPlans(tx *gorm.DB) error {
 	plans := []subscription.SubscriptionPlan{
 		{Name: "Free", Slug: "free", MaxEmployees: 5, PriceMonthly: 0, Features: `{"modules":["attendance","leave"]}`, IsActive: true},
 		{Name: "Basic", Slug: "basic", MaxEmployees: 50, PriceMonthly: 99000, Features: `{"modules":["attendance","leave","overtime","loan","reimbursement","payroll","contract","finance"]}`, IsActive: true},
-		{Name: "Pro", Slug: "pro", MaxEmployees: 0, PriceMonthly: 249000, Features: `{"modules":["attendance","leave","overtime","loan","reimbursement","payroll","contract","finance","recruitment","onboarding"]}`, IsActive: true},
+		{Name: "Pro", Slug: "pro", MaxEmployees: 0, PriceMonthly: 249000, Features: `{"modules":["attendance","leave","overtime","loan","reimbursement","payroll","contract","finance","recruitment","onboarding","asset"]}`, IsActive: true},
 	}
 
 	for i := range plans {
 		p := &plans[i]
 		var existing subscription.SubscriptionPlan
 		err := tx.Where("slug = ?", p.Slug).First(&existing).Error
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			if err := tx.Create(p).Error; err != nil {
 				return err
 			}
 		} else if err != nil {
 			return err
+		} else {
+			if err := tx.Model(&existing).Updates(map[string]interface{}{
+				"name":           p.Name,
+				"max_employees":  p.MaxEmployees,
+				"price_monthly":  p.PriceMonthly,
+				"features":       p.Features,
+				"is_active":      p.IsActive,
+			}).Error; err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -251,25 +292,42 @@ func seedOnboardingTemplates(tx *gorm.DB) error {
 	for _, def := range templates {
 		var existing onboarding.OnboardingTemplate
 		result := tx.Where("name = ? AND department = ?", def.Name, def.Department).First(&existing)
-		if result.Error == nil {
-			continue
-		}
 
-		tmpl := onboarding.OnboardingTemplate{
-			Name:       def.Name,
-			Department: def.Department,
-			CompanyID:  1,
-		}
-		for _, task := range def.Tasks {
-			tmpl.Items = append(tmpl.Items, onboarding.OnboardingTemplateItem{
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			tmpl := onboarding.OnboardingTemplate{
+				Name:       def.Name,
+				Department: def.Department,
+				CompanyID:  1,
+			}
+			for _, task := range def.Tasks {
+				tmpl.Items = append(tmpl.Items, onboarding.OnboardingTemplateItem{
+					TaskName:    task.Name,
+					Description: task.Description,
+					SortOrder:   task.Order,
+					CompanyID:   1,
+				})
+			}
+			if err := tx.Create(&tmpl).Error; err != nil {
+				return err
+			}
+		} else if result.Error != nil {
+			return result.Error
+		} else {
+			tx.Where("template_id = ?", existing.ID).Delete(&onboarding.OnboardingTemplateItem{})
+
+			var items []onboarding.OnboardingTemplateItem
+			for _, task := range def.Tasks {
+			items = append(items, onboarding.OnboardingTemplateItem{
+				TemplateID:  existing.ID,
 				TaskName:    task.Name,
-				Description: task.Description,
-				SortOrder:   task.Order,
-				CompanyID:   1,
-			})
-		}
-		if err := tx.Create(&tmpl).Error; err != nil {
-			return err
+					Description:          task.Description,
+					SortOrder:            task.Order,
+					CompanyID:            1,
+				})
+			}
+			if err := tx.Create(&items).Error; err != nil {
+				return err
+			}
 		}
 	}
 

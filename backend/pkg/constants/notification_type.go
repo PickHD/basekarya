@@ -17,4 +17,5 @@ const (
 	NotificationTypeApplicantStageChanged  NotificationType = "APPLICANT_STAGE_CHANGED"
 	NotificationTypeOnboardingTask         NotificationType = "ONBOARDING_TASK"
 	NotificationTypeFinanceApprovalReq     NotificationType = "FINANCE_APPROVAL_REQ"
+	NotificationTypeAssetApprovalReq       NotificationType = "ASSET_APPROVAL_REQ"
 )
