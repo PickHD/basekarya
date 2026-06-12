@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"basekarya-backend/internal/config"
+	"basekarya-backend/internal/modules/department"
 	"basekarya-backend/internal/modules/master"
 	"basekarya-backend/internal/modules/onboarding"
 	"basekarya-backend/internal/modules/rbac"
@@ -52,8 +53,8 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 }
 
 func seedMasterData(tx *gorm.DB) error {
-	generalDept := master.Department{Name: "Umum", CompanyID: 1}
-	if err := tx.Where(master.Department{Name: "Umum"}).FirstOrCreate(&generalDept).Error; err != nil {
+	generalDept := department.Department{Name: "Umum", CompanyID: 1}
+	if err := tx.Where(department.Department{Name: "Umum"}).FirstOrCreate(&generalDept).Error; err != nil {
 		return err
 	}
 
@@ -154,7 +155,7 @@ func seedPermissions(tx *gorm.DB, roleSuperadmin *rbac.Role) error {
 	}{
 		{"Permission", []string{constants.VIEW_PERMISSION}},
 		{"Role", []string{constants.CREATE_ROLE, constants.VIEW_ROLE, constants.ASSIGN_ROLE}},
-		{"Master", []string{constants.VIEW_MASTER}},
+		{"Master", []string{constants.VIEW_MASTER, constants.MANAGE_MASTER}},
 		{"Employee", []string{constants.VIEW_EMPLOYEE, constants.CREATE_EMPLOYEE, constants.UPDATE_EMPLOYEE, constants.DELETE_EMPLOYEE, constants.EXPORT_EMPLOYEE}},
 		{"Attendance", []string{constants.VIEW_ATTENDANCE, constants.VIEW_SELF_ATTENDANCE, constants.CREATE_ATTENDANCE, constants.EXPORT_ATTENDANCE}},
 		{"Payroll", []string{constants.VIEW_PAYROLL, constants.GENERATE_PAYROLL, constants.DOWNLOAD_PAYSLIP, constants.MARK_AS_PAID, constants.SEND_PAYSLIP}},

@@ -9,10 +9,8 @@ import (
 )
 
 type Repository interface {
-	FindAllDepartments(ctx context.Context) ([]Department, error)
 	FindAllShifts(ctx context.Context) ([]Shift, error)
 	FindAllLeaveTypes(ctx context.Context) ([]LeaveType, error)
-	FindDepartmentByName(ctx context.Context, name string) (*Department, error)
 	FindShiftByName(ctx context.Context, name string) (*Shift, error)
 	SeedDefaults(ctx context.Context, companyID uint) error
 }
@@ -22,16 +20,6 @@ type repository struct {
 
 func NewRepository(db *gorm.DB) Repository {
 	return &repository{db}
-}
-
-func (r *repository) FindAllDepartments(ctx context.Context) ([]Department, error) {
-	var deps []Department
-	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
-	if err := db.Model(&Department{}).Find(&deps).Error; err != nil {
-		return nil, err
-	}
-
-	return deps, nil
 }
 
 func (r *repository) FindAllShifts(ctx context.Context) ([]Shift, error) {
@@ -54,16 +42,6 @@ func (r *repository) FindAllLeaveTypes(ctx context.Context) ([]LeaveType, error)
 	return leaveTypes, nil
 }
 
-func (r *repository) FindDepartmentByName(ctx context.Context, name string) (*Department, error) {
-	var department Department
-	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
-	if err := db.Model(&Department{}).Where("name = ?", name).First(&department).Error; err != nil {
-		return nil, err
-	}
-
-	return &department, nil
-}
-
 func (r *repository) FindShiftByName(ctx context.Context, name string) (*Shift, error) {
 	var shift Shift
 	db := utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
@@ -76,11 +54,6 @@ func (r *repository) FindShiftByName(ctx context.Context, name string) (*Shift, 
 
 func (r *repository) SeedDefaults(ctx context.Context, companyID uint) error {
 	db := utils.GetDBFromContext(ctx, r.db)
-
-	generalDept := Department{Name: "Umum", CompanyID: companyID}
-	if err := db.Where(Department{Name: "Umum", CompanyID: companyID}).FirstOrCreate(&generalDept).Error; err != nil {
-		return err
-	}
 
 	regularShift := Shift{Name: "Regular", StartTime: "09:00:00", EndTime: "18:00:00", CompanyID: companyID}
 	if err := db.Where(Shift{Name: "Regular", CompanyID: companyID}).FirstOrCreate(&regularShift).Error; err != nil {
@@ -99,3 +72,5 @@ func (r *repository) SeedDefaults(ctx context.Context, companyID uint) error {
 	}
 	return nil
 }
+
+

@@ -41,6 +41,7 @@ import SubscriptionAdminPage from "@/pages/admin/SubscriptionAdminPage";
 import PlatformAdminDashboard from "@/pages/admin/PlatformAdminDashboard";
 import CompaniesPage from "@/pages/admin/CompaniesPage";
 import SubscriptionHistoryPage from "@/pages/admin/SubscriptionHistoryPage";
+import DepartmentListPage from "@/pages/admin/DepartmentListPage";
 
 import { PERMISSIONS } from "@/config/permissions";
 
@@ -172,6 +173,7 @@ function App() {
             <Route path="admin/announcements" element={<AnnouncementPage />} />
             <Route path="admin/payrolls" element={<PayrollListPage />} />
             <Route path="admin/company-settings" element={<CompanySettingsPage />} />
+            <Route path="admin/departments" element={<DepartmentListPage />} />
             <Route path="admin/requisitions" element={<RequisitionListPage />} />
             <Route path="admin/requisitions/:id/applicants" element={<ApplicantBoardPage />} />
             <Route path="admin/onboarding" element={<OnboardingListPage />} />

@@ -12,6 +12,7 @@ import type {
   CreateEmployeePayload,
   DashboardStats,
 } from "../types";
+import type { LookupItem } from "@/features/admin/types";
 import type { Meta } from "@/types/api";
 
 export const useAllEmployees = (page: number, search: string) => {
@@ -215,4 +216,67 @@ export const useDashboardStats = () => {
     },
     refetchInterval: 1000 * 60 * 5,
   });
+};
+
+export const useDepartments = () => {
+  return useQuery({
+    queryKey: ["departments"],
+    queryFn: async () => {
+      const { data } = await api.get<{ data: LookupItem[] }>("/departments");
+      return data.data;
+    },
+    staleTime: 1000 * 60 * 60,
+  });
+};
+
+export const useDepartmentMutations = () => {
+  const queryClient = useQueryClient();
+
+  const invalidateDepartments = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: ["departments"],
+      type: "active",
+    });
+  };
+
+  const createMutation = useMutation({
+    mutationFn: async (data: { name: string }) => {
+      return await api.post("/departments", data);
+    },
+    onSuccess: async () => {
+      toast.success("Department created");
+      await invalidateDepartments();
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to create department");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: { name: string } }) => {
+      return await api.put(`/departments/${id}`, data);
+    },
+    onSuccess: async () => {
+      toast.success("Department updated");
+      await invalidateDepartments();
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to update department");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await api.delete(`/departments/${id}`);
+    },
+    onSuccess: async () => {
+      toast.success("Department deleted");
+      await invalidateDepartments();
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete department");
+    },
+  });
+
+  return { createMutation, updateMutation, deleteMutation };
 };

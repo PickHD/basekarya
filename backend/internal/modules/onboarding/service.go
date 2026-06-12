@@ -40,6 +40,7 @@ type service struct {
 	email        EmailProvider
 	company      CompanyProvider
 	role         RoleProvider
+	department   DepartmentProvider
 	master       MasterProvider
 	transaction  infrastructure.TransactionManager
 }
@@ -51,10 +52,11 @@ func NewService(
 	email EmailProvider,
 	company CompanyProvider,
 	role RoleProvider,
+	department DepartmentProvider,
 	master MasterProvider,
 	transaction infrastructure.TransactionManager,
 ) Service {
-	return &service{repo, notification, user, email, company, role, master, transaction}
+	return &service{repo, notification, user, email, company, role, department, master, transaction}
 }
 
 // ── Templates ─────────────────────────────────────────────────────────────────
@@ -357,7 +359,7 @@ func (s *service) CompleteTask(ctx context.Context, taskID uint, completedByID u
 				return err
 			}
 
-			department, err := s.master.FindDepartmentByName(ctx, "Umum")
+			department, err := s.department.FindByName(ctx, "Umum")
 			if err != nil {
 				return err
 			}

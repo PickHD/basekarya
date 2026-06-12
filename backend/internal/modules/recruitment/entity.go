@@ -3,7 +3,7 @@ package recruitment
 import (
 	"time"
 
-	"basekarya-backend/internal/modules/master"
+	"basekarya-backend/internal/modules/department"
 	"basekarya-backend/internal/modules/user"
 
 	"gorm.io/gorm"
@@ -33,7 +33,7 @@ type JobRequisition struct {
 	// Relations
 	Requester  *user.User         `gorm:"foreignKey:RequesterID;references:ID" json:"requester,omitempty"`
 	Approver   *user.User         `gorm:"foreignKey:ApprovedBy;references:ID" json:"approver,omitempty"`
-	Department *master.Department `gorm:"foreignKey:DepartmentID;references:ID" json:"department,omitempty"`
+	Department *department.Department `gorm:"foreignKey:DepartmentID;references:ID" json:"department,omitempty"`
 	Applicants []Applicant        `gorm:"foreignKey:JobRequisitionID;references:ID" json:"applicants,omitempty"`
 }
 

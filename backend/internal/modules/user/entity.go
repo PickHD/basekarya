@@ -1,6 +1,7 @@
 package user
 
 import (
+	"basekarya-backend/internal/modules/department"
 	"basekarya-backend/internal/modules/master"
 	"basekarya-backend/internal/modules/rbac"
 	"time"
@@ -45,6 +46,6 @@ type Employee struct {
 
 	User User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 
-	Department *master.Department `gorm:"foreignKey:DepartmentID" json:"department,omitempty"`
+	Department *department.Department `gorm:"foreignKey:DepartmentID" json:"department,omitempty"`
 	Shift      *master.Shift      `gorm:"foreignKey:ShiftID" json:"shift,omitempty"`
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"basekarya-backend/internal/modules/company"
+	"basekarya-backend/internal/modules/department"
 	"basekarya-backend/internal/modules/master"
 	"basekarya-backend/internal/modules/rbac"
 	"basekarya-backend/internal/modules/user"
@@ -55,7 +56,7 @@ func TestService_CreateTemplate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _, _, _, _ := newTestOnboardingService()
+			svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
 			tt.setupMocks(repo)
 
 			err := svc.CreateTemplate(ctx, tt.req)
@@ -107,7 +108,7 @@ func TestService_GetTemplates(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _, _, _, _ := newTestOnboardingService()
+			svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
 			tt.setupMocks(repo)
 
 			result, err := svc.GetTemplates(testutil.CtxWithTenant(1, 1, false))
@@ -155,7 +156,7 @@ func TestService_GetTemplateByID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _, _, _, _ := newTestOnboardingService()
+			svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
 			tt.setupMocks(repo)
 
 			result, err := svc.GetTemplateByID(testutil.CtxWithTenant(1, 1, false), tt.id)
@@ -227,7 +228,7 @@ func TestService_UpdateTemplate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _, _, _, _ := newTestOnboardingService()
+			svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
 			tt.setupMocks(repo)
 
 			err := svc.UpdateTemplate(ctx, tt.id, tt.req)
@@ -284,7 +285,7 @@ func TestService_DeleteTemplate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _, _, _, _ := newTestOnboardingService()
+			svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
 			tt.setupMocks(repo)
 
 			err := svc.DeleteTemplate(ctx, tt.id)
@@ -349,7 +350,7 @@ func TestService_CreateWorkflow(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, userProv, emailProv, companyProv, _, _, _ := newTestOnboardingService()
+			svc, repo, _, userProv, emailProv, companyProv, _, _, _, _ := newTestOnboardingService()
 			tt.setupMocks(repo, userProv, emailProv, companyProv)
 
 			err := svc.CreateWorkflow(ctx, tt.req)
@@ -412,7 +413,7 @@ func TestService_GetWorkflows(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _, _, _, _ := newTestOnboardingService()
+			svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
 			tt.setupMocks(repo)
 
 			result, meta, err := svc.GetWorkflows(testutil.CtxWithTenant(1, 1, false), tt.filter)
@@ -470,7 +471,7 @@ func TestService_GetWorkflowDetail(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _, _, _, _ := newTestOnboardingService()
+			svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
 			tt.setupMocks(repo)
 
 			result, err := svc.GetWorkflowDetail(testutil.CtxWithTenant(1, 1, false), tt.id)
@@ -498,7 +499,7 @@ func TestService_CompleteTask(t *testing.T) {
 		taskID     uint
 		userID     uint
 		req        *CompleteTaskRequest
-		setupMocks func(*mockRepo, *mockRoleProvider, *mockMasterProvider, *mockUserProvider)
+		setupMocks func(*mockRepo, *mockRoleProvider, *mockMasterProvider, *mockDepartmentProvider, *mockUserProvider)
 		wantErr    bool
 		errMsg     string
 	}{
@@ -507,7 +508,7 @@ func TestService_CompleteTask(t *testing.T) {
 			taskID: 1,
 			userID: 1,
 			req:    &CompleteTaskRequest{Notes: "Done"},
-			setupMocks: func(repo *mockRepo, roleProv *mockRoleProvider, masterProv *mockMasterProvider, userProv *mockUserProvider) {
+			setupMocks: func(repo *mockRepo, roleProv *mockRoleProvider, masterProv *mockMasterProvider, deptProv *mockDepartmentProvider, userProv *mockUserProvider) {
 				repo.On("FindTaskByID", mock.Anything, uint(1)).Return(&OnboardingTask{
 					ID:                   1,
 					OnboardingWorkflowID: 1,
@@ -523,7 +524,7 @@ func TestService_CompleteTask(t *testing.T) {
 			taskID: 1,
 			userID: 1,
 			req:    &CompleteTaskRequest{Notes: "Final task"},
-			setupMocks: func(repo *mockRepo, roleProv *mockRoleProvider, masterProv *mockMasterProvider, userProv *mockUserProvider) {
+			setupMocks: func(repo *mockRepo, roleProv *mockRoleProvider, masterProv *mockMasterProvider, deptProv *mockDepartmentProvider, userProv *mockUserProvider) {
 				repo.On("FindTaskByID", mock.Anything, uint(1)).Return(&OnboardingTask{
 					ID:                   1,
 					OnboardingWorkflowID: 1,
@@ -536,7 +537,7 @@ func TestService_CompleteTask(t *testing.T) {
 					ID: 1, NewHireName: "Jane Smith", NewHireEmail: "jane@example.com", Position: "Dev",
 				}, nil)
 				roleProv.On("FindRoleByName", mock.Anything, "EMPLOYEE").Return(&rbac.Role{ID: 2}, nil)
-				masterProv.On("FindDepartmentByName", mock.Anything, "Umum").Return(&master.Department{ID: 1}, nil)
+				deptProv.On("FindByName", mock.Anything, "Umum").Return(&department.Department{ID: 1}, nil)
 				masterProv.On("FindShiftByName", mock.Anything, "Regular").Return(&master.Shift{ID: 1}, nil)
 				userProv.On("CreateEmployee", mock.Anything, mock.AnythingOfType("*user.CreateEmployeeRequest")).Return(&user.CreateEmployeeResponse{Username: "janesmith"}, nil)
 			},
@@ -547,7 +548,7 @@ func TestService_CompleteTask(t *testing.T) {
 			taskID: 999,
 			userID: 1,
 			req:    &CompleteTaskRequest{Notes: ""},
-			setupMocks: func(repo *mockRepo, roleProv *mockRoleProvider, masterProv *mockMasterProvider, userProv *mockUserProvider) {
+			setupMocks: func(repo *mockRepo, roleProv *mockRoleProvider, masterProv *mockMasterProvider, deptProv *mockDepartmentProvider, userProv *mockUserProvider) {
 				repo.On("FindTaskByID", mock.Anything, uint(999)).Return(nil, errors.New("not found"))
 			},
 			wantErr: true,
@@ -558,7 +559,7 @@ func TestService_CompleteTask(t *testing.T) {
 			taskID: 1,
 			userID: 1,
 			req:    &CompleteTaskRequest{Notes: ""},
-			setupMocks: func(repo *mockRepo, roleProv *mockRoleProvider, masterProv *mockMasterProvider, userProv *mockUserProvider) {
+			setupMocks: func(repo *mockRepo, roleProv *mockRoleProvider, masterProv *mockMasterProvider, deptProv *mockDepartmentProvider, userProv *mockUserProvider) {
 				repo.On("FindTaskByID", mock.Anything, uint(1)).Return(&OnboardingTask{
 					ID:          1,
 					IsCompleted: true,
@@ -572,7 +573,7 @@ func TestService_CompleteTask(t *testing.T) {
 			taskID: 1,
 			userID: 1,
 			req:    &CompleteTaskRequest{Notes: "Done"},
-			setupMocks: func(repo *mockRepo, roleProv *mockRoleProvider, masterProv *mockMasterProvider, userProv *mockUserProvider) {
+			setupMocks: func(repo *mockRepo, roleProv *mockRoleProvider, masterProv *mockMasterProvider, deptProv *mockDepartmentProvider, userProv *mockUserProvider) {
 				repo.On("FindTaskByID", mock.Anything, uint(1)).Return(&OnboardingTask{
 					ID:                   1,
 					OnboardingWorkflowID: 1,
@@ -588,7 +589,7 @@ func TestService_CompleteTask(t *testing.T) {
 			taskID: 1,
 			userID: 1,
 			req:    &CompleteTaskRequest{Notes: "Done"},
-			setupMocks: func(repo *mockRepo, roleProv *mockRoleProvider, masterProv *mockMasterProvider, userProv *mockUserProvider) {
+			setupMocks: func(repo *mockRepo, roleProv *mockRoleProvider, masterProv *mockMasterProvider, deptProv *mockDepartmentProvider, userProv *mockUserProvider) {
 				repo.On("FindTaskByID", mock.Anything, uint(1)).Return(&OnboardingTask{
 					ID:                   1,
 					OnboardingWorkflowID: 1,
@@ -606,7 +607,7 @@ func TestService_CompleteTask(t *testing.T) {
 			taskID: 1,
 			userID: 1,
 			req:    &CompleteTaskRequest{Notes: "Done"},
-			setupMocks: func(repo *mockRepo, roleProv *mockRoleProvider, masterProv *mockMasterProvider, userProv *mockUserProvider) {
+			setupMocks: func(repo *mockRepo, roleProv *mockRoleProvider, masterProv *mockMasterProvider, deptProv *mockDepartmentProvider, userProv *mockUserProvider) {
 				repo.On("FindTaskByID", mock.Anything, uint(1)).Return(&OnboardingTask{
 					ID:                   1,
 					OnboardingWorkflowID: 1,
@@ -627,8 +628,8 @@ func TestService_CompleteTask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, userProv, _, _, roleProv, masterProv, _ := newTestOnboardingService()
-			tt.setupMocks(repo, roleProv, masterProv, userProv)
+			svc, repo, _, userProv, _, _, roleProv, deptProv, masterProv, _ := newTestOnboardingService()
+			tt.setupMocks(repo, roleProv, masterProv, deptProv, userProv)
 
 			err := svc.CompleteTask(ctx, tt.taskID, tt.userID, tt.req)
 
@@ -643,7 +644,7 @@ func TestService_CompleteTask(t *testing.T) {
 }
 
 func TestService_GetWorkflows_ProgressCalculation(t *testing.T) {
-	svc, repo, _, _, _, _, _, _, _ := newTestOnboardingService()
+	svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
 
 	repo.On("FindAllWorkflows", mock.Anything, mock.AnythingOfType("*onboarding.WorkflowFilter")).Return(
 		[]OnboardingWorkflow{
@@ -663,7 +664,7 @@ func TestService_GetWorkflows_ProgressCalculation(t *testing.T) {
 }
 
 func TestService_GetWorkflowDetail_ProgressZeroTasks(t *testing.T) {
-	svc, repo, _, _, _, _, _, _, _ := newTestOnboardingService()
+	svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
 
 	repo.On("FindWorkflowByID", mock.Anything, uint(1)).Return(&OnboardingWorkflow{
 		ID: 1, NewHireName: "Jane", Status: WorkflowStatusInProgress,
@@ -684,7 +685,7 @@ func uintPtr(v uint) *uint {
 }
 
 func TestService_GetWorkflows_PaginationDefaults(t *testing.T) {
-	svc, repo, _, _, _, _, _, _, _ := newTestOnboardingService()
+	svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
 
 	repo.On("FindAllWorkflows", mock.Anything, mock.AnythingOfType("*onboarding.WorkflowFilter")).Return(
 		[]OnboardingWorkflow{}, int64(0), nil)
@@ -699,7 +700,7 @@ func TestService_GetWorkflows_PaginationDefaults(t *testing.T) {
 }
 
 func TestService_GetWorkflows_MetaResponse(t *testing.T) {
-	svc, repo, _, _, _, _, _, _, _ := newTestOnboardingService()
+	svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
 
 	repo.On("FindAllWorkflows", mock.Anything, mock.AnythingOfType("*onboarding.WorkflowFilter")).Return(
 		[]OnboardingWorkflow{

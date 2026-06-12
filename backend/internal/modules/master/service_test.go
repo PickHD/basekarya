@@ -1,7 +1,6 @@
 package master
 
 import (
-	"errors"
 	"testing"
 
 	"basekarya-backend/internal/testutil"
@@ -11,58 +10,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
-
-func TestService_GetAllDepartments(t *testing.T) {
-	ctx := testutil.CtxWithTenant(1, 1, false)
-
-	tests := []struct {
-		name       string
-		setupMocks func(*mockRepo, *mockCacheProvider)
-		wantErr    bool
-	}{
-		{
-			name: "from db on cache miss",
-			setupMocks: func(repo *mockRepo, cache *mockCacheProvider) {
-				cache.On("Get", mock.Anything, mock.AnythingOfType("string")).Return("", redis.Nil)
-				repo.On("FindAllDepartments", mock.Anything).Return([]Department{
-					{ID: 1, Name: "Engineering"},
-				}, nil)
-				cache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
-			},
-			wantErr: false,
-		},
-		{
-			name: "from cache",
-			setupMocks: func(repo *mockRepo, cache *mockCacheProvider) {
-				cache.On("Get", mock.Anything, mock.AnythingOfType("string")).Return(`[{"id":1,"name":"Engineering"}]`, nil)
-			},
-			wantErr: false,
-		},
-		{
-			name: "repo error",
-			setupMocks: func(repo *mockRepo, cache *mockCacheProvider) {
-				cache.On("Get", mock.Anything, mock.AnythingOfType("string")).Return("", redis.Nil)
-				repo.On("FindAllDepartments", mock.Anything).Return([]Department(nil), errors.New("db error"))
-			},
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, cache := newTestMasterService()
-			tt.setupMocks(repo, cache)
-
-			_, err := svc.GetAllDepartments(ctx)
-
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
 
 func TestService_GetAllShifts(t *testing.T) {
 	ctx := testutil.CtxWithTenant(1, 1, false)

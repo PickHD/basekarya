@@ -10,6 +10,7 @@ import (
 	"basekarya-backend/internal/modules/auth"
 	"basekarya-backend/internal/modules/company"
 	"basekarya-backend/internal/modules/contract"
+	"basekarya-backend/internal/modules/department"
 	"basekarya-backend/internal/modules/finance"
 	"basekarya-backend/internal/modules/health"
 	"basekarya-backend/internal/modules/leave"
@@ -53,6 +54,7 @@ type Container struct {
 	RbacHandler          *rbac.Handler
 	AnnouncementHandler  *announcement.Handler
 	ContractHandler      *contract.Handler
+	DepartmentHandler    *department.Handler
 	RecruitmentHandler   *recruitment.Handler
 	OnboardingHandler    *onboarding.Handler
 	FinanceHandler       *finance.Handler
@@ -91,6 +93,7 @@ func NewContainer() (*Container, error) {
 	userRepo := user.NewRepository(db.GetDB())
 	attendanceRepo := attendance.NewRepository(db.GetDB())
 	masterRepo := master.NewRepository(db.GetDB())
+	departmentRepo := department.NewRepository(db.GetDB())
 	reimburseRepo := reimbursement.NewRepository(db.GetDB())
 	payrollRepo := payroll.NewRepository(db.GetDB())
 	leaveRepo := leave.NewRepository(db.GetDB())
@@ -112,6 +115,7 @@ func NewContainer() (*Container, error) {
 	authSvc := auth.NewService(userRepo, bcrypt, jwt, redis, email, companyRepo, rbacRepo, masterRepo)
 	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeWorker, transactionManager, excel)
 	masterSvc := master.NewService(masterRepo, redis)
+	departmentSvc := department.NewService(departmentRepo, redis)
 	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo, notificationSvc, transactionManager, httpClient.GetClient(), email, loanRepo, overtimeRepo)
 	leaveSvc := leave.NewService(leaveRepo, storage, notificationSvc, userRepo, transactionManager, excel)
 	userSvc := user.NewService(userRepo, bcrypt, storage, redis, leaveSvc, transactionManager, subscriptionMW, email)
@@ -122,7 +126,7 @@ func NewContainer() (*Container, error) {
 	rbacSvc := rbac.NewService(rbacRepo, redis, companyRepo, transactionManager)
 	announcementSvc := announcement.NewService(userRepo, notificationSvc)
 	contractSvc := contract.NewService(contractRepo, storage, notificationSvc, userRepo, excel)
-	onboardingSvc := onboarding.NewService(onboardingRepo, notificationSvc, userSvc, email, companyRepo, rbacRepo, masterRepo, transactionManager)
+	onboardingSvc := onboarding.NewService(onboardingRepo, notificationSvc, userSvc, email, companyRepo, rbacRepo, departmentRepo, masterRepo, transactionManager)
 	recruitmentSvc := recruitment.NewService(recruitmentRepo, storage, notificationSvc, userRepo, onboardingSvc, transactionManager)
 	astSvc := asset.NewService(astRepo, notificationSvc, userRepo, transactionManager, excel)
 	financeSvc := finance.NewService(financeRepo, notificationSvc, userRepo, transactionManager, excel)
@@ -133,6 +137,7 @@ func NewContainer() (*Container, error) {
 	userHandler := user.NewHandler(userSvc)
 	attendanceHandler := attendance.NewHandler(attendanceSvc)
 	masterHandler := master.NewHandler(masterSvc)
+	departmentHandler := department.NewHandler(departmentSvc)
 	reimburseHandler := reimbursement.NewHandler(reimburseSvc)
 	payrollHandler := payroll.NewHandler(payrollSvc)
 	leaveHandler := leave.NewHandler(leaveSvc)
@@ -184,6 +189,7 @@ func NewContainer() (*Container, error) {
 		RbacHandler:          rbacHandler,
 		AnnouncementHandler:  announcementHandler,
 		ContractHandler:      contractHandler,
+		DepartmentHandler:    departmentHandler,
 		RecruitmentHandler:   recruitmentHandler,
 		OnboardingHandler:    onboardingHandler,
 		FinanceHandler:       financeHandler,

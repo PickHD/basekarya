@@ -19,6 +19,7 @@ import {
   Crown,
   Building2,
   Package,
+  Building,
 } from "lucide-react";
 import type { MenuItem } from "./types";
 import { PERMISSIONS } from "./permissions";
@@ -171,6 +172,14 @@ export const menuItems: MenuItem[] = [
     href: "/admin/company-settings",
     icon: Settings,
     permission: PERMISSIONS.VIEW_COMPANY,
+    group: "Pengaturan",
+    hideForPlatformAdmin: true,
+  },
+  {
+    title: "Departments",
+    href: "/admin/departments",
+    icon: Building,
+    permission: PERMISSIONS.VIEW_MASTER,
     group: "Pengaturan",
     hideForPlatformAdmin: true,
   },

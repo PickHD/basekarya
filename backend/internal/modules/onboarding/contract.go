@@ -2,6 +2,7 @@ package onboarding
 
 import (
 	"basekarya-backend/internal/modules/company"
+	"basekarya-backend/internal/modules/department"
 	"basekarya-backend/internal/modules/master"
 	"basekarya-backend/internal/modules/rbac"
 	"basekarya-backend/internal/modules/user"
@@ -35,7 +36,10 @@ type RoleProvider interface {
 	FindRoleByName(ctx context.Context, name string) (*rbac.Role, error)
 }
 
+type DepartmentProvider interface {
+	FindByName(ctx context.Context, name string) (*department.Department, error)
+}
+
 type MasterProvider interface {
-	FindDepartmentByName(ctx context.Context, name string) (*master.Department, error)
 	FindShiftByName(ctx context.Context, name string) (*master.Shift, error)
 }

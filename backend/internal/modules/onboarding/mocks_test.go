@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"basekarya-backend/internal/modules/company"
+	"basekarya-backend/internal/modules/department"
 	"basekarya-backend/internal/modules/master"
 	"basekarya-backend/internal/modules/rbac"
 	"basekarya-backend/internal/modules/user"
@@ -157,15 +158,17 @@ func (m *mockRoleProvider) FindRoleByName(ctx context.Context, name string) (*rb
 	return args.Get(0).(*rbac.Role), args.Error(1)
 }
 
-type mockMasterProvider struct{ mock.Mock }
+type mockDepartmentProvider struct{ mock.Mock }
 
-func (m *mockMasterProvider) FindDepartmentByName(ctx context.Context, name string) (*master.Department, error) {
+func (m *mockDepartmentProvider) FindByName(ctx context.Context, name string) (*department.Department, error) {
 	args := m.Called(ctx, name)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*master.Department), args.Error(1)
+	return args.Get(0).(*department.Department), args.Error(1)
 }
+
+type mockMasterProvider struct{ mock.Mock }
 
 func (m *mockMasterProvider) FindShiftByName(ctx context.Context, name string) (*master.Shift, error) {
 	args := m.Called(ctx, name)
@@ -233,18 +236,19 @@ func (m *mockService) CompleteTask(ctx context.Context, taskID uint, completedBy
 	return m.Called(ctx, taskID, completedByID, req).Error(0)
 }
 
-func newTestOnboardingService() (Service, *mockRepo, *mockNotificationProvider, *mockUserProvider, *mockEmailProvider, *mockCompanyProvider, *mockRoleProvider, *mockMasterProvider, *testutil.MockTransactionManager) {
+func newTestOnboardingService() (Service, *mockRepo, *mockNotificationProvider, *mockUserProvider, *mockEmailProvider, *mockCompanyProvider, *mockRoleProvider, *mockDepartmentProvider, *mockMasterProvider, *testutil.MockTransactionManager) {
 	repo := new(mockRepo)
 	notif := new(mockNotificationProvider)
 	userProv := new(mockUserProvider)
 	emailProv := new(mockEmailProvider)
 	companyProv := new(mockCompanyProvider)
 	roleProv := new(mockRoleProvider)
+	deptProv := new(mockDepartmentProvider)
 	masterProv := new(mockMasterProvider)
 	tm := testutil.NewMockTransactionManager()
 
-	svc := NewService(repo, notif, userProv, emailProv, companyProv, roleProv, masterProv, tm)
-	return svc, repo, notif, userProv, emailProv, companyProv, roleProv, masterProv, tm
+	svc := NewService(repo, notif, userProv, emailProv, companyProv, roleProv, deptProv, masterProv, tm)
+	return svc, repo, notif, userProv, emailProv, companyProv, roleProv, deptProv, masterProv, tm
 }
 
 var _ company.StorageProvider = (*companyMockStorage)(nil)
