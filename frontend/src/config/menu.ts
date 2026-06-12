@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Crown,
   Building2,
+  Package,
 } from "lucide-react";
 import type { MenuItem } from "./types";
 import { PERMISSIONS } from "./permissions";
@@ -72,6 +73,15 @@ export const menuItems: MenuItem[] = [
     permission: [PERMISSIONS.VIEW_LOAN, PERMISSIONS.VIEW_SELF_LOAN],
     group: "Pengajuan",
     hideForPlatformAdmin: true,
+  },
+  {
+    title: "Asset Management",
+    href: "/assets",
+    icon: Package,
+    permission: [PERMISSIONS.VIEW_ASSET, PERMISSIONS.VIEW_SELF_ASSET],
+    group: "Pengajuan",
+    hideForPlatformAdmin: true,
+    requiredModule: "asset",
   },
   {
     title: "Reimbursement",

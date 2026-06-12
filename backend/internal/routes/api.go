@@ -70,6 +70,7 @@ func (r *Router) setupRoutes() {
 	r.SetupRecruitmentRoutes(protected.Group("/recruitments"), r.container.SubscriptionMiddleware)
 	r.SetupOnboardingRoutes(protected.Group("/onboarding"), r.container.SubscriptionMiddleware)
 	r.SetupFinanceRoutes(protected.Group("/finances"), r.container.SubscriptionMiddleware)
+	r.SetupAssetRoutes(protected.Group("/assets"), r.container.SubscriptionMiddleware)
 	r.SetupSubscriptionRoutes(protected.Group("/subscriptions"))
 	r.SetupSubscriptionAdminRoutes(protected.Group("/admin/subscriptions"))
 }

@@ -1,0 +1,235 @@
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2 } from "lucide-react";
+import { AssetAssignmentStatusBadge } from "./StatusBadge";
+import {
+  useAssetAssignment,
+  useAssetAssignmentAction,
+  useReturnAssetAssignment,
+} from "@/features/asset/hooks/useAsset";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PERMISSIONS } from "@/config/permissions";
+import type { AssetAssignmentDetailDialogProps } from "@/features/asset/types";
+
+export function AssetAssignmentDetailDialog({
+  open,
+  onOpenChange,
+  assignmentId,
+}: AssetAssignmentDetailDialogProps) {
+  const { data, isLoading } = useAssetAssignment(assignmentId?.toString() || "");
+  const { mutate: actionMutate, isPending: isActioning } = useAssetAssignmentAction();
+  const { mutate: returnMutate, isPending: isReturning } = useReturnAssetAssignment();
+  const { hasPermission } = usePermissions();
+
+  const [actionType, setActionType] = useState<"APPROVE" | "REJECT" | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+  const canApprove = hasPermission(PERMISSIONS.APPROVAL_ASSET);
+  const isPendingStatus = data?.status === "PENDING";
+  const isActiveStatus = data?.status === "ACTIVE";
+
+  const handleOpenChangeWrapper = (isOpen: boolean) => {
+    onOpenChange(isOpen);
+    if (!isOpen) {
+      setTimeout(() => {
+        setRejectionReason("");
+        setActionType(null);
+        setIsConfirmOpen(false);
+      }, 300);
+    }
+  };
+
+  const handleInitiateAction = (type: "APPROVE" | "REJECT") => {
+    setActionType(type);
+    setRejectionReason("");
+    setIsConfirmOpen(true);
+  };
+
+  const handleConfirmAction = () => {
+    if (!data || !actionType) return;
+    if (actionType === "REJECT" && !rejectionReason.trim()) return;
+
+    actionMutate(
+      { id: data.id, action: actionType, rejection_reason: rejectionReason },
+      {
+        onSuccess: () => {
+          setIsConfirmOpen(false);
+          onOpenChange(false);
+        },
+      }
+    );
+  };
+
+  const handleReturn = () => {
+    if (!data) return;
+    returnMutate(data.id, {
+      onSuccess: () => {
+        onOpenChange(false);
+      },
+    });
+  };
+
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("id-ID", { dateStyle: "full" });
+  };
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChangeWrapper}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex justify-between items-center pr-8">
+              <span>Detail Permintaan Aset</span>
+              {data && <AssetAssignmentStatusBadge status={data.status} />}
+            </DialogTitle>
+            <DialogDescription>ID Request: #{assignmentId}</DialogDescription>
+          </DialogHeader>
+
+          {isLoading ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            </div>
+          ) : data ? (
+            <div className="grid gap-6 py-4">
+              <div className="bg-slate-50 p-4 rounded-lg border flex justify-between items-start">
+                <div>
+                  <h3 className="font-bold text-lg text-slate-900">
+                    {data.employee_name || "Karyawan"}
+                  </h3>
+                  <p className="text-sm text-slate-500">NIK: {data.employee_nik || "-"}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-slate-500 mb-1">Aset</p>
+                  <p className="text-lg font-bold text-blue-600">{data.asset_name || "-"}</p>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-sm font-medium text-slate-500">Tanggal Pengajuan</span>
+                    <p className="text-sm font-medium">{formatDate(data.created_at)}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-slate-500">Tujuan Penggunaan</span>
+                    <p className="text-sm">{data.purpose || "-"}</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-sm font-medium text-slate-500">Estimasi Kembali</span>
+                    <p className="text-sm font-medium">{formatDate(data.expected_return_date)}</p>
+                  </div>
+                  {data.actual_return_date && (
+                    <div>
+                      <span className="text-sm font-medium text-slate-500">Tanggal Dikembalikan</span>
+                      <p className="text-sm font-medium text-green-600">{formatDate(data.actual_return_date)}</p>
+                    </div>
+                  )}
+                  {data.rejection_reason && (
+                    <div className="bg-red-50 p-3 rounded border border-red-200">
+                      <span className="text-sm font-bold text-red-700 block">Alasan Penolakan:</span>
+                      <p className="text-sm text-red-600">{data.rejection_reason}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="py-10 text-center text-slate-500">Data tidak ditemukan.</div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            {canApprove && isActiveStatus && (
+              <Button className="bg-green-600 hover:bg-green-700" onClick={handleReturn} disabled={isReturning}>
+                {isReturning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Kembalikan Aset
+              </Button>
+            )}
+            {canApprove && isPendingStatus && (
+              <>
+                <Button variant="destructive" onClick={() => handleInitiateAction("REJECT")} disabled={isActioning}>
+                  Tolak Permintaan
+                </Button>
+                <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleInitiateAction("APPROVE")} disabled={isActioning}>
+                  Setujui Permintaan
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {actionType === "APPROVE" ? "Setujui Permintaan?" : "Tolak Permintaan?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {actionType === "APPROVE"
+                ? "Apakah Anda yakin ingin menyetujui permintaan aset ini?"
+                : "Harap berikan alasan penolakan agar karyawan dapat memperbaikinya."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {actionType === "REJECT" && (
+            <div className="py-2 space-y-2">
+              <Label htmlFor="reason" className="text-sm font-medium">
+                Alasan Penolakan <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="reason"
+                placeholder="Contoh: Aset sedang tidak tersedia"
+                value={rejectionReason}
+                onChange={(e: any) => setRejectionReason(e.target.value)}
+                className="resize-none"
+              />
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isActioning}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmAction();
+              }}
+              disabled={isActioning || (actionType === "REJECT" && !rejectionReason.trim())}
+              className={
+                actionType === "REJECT"
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-green-600 hover:bg-green-700"
+              }
+            >
+              {isActioning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {actionType === "APPROVE" ? "Ya, Setujui" : "Tolak Permintaan"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
