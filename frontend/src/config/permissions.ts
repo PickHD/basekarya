@@ -7,6 +7,7 @@ export const PERMISSIONS = {
 
   // master
   VIEW_MASTER: "VIEW_MASTER",
+  MANAGE_MASTER: "MANAGE_MASTER",
 
   // employee
   VIEW_EMPLOYEE: "VIEW_EMPLOYEE",

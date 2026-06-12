@@ -10,7 +10,6 @@ import (
 )
 
 type Service interface {
-	GetAllDepartments(ctx context.Context) ([]LookupResponse, error)
 	GetAllShifts(ctx context.Context) ([]LookupResponse, error)
 	GetAllLeaveTypes(ctx context.Context) ([]LookupLeaveTypeResponse, error)
 }
@@ -22,46 +21,6 @@ type service struct {
 
 func NewService(repo Repository, cache CacheProvider) Service {
 	return &service{repo, cache}
-}
-
-func (s *service) GetAllDepartments(ctx context.Context) ([]LookupResponse, error) {
-	cacheData, err := s.cache.Get(context.Background(), constants.DEPARTMEN_CACHE_KEY)
-	if err == redis.Nil {
-		var results []LookupResponse
-		data, err := s.repo.FindAllDepartments(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, d := range data {
-			result := LookupResponse{
-				ID:   d.ID,
-				Name: d.Name,
-			}
-
-			results = append(results, result)
-		}
-
-		parsedData, err := json.Marshal(&results)
-		if err != nil {
-			return nil, err
-		}
-
-		err = s.cache.Set(context.Background(), constants.DEPARTMEN_CACHE_KEY, parsedData, 24*time.Hour)
-		if err != nil {
-			return nil, err
-		}
-
-		return results, nil
-	}
-
-	var results []LookupResponse
-	err = json.Unmarshal([]byte(cacheData), &results)
-	if err != nil {
-		return nil, err
-	}
-
-	return results, nil
 }
 
 func (s *service) GetAllShifts(ctx context.Context) ([]LookupResponse, error) {

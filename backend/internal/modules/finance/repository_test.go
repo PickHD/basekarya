@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"basekarya-backend/internal/modules/department"
 	"basekarya-backend/internal/modules/master"
 	"basekarya-backend/internal/modules/rbac"
 	"basekarya-backend/internal/modules/user"
@@ -31,7 +32,7 @@ func setupFinanceTestDB(t *testing.T) *testutil.TestDB {
 
 	err = db.AutoMigrate(
 		&rbac.Role{},
-		&master.Department{},
+		&department.Department{},
 		&master.Shift{},
 		&user.User{},
 		&user.Employee{},
@@ -75,7 +76,7 @@ func seedFinanceTestData(t *testing.T, db *testutil.TestDB) {
 	role := &rbac.Role{ID: 1, Name: "Admin", CompanyID: companyID}
 	require.NoError(t, db.DB.Create(role).Error)
 
-	dept := &master.Department{ID: 1, Name: "Engineering", CompanyID: companyID}
+	dept := &department.Department{ID: 1, Name: "Engineering", CompanyID: companyID}
 	require.NoError(t, db.DB.Create(dept).Error)
 
 	shift := &master.Shift{ID: 1, Name: "Day", StartTime: "09:00", EndTime: "17:00", CompanyID: companyID}

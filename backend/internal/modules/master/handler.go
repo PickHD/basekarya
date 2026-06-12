@@ -16,17 +16,6 @@ func NewHandler(service Service) *Handler {
 	return &Handler{service}
 }
 
-func (h *Handler) GetDepartments(ctx echo.Context) error {
-	resp, err := h.service.GetAllDepartments(ctx.Request().Context())
-	if err != nil {
-		logger.Errorw("get departments failed: ", err)
-
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
-	}
-
-	return response.NewResponses[any](ctx, http.StatusOK, "Get Departments Successfully", resp, nil, nil)
-}
-
 func (h *Handler) GetShifts(ctx echo.Context) error {
 	resp, err := h.service.GetAllShifts(ctx.Request().Context())
 	if err != nil {

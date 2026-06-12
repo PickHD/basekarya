@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"basekarya-backend/internal/modules/department"
 	"basekarya-backend/internal/modules/master"
 	"basekarya-backend/internal/modules/user"
 	"basekarya-backend/internal/testutil"
@@ -621,7 +622,7 @@ func TestService_GetAllRecap(t *testing.T) {
 						ID:          1,
 						CheckInTime: time.Now(),
 						Status:      string(constants.AttendanceStatusPresent),
-						Employee:    &user.Employee{FullName: "John", NIK: "001", Department: &master.Department{Name: "IT"}},
+						Employee:    &user.Employee{FullName: "John", NIK: "001", Department: &department.Department{Name: "IT"}},
 						Shift:       &master.Shift{Name: "Morning"},
 					},
 				}, nil, nil)
@@ -650,7 +651,7 @@ func TestService_GetAllRecap(t *testing.T) {
 						CheckInTime:  time.Now(),
 						CheckOutTime: &checkOut,
 						Status:       string(constants.AttendanceStatusPresent),
-						Employee:     &user.Employee{FullName: "Jane", NIK: "002", Department: &master.Department{Name: "HR"}},
+						Employee:     &user.Employee{FullName: "Jane", NIK: "002", Department: &department.Department{Name: "HR"}},
 						Shift:        &master.Shift{Name: "Morning"},
 					},
 				}, nil, nil)
@@ -709,7 +710,7 @@ func TestService_GenerateExcel(t *testing.T) {
 						CheckInTime:  time.Now(),
 						CheckOutTime: &checkOut,
 						Status:       string(constants.AttendanceStatusPresent),
-						Employee:     &user.Employee{FullName: "John", NIK: "001", Department: &master.Department{Name: "IT"}},
+						Employee:     &user.Employee{FullName: "John", NIK: "001", Department: &department.Department{Name: "IT"}},
 						Shift:        &master.Shift{Name: "Morning"},
 					},
 				}, nil, nil)
@@ -738,7 +739,7 @@ func TestService_GenerateExcel(t *testing.T) {
 						Date:        time.Now(),
 						CheckInTime: time.Now(),
 						Status:      "LEAVE",
-						Employee:    &user.Employee{FullName: "John", NIK: "001", Department: &master.Department{Name: "IT"}},
+						Employee:    &user.Employee{FullName: "John", NIK: "001", Department: &department.Department{Name: "IT"}},
 						Shift:       &master.Shift{Name: "Morning"},
 					},
 				}, nil, nil)
@@ -757,7 +758,7 @@ func TestService_GenerateExcel(t *testing.T) {
 						Date:        time.Now(),
 						CheckInTime: time.Now(),
 						Status:      "SICK",
-						Employee:    &user.Employee{FullName: "John", NIK: "001", Department: &master.Department{Name: "IT"}},
+						Employee:    &user.Employee{FullName: "John", NIK: "001", Department: &department.Department{Name: "IT"}},
 						Shift:       &master.Shift{Name: "Morning"},
 					},
 				}, nil, nil)

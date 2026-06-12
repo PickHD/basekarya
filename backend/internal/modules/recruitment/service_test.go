@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"basekarya-backend/internal/modules/master"
+	"basekarya-backend/internal/modules/department"
 	"basekarya-backend/internal/modules/user"
 	"basekarya-backend/internal/testutil"
 	"basekarya-backend/pkg/constants"
@@ -296,7 +296,7 @@ func TestService_GetRequisitions(t *testing.T) {
 					Return([]JobRequisition{
 						{ID: 1, Title: "Dev", Status: "DRAFT", RequesterID: 1,
 							Requester:  &user.User{Employee: &user.Employee{FullName: "John Doe"}},
-							Department: &master.Department{Name: "Engineering"}},
+							Department: &department.Department{Name: "Engineering"}},
 					}, int64(1), nil)
 			},
 			wantLen: 1,
@@ -373,7 +373,7 @@ func TestService_GetRequisitionDetail(t *testing.T) {
 					ID: 1, Title: "Dev", Status: "DRAFT", RequesterID: 1,
 					Requester:  &user.User{Employee: &user.Employee{FullName: "John Doe"}},
 					Approver:   &user.User{Employee: &user.Employee{FullName: "Admin"}},
-					Department: &master.Department{Name: "Engineering"},
+					Department: &department.Department{Name: "Engineering"},
 				}, nil)
 			},
 			wantErr: false,
@@ -635,14 +635,14 @@ func TestService_UpdateStage(t *testing.T) {
 					FullName: "Jane", Email: "jane@example.com", CompanyID: 1,
 					JobRequisition: &JobRequisition{
 						Title: "Dev", TargetDate: &targetDate,
-						Department: &master.Department{Name: "Engineering"},
+						Department: &department.Department{Name: "Engineering"},
 					},
 				}, nil)
 				repo.On("CountApplicantsByRequisitionAndStage", mock.Anything, uint(1), constants.ApplicantStageHired).Return(int64(0), nil)
 				repo.On("UpdateApplicantStage", mock.Anything, uint(1), constants.ApplicantStageHired, 0, "", "").Return(nil)
 				repo.On("FindRequisitionByID", mock.Anything, uint(1)).Return(&JobRequisition{
 					Title: "Dev", TargetDate: &targetDate,
-					Department: &master.Department{Name: "Engineering"},
+					Department: &department.Department{Name: "Engineering"},
 				}, nil)
 				onboard.On("CreateWorkflow", mock.Anything, mock.AnythingOfType("*onboarding.CreateWorkflowRequest")).Return(nil)
 				repo.On("CreateStageHistory", mock.Anything, mock.AnythingOfType("*recruitment.ApplicantStageHistory")).Return(nil)

@@ -9,14 +9,6 @@ import (
 
 type mockRepo struct{ mock.Mock }
 
-func (m *mockRepo) FindAllDepartments(ctx context.Context) ([]Department, error) {
-	args := m.Called(ctx)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]Department), args.Error(1)
-}
-
 func (m *mockRepo) FindAllShifts(ctx context.Context) ([]Shift, error) {
 	args := m.Called(ctx)
 	if args.Get(0) == nil {
@@ -31,14 +23,6 @@ func (m *mockRepo) FindAllLeaveTypes(ctx context.Context) ([]LeaveType, error) {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]LeaveType), args.Error(1)
-}
-
-func (m *mockRepo) FindDepartmentByName(ctx context.Context, name string) (*Department, error) {
-	args := m.Called(ctx, name)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*Department), args.Error(1)
 }
 
 func (m *mockRepo) FindShiftByName(ctx context.Context, name string) (*Shift, error) {
@@ -69,14 +53,6 @@ func (m *mockCacheProvider) Del(ctx context.Context, key string) error {
 }
 
 type mockService struct{ mock.Mock }
-
-func (m *mockService) GetAllDepartments(ctx context.Context) ([]LookupResponse, error) {
-	args := m.Called(ctx)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]LookupResponse), args.Error(1)
-}
 
 func (m *mockService) GetAllShifts(ctx context.Context) ([]LookupResponse, error) {
 	args := m.Called(ctx)

@@ -58,6 +58,7 @@ func (r *Router) setupRoutes() {
 	r.SetupLeaveRoutes(protected.Group("/leaves"))
 	r.SetupLoanRoutes(protected.Group("/loans"))
 	r.SetupMasterRoutes(protected.Group("/masters"))
+	r.SetupDepartmentRoutes(protected.Group("/departments"))
 	r.SetupNotificationRoutes(protected.Group("/notifications"))
 	r.SetupOvertimeRoutes(protected.Group("/overtimes"))
 	r.SetupPayrollRoutes(protected.Group("/payrolls"), r.container.SubscriptionMiddleware)

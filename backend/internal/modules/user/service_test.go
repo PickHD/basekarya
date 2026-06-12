@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"basekarya-backend/internal/modules/department"
 	"basekarya-backend/internal/modules/master"
 	"basekarya-backend/internal/modules/rbac"
 	"basekarya-backend/internal/testutil"
@@ -50,7 +51,7 @@ func TestService_GetProfile(t *testing.T) {
 					Employee: &Employee{
 						FullName: "Jane Doe",
 						NIK:      "EMP002",
-						Department: &master.Department{Name: "Engineering"},
+						Department: &department.Department{Name: "Engineering"},
 						Shift:      &master.Shift{Name: "Day", StartTime: "09:00", EndTime: "17:00"},
 					},
 				}, nil)
@@ -369,7 +370,7 @@ func TestService_GetAllEmployees(t *testing.T) {
 						Role:     &rbac.Role{ID: 1, Name: "EMPLOYEE"},
 						Employee: &Employee{
 							ID: 1, FullName: "John Doe", NIK: "EMP001",
-							Department: &master.Department{Name: "Engineering"},
+							Department: &department.Department{Name: "Engineering"},
 							Shift:      &master.Shift{Name: "Day"},
 							BaseSalary: 5000000,
 							Email:      "john@example.com",
