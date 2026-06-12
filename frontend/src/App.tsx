@@ -20,6 +20,7 @@ import AttendanceHistoryPage from "@/pages/dashboard/AttendanceHistoryPage";
 import ReimbursementListPage from "@/pages/reimbursement/ReimbursementListPage";
 import LoanListPage from "@/pages/loan/LoanListPage";
 import OvertimeListPage from "@/pages/overtime/OvertimeListPage";
+import AssetsListPage from "@/pages/asset/AssetsListPage";
 import FinancePage from "@/pages/finance/FinancePage";
 import FinanceDashboardPage from "@/pages/finance/FinanceDashboardPage";
 
@@ -128,6 +129,12 @@ function App() {
           <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.VIEW_LEAVE, PERMISSIONS.VIEW_SELF_LEAVE]} />}>
             <Route path="leave">
               <Route index element={<LeaveListPage />} />
+            </Route>
+          </Route>
+
+          <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.VIEW_ASSET, PERMISSIONS.VIEW_SELF_ASSET]} />}>
+            <Route path="assets">
+              <Route index element={<AssetsListPage />} />
             </Route>
           </Route>
 
