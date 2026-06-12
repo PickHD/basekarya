@@ -81,14 +81,14 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 			lateMinute = int(diff.Minutes())
 		}
 
-		earliersAllowed := shiftStartToday.Add(-2 * time.Hour)
-		if now.Before(earliersAllowed) {
-			return errors.New("cannot check-in, too early")
-		}
-
 		todayAtt, err := s.repo.GetTodayAttendance(ctx, employee.ID)
 		// if today no data, its check-in of that employee
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			earliersAllowed := shiftStartToday.Add(-2 * time.Hour)
+			if now.Before(earliersAllowed) {
+				return errors.New("cannot check-in, too early")
+			}
+
 			// calculate status is LATE or PRESENT
 			lateThreshold := shiftStartToday.Add(15 * time.Minute)
 			status := string(constants.AttendanceStatusPresent)
