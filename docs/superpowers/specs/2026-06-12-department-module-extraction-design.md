@@ -82,12 +82,18 @@ New `department/` module gets `service_test.go`, `handler_test.go`, `repository_
 
 Master tests are stripped of all department test cases.
 
+### Seeder Changes
+
+Remove the hardcoded `"Umum"` department seed from `internal/seeder/execute.go`:
+- Delete lines 55-58 in `seedMasterData()` — the `master.Department{Name: "Umum", CompanyID: 1}` block
+- Keep shift and leave type seeding intact
+- Employee seed data that references department names (lines 254-299) stays — those are just string fields
+
 ### What Does NOT Change
 
 - No DB schema changes — `ref_departments` table stays as-is
 - No migration files
 - No new permission constants
-- No seeder changes
 - No changes to other consumer modules (attendance, payroll, etc.)
 
 ## Change Summary
@@ -98,4 +104,5 @@ Master tests are stripped of all department test cases.
 | Routes | `routes/department.go` | `routes/master.go`, `routes/api.go` | 5 department endpoints |
 | Container | — | `container.go` (repo, svc, handler wiring) | — |
 | Consumers | — | `auth` (remove dept from seed), `onboarding` (new dep provider) | Cross-module refs to master departments |
+| Seeder | — | `execute.go` (remove dept seed) | — |
 | Frontend | — | Consolidate `useDepartments`, update URLs | — |
