@@ -44,7 +44,10 @@ func (s *PlanCacheService) HasAccess(ctx context.Context, companyID uint, module
 		Joins("JOIN companies ON companies.subscription_plan_id = subscription_plans.id").
 		Where("companies.id = ?", companyID).
 		Scan(&dbJSON).Error
-	if err != nil || dbJSON == "" {
+	if err != nil {
+		return false, fmt.Errorf("failed to query subscription features: %w", err)
+	}
+	if dbJSON == "" {
 		return false, fmt.Errorf("subscription plan not found")
 	}
 
@@ -72,7 +75,7 @@ func (s *PlanCacheService) CheckEmployeeLimit(ctx context.Context) (bool, error)
 		Where("companies.id = ?", companyID).
 		Scan(&maxEmployees).Error
 	if err != nil {
-		return true, err
+		return false, err
 	}
 
 	if maxEmployees == 0 {
@@ -80,10 +83,13 @@ func (s *PlanCacheService) CheckEmployeeLimit(ctx context.Context) (bool, error)
 	}
 
 	var count int64
-	s.db.Table("users").
+	err = s.db.Table("users").
 		Joins("JOIN roles ON roles.id = users.role_id").
 		Where("users.company_id = ? AND roles.name = ? AND users.is_active = ?", companyID, "EMPLOYEE", true).
-		Count(&count)
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
 
 	return count < int64(maxEmployees), nil
 }
