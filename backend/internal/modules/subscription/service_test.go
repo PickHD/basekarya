@@ -297,7 +297,8 @@ func TestService_ReviewRequest(t *testing.T) {
 				role.On("FindPermissionIDsByGroupNames", mock.Anything, mock.Anything).Return([]uint{1, 2}, nil)
 				role.On("FindRoleIDsByCompanyID", mock.Anything, uint(1)).Return([]uint{1}, nil)
 				role.On("AssignPermissions", mock.Anything, uint(1), []uint{1, 2}, uint(1)).Return(nil)
-				cache.On("FlushDB", mock.Anything).Return(nil)
+				cache.On("Del", mock.Anything, "subscription:features:1").Return(nil)
+				cache.On("Del", mock.Anything, "company:profile:1").Return(nil)
 				user.On("ForceResetPasswordByCompanyID", mock.Anything, uint(1)).Return(nil)
 			},
 			wantErr: false,
@@ -523,6 +524,7 @@ func TestService_UpdateCompanyStatus(t *testing.T) {
 		companyID  uint
 		req        *UpdateCompanyStatusRequest
 		setupMocks func(*mockRepo)
+		setupCache func(*mockCache)
 		wantErr    bool
 	}{
 		{
@@ -531,6 +533,10 @@ func TestService_UpdateCompanyStatus(t *testing.T) {
 			req:       &UpdateCompanyStatusRequest{SubscriptionStatus: constants.SubStatusActive},
 			setupMocks: func(repo *mockRepo) {
 				repo.On("UpdateCompanyStatus", mock.Anything, uint(1), constants.SubStatusActive).Return(nil)
+			},
+			setupCache: func(cache *mockCache) {
+				cache.On("Del", mock.Anything, "subscription:features:1").Return(nil)
+				cache.On("Del", mock.Anything, "company:profile:1").Return(nil)
 			},
 			wantErr: false,
 		},
@@ -547,8 +553,11 @@ func TestService_UpdateCompanyStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _ := newTestSubscriptionService()
+			svc, repo, _, _, _, cache := newTestSubscriptionService()
 			tt.setupMocks(repo)
+			if tt.setupCache != nil {
+				tt.setupCache(cache)
+			}
 
 			err := svc.UpdateCompanyStatus(testutil.CtxWithTenant(1, 1, true), tt.companyID, tt.req)
 
