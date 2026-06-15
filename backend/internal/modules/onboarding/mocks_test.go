@@ -18,34 +18,6 @@ import (
 
 type mockRepo struct{ mock.Mock }
 
-func (m *mockRepo) CreateTemplate(ctx context.Context, t *OnboardingTemplate) error {
-	return m.Called(ctx, t).Error(0)
-}
-
-func (m *mockRepo) FindAllTemplates(ctx context.Context) ([]OnboardingTemplate, error) {
-	args := m.Called(ctx)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]OnboardingTemplate), args.Error(1)
-}
-
-func (m *mockRepo) FindTemplateByID(ctx context.Context, id uint) (*OnboardingTemplate, error) {
-	args := m.Called(ctx, id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*OnboardingTemplate), args.Error(1)
-}
-
-func (m *mockRepo) UpdateTemplate(ctx context.Context, t *OnboardingTemplate) error {
-	return m.Called(ctx, t).Error(0)
-}
-
-func (m *mockRepo) DeleteTemplate(ctx context.Context, id uint) error {
-	return m.Called(ctx, id).Error(0)
-}
-
 func (m *mockRepo) CreateWorkflow(ctx context.Context, w *OnboardingWorkflow) error {
 	return m.Called(ctx, w).Error(0)
 }
@@ -179,34 +151,6 @@ func (m *mockMasterProvider) FindShiftByName(ctx context.Context, name string) (
 }
 
 type mockService struct{ mock.Mock }
-
-func (m *mockService) CreateTemplate(ctx context.Context, req *CreateTemplateRequest) error {
-	return m.Called(ctx, req).Error(0)
-}
-
-func (m *mockService) GetTemplates(ctx context.Context) ([]TemplateResponse, error) {
-	args := m.Called(ctx)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]TemplateResponse), args.Error(1)
-}
-
-func (m *mockService) GetTemplateByID(ctx context.Context, id uint) (*TemplateResponse, error) {
-	args := m.Called(ctx, id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*TemplateResponse), args.Error(1)
-}
-
-func (m *mockService) UpdateTemplate(ctx context.Context, id uint, req *UpdateTemplateRequest) error {
-	return m.Called(ctx, id, req).Error(0)
-}
-
-func (m *mockService) DeleteTemplate(ctx context.Context, id uint) error {
-	return m.Called(ctx, id).Error(0)
-}
 
 func (m *mockService) CreateWorkflow(ctx context.Context, req *CreateWorkflowRequest) error {
 	return m.Called(ctx, req).Error(0)

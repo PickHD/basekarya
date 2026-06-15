@@ -16,290 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestService_CreateTemplate(t *testing.T) {
-	ctx := testutil.CtxWithTenant(1, 1, false)
-
-	tests := []struct {
-		name       string
-		req        *CreateTemplateRequest
-		setupMocks func(*mockRepo)
-		wantErr    bool
-		errMsg     string
-	}{
-		{
-			name: "success",
-			req: &CreateTemplateRequest{
-				Name:       "IT Setup",
-				Department: "IT",
-				Items: []TemplateItemRequest{
-					{TaskName: "Create Email", Description: "Setup email", SortOrder: 1},
-				},
-			},
-			setupMocks: func(repo *mockRepo) {
-				repo.On("CreateTemplate", mock.Anything, mock.AnythingOfType("*onboarding.OnboardingTemplate")).Return(nil)
-			},
-			wantErr: false,
-		},
-		{
-			name: "repo error",
-			req: &CreateTemplateRequest{
-				Name:       "IT Setup",
-				Department: "IT",
-			},
-			setupMocks: func(repo *mockRepo) {
-				repo.On("CreateTemplate", mock.Anything, mock.AnythingOfType("*onboarding.OnboardingTemplate")).Return(errors.New("db error"))
-			},
-			wantErr: true,
-			errMsg:  "db error",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
-			tt.setupMocks(repo)
-
-			err := svc.CreateTemplate(ctx, tt.req)
-
-			if tt.wantErr {
-				require.Error(t, err)
-				assert.Equal(t, tt.errMsg, err.Error())
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
-
-func TestService_GetTemplates(t *testing.T) {
-	tests := []struct {
-		name       string
-		setupMocks func(*mockRepo)
-		wantLen    int
-		wantErr    bool
-	}{
-		{
-			name: "success with data",
-			setupMocks: func(repo *mockRepo) {
-				repo.On("FindAllTemplates", mock.Anything).Return([]OnboardingTemplate{
-					{ID: 1, Name: "IT Setup", Department: "IT", Items: []OnboardingTemplateItem{}},
-				}, nil)
-			},
-			wantLen: 1,
-			wantErr: false,
-		},
-		{
-			name: "success empty",
-			setupMocks: func(repo *mockRepo) {
-				repo.On("FindAllTemplates", mock.Anything).Return([]OnboardingTemplate{}, nil)
-			},
-			wantLen: 0,
-			wantErr: false,
-		},
-		{
-			name: "repo error",
-			setupMocks: func(repo *mockRepo) {
-				repo.On("FindAllTemplates", mock.Anything).Return(nil, errors.New("db error"))
-			},
-			wantLen: 0,
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
-			tt.setupMocks(repo)
-
-			result, err := svc.GetTemplates(testutil.CtxWithTenant(1, 1, false))
-
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				assert.Len(t, result, tt.wantLen)
-			}
-		})
-	}
-}
-
-func TestService_GetTemplateByID(t *testing.T) {
-	tests := []struct {
-		name       string
-		id         uint
-		setupMocks func(*mockRepo)
-		wantErr    bool
-		errMsg     string
-	}{
-		{
-			name: "success",
-			id:   1,
-			setupMocks: func(repo *mockRepo) {
-				repo.On("FindTemplateByID", mock.Anything, uint(1)).Return(&OnboardingTemplate{
-					ID: 1, Name: "IT Setup", Department: "IT", Items: []OnboardingTemplateItem{
-						{ID: 1, TaskName: "Create Email", SortOrder: 1},
-					},
-				}, nil)
-			},
-			wantErr: false,
-		},
-		{
-			name: "not found",
-			id:   999,
-			setupMocks: func(repo *mockRepo) {
-				repo.On("FindTemplateByID", mock.Anything, uint(999)).Return(nil, errors.New("not found"))
-			},
-			wantErr: true,
-			errMsg:  "template not found",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
-			tt.setupMocks(repo)
-
-			result, err := svc.GetTemplateByID(testutil.CtxWithTenant(1, 1, false), tt.id)
-
-			if tt.wantErr {
-				require.Error(t, err)
-				assert.Equal(t, tt.errMsg, err.Error())
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tt.id, result.ID)
-			}
-		})
-	}
-}
-
-func TestService_UpdateTemplate(t *testing.T) {
-	ctx := testutil.CtxWithTenant(1, 1, false)
-
-	tests := []struct {
-		name       string
-		id         uint
-		req        *UpdateTemplateRequest
-		setupMocks func(*mockRepo)
-		wantErr    bool
-		errMsg     string
-	}{
-		{
-			name: "success",
-			id:   1,
-			req: &UpdateTemplateRequest{
-				Name:       "IT Setup Updated",
-				Department: "IT",
-				Items: []TemplateItemRequest{
-					{TaskName: "Create Email", SortOrder: 1},
-				},
-			},
-			setupMocks: func(repo *mockRepo) {
-				repo.On("FindTemplateByID", mock.Anything, uint(1)).Return(&OnboardingTemplate{
-					ID: 1, Name: "IT Setup", Department: "IT", Items: []OnboardingTemplateItem{},
-				}, nil)
-				repo.On("UpdateTemplate", mock.Anything, mock.AnythingOfType("*onboarding.OnboardingTemplate")).Return(nil)
-			},
-			wantErr: false,
-		},
-		{
-			name: "template not found",
-			id:   999,
-			req:  &UpdateTemplateRequest{Name: "Test", Department: "IT"},
-			setupMocks: func(repo *mockRepo) {
-				repo.On("FindTemplateByID", mock.Anything, uint(999)).Return(nil, errors.New("not found"))
-			},
-			wantErr: true,
-			errMsg:  "template not found",
-		},
-		{
-			name: "update error",
-			id:   1,
-			req:  &UpdateTemplateRequest{Name: "Updated", Department: "IT"},
-			setupMocks: func(repo *mockRepo) {
-				repo.On("FindTemplateByID", mock.Anything, uint(1)).Return(&OnboardingTemplate{
-					ID: 1, Name: "IT Setup", Department: "IT", Items: []OnboardingTemplateItem{},
-				}, nil)
-				repo.On("UpdateTemplate", mock.Anything, mock.AnythingOfType("*onboarding.OnboardingTemplate")).Return(errors.New("db error"))
-			},
-			wantErr: true,
-			errMsg:  "db error",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
-			tt.setupMocks(repo)
-
-			err := svc.UpdateTemplate(ctx, tt.id, tt.req)
-
-			if tt.wantErr {
-				require.Error(t, err)
-				assert.Equal(t, tt.errMsg, err.Error())
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
-
-func TestService_DeleteTemplate(t *testing.T) {
-	ctx := testutil.CtxWithTenant(1, 1, false)
-
-	tests := []struct {
-		name       string
-		id         uint
-		setupMocks func(*mockRepo)
-		wantErr    bool
-		errMsg     string
-	}{
-		{
-			name: "success",
-			id:   1,
-			setupMocks: func(repo *mockRepo) {
-				repo.On("FindTemplateByID", mock.Anything, uint(1)).Return(&OnboardingTemplate{ID: 1}, nil)
-				repo.On("DeleteTemplate", mock.Anything, uint(1)).Return(nil)
-			},
-			wantErr: false,
-		},
-		{
-			name: "not found",
-			id:   999,
-			setupMocks: func(repo *mockRepo) {
-				repo.On("FindTemplateByID", mock.Anything, uint(999)).Return(nil, errors.New("not found"))
-			},
-			wantErr: true,
-			errMsg:  "template not found",
-		},
-		{
-			name: "delete error",
-			id:   1,
-			setupMocks: func(repo *mockRepo) {
-				repo.On("FindTemplateByID", mock.Anything, uint(1)).Return(&OnboardingTemplate{ID: 1}, nil)
-				repo.On("DeleteTemplate", mock.Anything, uint(1)).Return(errors.New("db error"))
-			},
-			wantErr: true,
-			errMsg:  "db error",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
-			tt.setupMocks(repo)
-
-			err := svc.DeleteTemplate(ctx, tt.id)
-
-			if tt.wantErr {
-				require.Error(t, err)
-				assert.Equal(t, tt.errMsg, err.Error())
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
-
 func TestService_CreateWorkflow(t *testing.T) {
 	ctx := testutil.CtxWithTenant(1, 1, false)
 
@@ -318,14 +34,12 @@ func TestService_CreateWorkflow(t *testing.T) {
 				Position:     "Developer",
 				Department:   "Engineering",
 				StartDate:    "2025-01-15",
+				Tasks: []WorkflowTaskRequest{
+					{TaskName: "Create Email", Description: "Setup email", SortOrder: 1},
+				},
 			},
 			setupMocks: func(repo *mockRepo, userProv *mockUserProvider, emailProv *mockEmailProvider, companyProv *mockCompanyProvider) {
 				repo.On("CreateWorkflow", mock.Anything, mock.AnythingOfType("*onboarding.OnboardingWorkflow")).Return(nil)
-				repo.On("FindAllTemplates", mock.Anything).Return([]OnboardingTemplate{
-					{ID: 1, CompanyID: 1, Name: "IT Setup", Department: "IT", Items: []OnboardingTemplateItem{
-						{ID: 1, CompanyID: 1, TaskName: "Create Email", Description: "Setup email", SortOrder: 1},
-					}},
-				}, nil)
 				repo.On("CreateTasks", mock.Anything, mock.Anything).Return(nil)
 				repo.On("MarkWorkflowEmailSent", mock.Anything, mock.Anything).Return(nil)
 				companyProv.On("FindByID", mock.Anything, uint(1)).Return(&company.Company{ID: 1, Name: "TestCo"}, nil)
@@ -450,9 +164,9 @@ func TestService_GetWorkflowDetail(t *testing.T) {
 					ID: 1, NewHireName: "Jane", NewHireEmail: "jane@example.com",
 					Status: WorkflowStatusInProgress, CreatedAt: now,
 					Tasks: []OnboardingTask{
-						{ID: 1, TaskName: "Create Email", Department: "IT", IsCompleted: true, CompletedBy: uintPtr(1), CompletedAt: &now, CompletedByUser: &user.User{Employee: &user.Employee{FullName: "Admin"}}},
-						{ID: 2, TaskName: "Sign NDA", Department: "HR", IsCompleted: false},
-						{ID: 3, TaskName: "Other Task", Department: "Finance", IsCompleted: false},
+						{ID: 1, TaskName: "Create Email", IsCompleted: true, CompletedBy: uintPtr(1), CompletedAt: &now, CompletedByUser: &user.User{Employee: &user.Employee{FullName: "Admin"}}},
+						{ID: 2, TaskName: "Sign NDA", IsCompleted: false},
+						{ID: 3, TaskName: "Other Task", IsCompleted: false},
 					},
 				}, nil)
 			},
@@ -482,9 +196,7 @@ func TestService_GetWorkflowDetail(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				assert.NotNil(t, result)
-				assert.Len(t, result.ITTasks, 1)
-				assert.Len(t, result.HRTasks, 1)
-				assert.Len(t, result.OtherTasks, 1)
+				assert.Len(t, result.Tasks, 3)
 				assert.Equal(t, 33, result.Progress)
 			}
 		})
@@ -675,9 +387,7 @@ func TestService_GetWorkflowDetail_ProgressZeroTasks(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, 0, result.Progress)
-	assert.Empty(t, result.ITTasks)
-	assert.Empty(t, result.HRTasks)
-	assert.Empty(t, result.OtherTasks)
+	assert.Empty(t, result.Tasks)
 }
 
 func uintPtr(v uint) *uint {
