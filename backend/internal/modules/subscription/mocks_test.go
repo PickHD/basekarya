@@ -102,6 +102,14 @@ func (m *mockRepo) GetDashboardStats(ctx context.Context) (*DashboardStatsRespon
 	return args.Get(0).(*DashboardStatsResponse), args.Error(1)
 }
 
+func (m *mockRepo) FindExpiredCompanies(ctx context.Context) ([]uint, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]uint), args.Error(1)
+}
+
 type mockCompanyRepo struct{ mock.Mock }
 
 func (m *mockCompanyRepo) FindByID(ctx context.Context, id uint) (*company.Company, error) {
@@ -236,6 +244,10 @@ func (m *mockService) GetDashboardStats(ctx context.Context) (*DashboardStatsRes
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*DashboardStatsResponse), args.Error(1)
+}
+
+func (m *mockService) RefreshCompanyCache(ctx context.Context, companyID uint) error {
+	return m.Called(ctx, companyID).Error(0)
 }
 
 func newTestSubscriptionService() (Service, *mockRepo, *mockCompanyRepo, *mockRole, *mockUser, *mockCache) {
