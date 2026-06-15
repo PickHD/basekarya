@@ -1,32 +1,3 @@
-// ── Template Types ────────────────────────────────────────────────────────────
-
-export interface OnboardingTemplateItem {
-  id: number;
-  task_name: string;
-  description: string;
-  sort_order: number;
-}
-
-export interface OnboardingTemplate {
-  id: number;
-  name: string;
-  department: string;
-  items: OnboardingTemplateItem[];
-  created_at: string;
-}
-
-export interface CreateTemplatePayload {
-  name: string;
-  department: string;
-  items: { task_name: string; description: string; sort_order: number }[];
-}
-
-export interface UpdateTemplatePayload {
-  name: string;
-  department: string;
-  items: { task_name: string; description: string; sort_order: number }[];
-}
-
 // ── Workflow Types ────────────────────────────────────────────────────────────
 
 export type OnboardingStatus = "IN_PROGRESS" | "COMPLETED";
@@ -47,7 +18,6 @@ export interface OnboardingTask {
   id: number;
   task_name: string;
   description: string;
-  department: string;
   is_completed: boolean;
   completed_by: string;
   completed_at: string | null;
@@ -66,9 +36,7 @@ export interface OnboardingWorkflowDetail {
   progress: number;
   welcome_email_sent: boolean;
   created_at: string;
-  it_tasks: OnboardingTask[];
-  hr_tasks: OnboardingTask[];
-  other_tasks: OnboardingTask[];
+  tasks: OnboardingTask[];
 }
 
 export interface CreateWorkflowPayload {
@@ -79,6 +47,7 @@ export interface CreateWorkflowPayload {
   position?: string;
   department?: string;
   start_date?: string;
+  tasks: { task_name: string; description: string; sort_order: number }[];
 }
 
 export interface UseWorkflowsParams {

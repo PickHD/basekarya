@@ -2,10 +2,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { createQueryWrapper } from "@/test/utils";
 import {
-  useOnboardingTemplates,
-  useCreateTemplate,
-  useUpdateTemplate,
-  useDeleteTemplate,
   useOnboardingWorkflows,
   useOnboardingWorkflowDetail,
   useCreateWorkflow,
@@ -22,69 +18,6 @@ vi.mock("sonner", () => ({
 
 import { api } from "@/lib/axios";
 import { toast } from "sonner";
-
-describe("useOnboardingTemplates", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it("should fetch templates", async () => {
-    const mockData = { data: [{ id: 1, name: "Default" }] };
-    (api.get as ReturnType<typeof vi.fn>).mockResolvedValue({ data: mockData });
-
-    const { wrapper } = createQueryWrapper();
-    const { result } = renderHook(() => useOnboardingTemplates(), { wrapper });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(api.get).toHaveBeenCalledWith("/onboarding/templates");
-  });
-});
-
-describe("useCreateTemplate", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it("should create template", async () => {
-    (api.post as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { message: "ok" } });
-
-    const { wrapper } = createQueryWrapper();
-    const { result } = renderHook(() => useCreateTemplate(), { wrapper });
-
-    result.current.mutate({ name: "New Template", tasks: [{ title: "Task 1" }] });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(toast.success).toHaveBeenCalledWith("Template created successfully");
-  });
-});
-
-describe("useUpdateTemplate", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it("should update template", async () => {
-    (api.put as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { message: "ok" } });
-
-    const { wrapper } = createQueryWrapper();
-    const { result } = renderHook(() => useUpdateTemplate(), { wrapper });
-
-    result.current.mutate({ id: 1, payload: { name: "Updated", tasks: [] } });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(toast.success).toHaveBeenCalledWith("Template updated successfully");
-  });
-});
-
-describe("useDeleteTemplate", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it("should delete template", async () => {
-    (api.delete as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { message: "ok" } });
-
-    const { wrapper } = createQueryWrapper();
-    const { result } = renderHook(() => useDeleteTemplate(), { wrapper });
-
-    result.current.mutate(1);
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(toast.success).toHaveBeenCalledWith("Template deleted");
-  });
-});
 
 describe("useOnboardingWorkflows", () => {
   beforeEach(() => vi.clearAllMocks());
