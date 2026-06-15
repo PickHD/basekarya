@@ -73,6 +73,7 @@ func main() {
 		appContainer.GeocodeWorker.Start(1)
 		appContainer.LeaveScheduler.Start()
 		appContainer.NotificationScheduler.Start()
+		appContainer.SubscriptionScheduler.Start()
 		go appContainer.WebsocketHub.Run()
 
 		logger.Info("Starting BaseKarya API Server...")

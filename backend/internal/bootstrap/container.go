@@ -68,7 +68,8 @@ type Container struct {
 	GeocodeWorker         attendance.GeocodeWorker
 	LeaveScheduler        leave.Scheduler
 	NotificationScheduler notification.Scheduler
-	ContractScheduler     contract.Scheduler
+	ContractScheduler      contract.Scheduler
+	SubscriptionScheduler  subscription.Scheduler
 }
 
 func NewContainer() (*Container, error) {
@@ -108,7 +109,8 @@ func NewContainer() (*Container, error) {
 	financeRepo := finance.NewRepository(db.GetDB())
 	astRepo := asset.NewRepository(db.GetDB())
 	subscriptionRepo := subscription.NewRepository(db.GetDB())
-	subscriptionMW := middleware.NewSubscriptionMiddleware(db.GetDB())
+	planCache := subscription.NewPlanCacheService(db.GetDB(), redis)
+	subscriptionMW := middleware.NewSubscriptionMiddleware(planCache)
 
 	healthSvc := health.NewService(healthRepo)
 	notificationSvc := notification.NewService(wsHub, notificationRepo)
@@ -130,7 +132,7 @@ func NewContainer() (*Container, error) {
 	recruitmentSvc := recruitment.NewService(recruitmentRepo, storage, notificationSvc, userRepo, onboardingSvc, transactionManager)
 	astSvc := asset.NewService(astRepo, notificationSvc, userRepo, transactionManager, excel)
 	financeSvc := finance.NewService(financeRepo, notificationSvc, userRepo, transactionManager, excel)
-	subscriptionSvc := subscription.NewService(subscriptionRepo, companyRepo, rbacRepo, userRepo, redis)
+	subscriptionSvc := subscription.NewService(subscriptionRepo, companyRepo, rbacRepo, userRepo, planCache)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)
@@ -161,6 +163,7 @@ func NewContainer() (*Container, error) {
 	leaveScheduler := leave.NewScheduler(cronScheduler, leaveSvc)
 	notificationScheduler := notification.NewScheduler(cronScheduler, notificationSvc)
 	contractScheduler := contract.NewScheduler(cronScheduler, contractSvc)
+	subscriptionScheduler := subscription.NewScheduler(cronScheduler, subscriptionRepo, planCache)
 
 	return &Container{
 		Config:       cfg,
@@ -203,7 +206,8 @@ func NewContainer() (*Container, error) {
 		GeocodeWorker:         geocodeWorker,
 		LeaveScheduler:        leaveScheduler,
 		NotificationScheduler: notificationScheduler,
-		ContractScheduler:     contractScheduler,
+		ContractScheduler:      contractScheduler,
+		SubscriptionScheduler:  subscriptionScheduler,
 	}, nil
 }
 
@@ -227,6 +231,10 @@ func (c *Container) Close() error {
 
 	if c.ContractScheduler != nil {
 		c.ContractScheduler.Stop()
+	}
+
+	if c.SubscriptionScheduler != nil {
+		c.SubscriptionScheduler.Stop()
 	}
 
 	if c.Redis != nil {
