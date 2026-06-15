@@ -425,3 +425,77 @@ func TestService_GetWorkflows_MetaResponse(t *testing.T) {
 	assert.Equal(t, int64(15), meta.TotalData)
 	assert.Equal(t, int64(2), meta.TotalPage)
 }
+
+func TestService_UpdateWorkflowTasks(t *testing.T) {
+	ctx := testutil.CtxWithTenant(1, 1, false)
+
+	tests := []struct {
+		name       string
+		workflowID uint
+		req        *UpdateWorkflowTasksRequest
+		setupMocks func(*mockRepo)
+		wantErr    bool
+		errMsg     string
+	}{
+		{
+			name:       "success",
+			workflowID: 1,
+			req: &UpdateWorkflowTasksRequest{
+				Tasks: []WorkflowTaskRequest{
+					{TaskName: "Setup Email", Description: "Create email", SortOrder: 1},
+				},
+			},
+			setupMocks: func(repo *mockRepo) {
+				repo.On("FindWorkflowByID", mock.Anything, uint(1)).Return(&OnboardingWorkflow{ID: 1}, nil)
+				repo.On("DeletePendingTasks", mock.Anything, uint(1)).Return(nil)
+				repo.On("CreateTasks", mock.Anything, mock.Anything).Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name:       "workflow not found",
+			workflowID: 999,
+			req: &UpdateWorkflowTasksRequest{
+				Tasks: []WorkflowTaskRequest{
+					{TaskName: "Task", SortOrder: 1},
+				},
+			},
+			setupMocks: func(repo *mockRepo) {
+				repo.On("FindWorkflowByID", mock.Anything, uint(999)).Return(nil, errors.New("not found"))
+			},
+			wantErr: true,
+			errMsg:  "workflow not found",
+		},
+		{
+			name:       "delete pending tasks error",
+			workflowID: 1,
+			req: &UpdateWorkflowTasksRequest{
+				Tasks: []WorkflowTaskRequest{
+					{TaskName: "Task", SortOrder: 1},
+				},
+			},
+			setupMocks: func(repo *mockRepo) {
+				repo.On("FindWorkflowByID", mock.Anything, uint(1)).Return(&OnboardingWorkflow{ID: 1}, nil)
+				repo.On("DeletePendingTasks", mock.Anything, uint(1)).Return(errors.New("db error"))
+			},
+			wantErr: true,
+			errMsg:  "db error",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc, repo, _, _, _, _, _, _, _, _ := newTestOnboardingService()
+			tt.setupMocks(repo)
+
+			err := svc.UpdateWorkflowTasks(ctx, tt.workflowID, tt.req)
+
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Equal(t, tt.errMsg, err.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

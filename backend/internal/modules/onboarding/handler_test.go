@@ -228,3 +228,80 @@ func TestHandler_CompleteTask(t *testing.T) {
 		})
 	}
 }
+
+func TestHandler_UpdateWorkflowTasks(t *testing.T) {
+	tests := []struct {
+		name       string
+		pathParams map[string]string
+		body       interface{}
+		setupMocks func(*mockService)
+		wantStatus int
+	}{
+		{
+			name:       "success",
+			pathParams: map[string]string{"id": "1"},
+			body: UpdateWorkflowTasksRequest{
+				Tasks: []WorkflowTaskRequest{
+					{TaskName: "Setup Email", SortOrder: 1},
+				},
+			},
+			setupMocks: func(svc *mockService) {
+				svc.On("UpdateWorkflowTasks", mock.Anything, uint(1), mock.AnythingOfType("*onboarding.UpdateWorkflowTasksRequest")).Return(nil)
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "invalid id",
+			pathParams: map[string]string{"id": "abc"},
+			body: UpdateWorkflowTasksRequest{
+				Tasks: []WorkflowTaskRequest{
+					{TaskName: "Task", SortOrder: 1},
+				},
+			},
+			setupMocks: func(svc *mockService) {},
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "empty tasks",
+			pathParams: map[string]string{"id": "1"},
+			body:       UpdateWorkflowTasksRequest{Tasks: []WorkflowTaskRequest{}},
+			setupMocks: func(svc *mockService) {},
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "service error",
+			pathParams: map[string]string{"id": "1"},
+			body: UpdateWorkflowTasksRequest{
+				Tasks: []WorkflowTaskRequest{
+					{TaskName: "Task", SortOrder: 1},
+				},
+			},
+			setupMocks: func(svc *mockService) {
+				svc.On("UpdateWorkflowTasks", mock.Anything, uint(1), mock.AnythingOfType("*onboarding.UpdateWorkflowTasksRequest")).Return(errors.New("not found"))
+			},
+			wantStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := new(mockService)
+			tt.setupMocks(svc)
+			handler := NewHandler(svc)
+
+			at := testutil.NewAPITest(t, http.MethodPut, "/api/onboarding/workflows/:id/tasks", tt.body)
+			at.WithPathParams(tt.pathParams)
+			at.WithAuthContext(&infrastructure.MyClaims{UserID: 1, CompanyID: 1})
+
+			rec, err := at.Execute(handler.UpdateWorkflowTasks)
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantStatus, rec.Code)
+
+			var resp map[string]interface{}
+			require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+			if tt.wantStatus < 400 {
+				assert.Nil(t, resp["error"])
+			}
+		})
+	}
+}

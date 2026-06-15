@@ -17,4 +17,5 @@ func (r *Router) SetupOnboardingRoutes(e *echo.Group, sub *middleware.Subscripti
 
 	// Tasks
 	g.PUT("/tasks/:id/complete", r.container.OnboardingHandler.CompleteTask, r.container.AuthMiddleware.GrantPermission(constants.UPDATE_ONBOARDING_TASK))
+	g.PUT("/workflows/:id/tasks", r.container.OnboardingHandler.UpdateWorkflowTasks, r.container.AuthMiddleware.GrantPermission(constants.VIEW_ONBOARDING))
 }

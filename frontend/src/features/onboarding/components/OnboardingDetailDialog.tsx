@@ -9,8 +9,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Mail, CheckCircle2, Circle, User } from "lucide-react";
+import { Loader2, Mail, CheckCircle2, Circle, User, Pencil } from "lucide-react";
 import { useOnboardingWorkflowDetail, useCompleteTask } from "@/features/onboarding/hooks/useOnboarding";
+import { ManageTasksDialog } from "@/features/onboarding/components/ManageTasksDialog";
 import type { OnboardingTask } from "@/features/onboarding/types";
 
 interface Props {
@@ -85,6 +86,7 @@ export function OnboardingDetailDialog({ open, onOpenChange, workflowId, canComp
   const { data: workflow, isLoading } = useOnboardingWorkflowDetail(workflowId);
   const { mutate: completeTask } = useCompleteTask();
   const [completing, setCompleting] = useState<number | null>(null);
+  const [manageTasksOpen, setManageTasksOpen] = useState(false);
 
   const handleComplete = (taskId: number) => {
     setCompleting(taskId);
@@ -95,6 +97,8 @@ export function OnboardingDetailDialog({ open, onOpenChange, workflowId, canComp
   };
 
   const totalTasks = workflow ? (workflow.tasks?.length ?? 0) : 0;
+
+  const pendingTasks = workflow?.tasks?.filter((t) => !t.is_completed) ?? [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -158,11 +162,23 @@ export function OnboardingDetailDialog({ open, onOpenChange, workflowId, canComp
               <TaskList tasks={workflow.tasks ?? []} canComplete={canComplete} completing={completing} handleComplete={handleComplete} />
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              {workflow.status !== "COMPLETED" && (
+                <Button variant="outline" size="sm" onClick={() => setManageTasksOpen(true)}>
+                  <Pencil className="mr-2 h-3.5 w-3.5" /> Manage Tasks
+                </Button>
+              )}
               <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
             </div>
           </div>
         )}
+
+        <ManageTasksDialog
+          open={manageTasksOpen}
+          onOpenChange={setManageTasksOpen}
+          workflowId={workflowId}
+          pendingTasks={pendingTasks}
+        />
       </DialogContent>
     </Dialog>
   );

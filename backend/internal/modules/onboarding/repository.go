@@ -23,6 +23,7 @@ type Repository interface {
 	CountPendingTasks(ctx context.Context, workflowID uint) (int64, error)
 	CountTotalTasks(ctx context.Context, workflowID uint) (int64, error)
 	MarkWorkflowCompleted(ctx context.Context, id uint) error
+	DeletePendingTasks(ctx context.Context, workflowID uint) error
 }
 
 type repository struct {
@@ -129,4 +130,9 @@ func (r *repository) CountTotalTasks(ctx context.Context, workflowID uint) (int6
 func (r *repository) MarkWorkflowCompleted(ctx context.Context, id uint) error {
 	return r.getDB(ctx).Model(&OnboardingWorkflow{}).Where("id = ?", id).
 		Update("status", WorkflowStatusCompleted).Error
+}
+
+func (r *repository) DeletePendingTasks(ctx context.Context, workflowID uint) error {
+	return r.getDB(ctx).Where("onboarding_workflow_id = ? AND is_completed = ?", workflowID, false).
+		Delete(&OnboardingTask{}).Error
 }

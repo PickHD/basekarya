@@ -56,3 +56,7 @@ export interface UseWorkflowsParams {
   status?: string;
   search?: string;
 }
+
+export interface UpdateWorkflowTasksPayload {
+  tasks: { task_name: string; description: string; sort_order: number }[];
+}

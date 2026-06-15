@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import type {
   CreateWorkflowPayload,
   UseWorkflowsParams,
+  UpdateWorkflowTasksPayload,
 } from "@/features/onboarding/types";
 
 // ── Workflow Hooks ────────────────────────────────────────────────────────────
@@ -62,6 +63,23 @@ export const useCompleteTask = () => {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to complete task");
+    },
+  });
+};
+
+export const useUpdateWorkflowTasks = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, payload }: { id: number; payload: UpdateWorkflowTasksPayload }) => {
+      const { data } = await api.put(`/onboarding/workflows/${id}/tasks`, payload);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Tasks updated");
+      queryClient.invalidateQueries({ queryKey: ["onboarding-workflows"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to update tasks");
     },
   });
 };

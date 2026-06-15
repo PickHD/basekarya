@@ -24,6 +24,7 @@ type Service interface {
 
 	// Tasks
 	CompleteTask(ctx context.Context, taskID uint, completedByID uint, req *CompleteTaskRequest) error
+	UpdateWorkflowTasks(ctx context.Context, workflowID uint, req *UpdateWorkflowTasksRequest) error
 }
 
 type service struct {
@@ -268,6 +269,34 @@ func (s *service) CompleteTask(ctx context.Context, taskID uint, completedByID u
 		}
 
 		return nil
+	})
+}
+
+// ── Update Tasks ────────────────────────────────────────────────────────────
+
+func (s *service) UpdateWorkflowTasks(ctx context.Context, workflowID uint, req *UpdateWorkflowTasksRequest) error {
+	return s.transaction.RunInTransaction(ctx, func(ctx context.Context) error {
+		_, err := s.repo.FindWorkflowByID(ctx, workflowID)
+		if err != nil {
+			return errors.New("workflow not found")
+		}
+
+		if err := s.repo.DeletePendingTasks(ctx, workflowID); err != nil {
+			return err
+		}
+
+		var tasks []OnboardingTask
+		for _, t := range req.Tasks {
+			tasks = append(tasks, OnboardingTask{
+				CompanyID:            utils.GetCompanyIDFromCtx(ctx),
+				OnboardingWorkflowID: workflowID,
+				TaskName:             t.TaskName,
+				Description:          t.Description,
+				SortOrder:            t.SortOrder,
+			})
+		}
+
+		return s.repo.CreateTasks(ctx, tasks)
 	})
 }
 

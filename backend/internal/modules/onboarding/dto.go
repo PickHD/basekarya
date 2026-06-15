@@ -65,6 +65,12 @@ type WorkflowDetailResponse struct {
 	Tasks            []TaskResponse `json:"tasks"`
 }
 
+// ── Task Update ───────────────────────────────────────────────────────────────
+
+type UpdateWorkflowTasksRequest struct {
+	Tasks []WorkflowTaskRequest `json:"tasks" validate:"required,min=1"`
+}
+
 // ── Task Complete ─────────────────────────────────────────────────────────────
 
 type CompleteTaskRequest struct {

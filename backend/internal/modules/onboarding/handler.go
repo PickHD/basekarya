@@ -99,3 +99,25 @@ func (h *Handler) CompleteTask(ctx echo.Context) error {
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Task completed", nil, nil, nil)
 }
+
+func (h *Handler) UpdateWorkflowTasks(ctx echo.Context) error {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		return response.NewResponses[any](ctx, http.StatusBadRequest, "invalid workflow id", nil, err, nil)
+	}
+
+	var req UpdateWorkflowTasksRequest
+	if err := ctx.Bind(&req); err != nil {
+		return response.NewResponses[any](ctx, http.StatusBadRequest, "Invalid Request", nil, err, nil)
+	}
+	if err := ctx.Validate(&req); err != nil {
+		return response.NewResponses[any](ctx, http.StatusBadRequest, "Invalid Request", nil, err, nil)
+	}
+
+	if err := h.service.UpdateWorkflowTasks(ctx.Request().Context(), uint(id), &req); err != nil {
+		logger.Errorw("UpdateWorkflowTasks failed:", err)
+		return response.NewResponses[any](ctx, http.StatusBadRequest, err.Error(), nil, err, nil)
+	}
+
+	return response.NewResponses[any](ctx, http.StatusOK, "Workflow tasks updated", nil, nil, nil)
+}

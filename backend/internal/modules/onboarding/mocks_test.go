@@ -69,6 +69,10 @@ func (m *mockRepo) MarkWorkflowCompleted(ctx context.Context, id uint) error {
 	return m.Called(ctx, id).Error(0)
 }
 
+func (m *mockRepo) DeletePendingTasks(ctx context.Context, workflowID uint) error {
+	return m.Called(ctx, workflowID).Error(0)
+}
+
 type mockNotificationProvider struct{ mock.Mock }
 
 func (m *mockNotificationProvider) SendNotification(ctx context.Context, userID uint, Type string, Title string, Message string, relatedID uint) error {
@@ -178,6 +182,10 @@ func (m *mockService) GetWorkflowDetail(ctx context.Context, id uint) (*Workflow
 
 func (m *mockService) CompleteTask(ctx context.Context, taskID uint, completedByID uint, req *CompleteTaskRequest) error {
 	return m.Called(ctx, taskID, completedByID, req).Error(0)
+}
+
+func (m *mockService) UpdateWorkflowTasks(ctx context.Context, workflowID uint, req *UpdateWorkflowTasksRequest) error {
+	return m.Called(ctx, workflowID, req).Error(0)
 }
 
 func newTestOnboardingService() (Service, *mockRepo, *mockNotificationProvider, *mockUserProvider, *mockEmailProvider, *mockCompanyProvider, *mockRoleProvider, *mockDepartmentProvider, *mockMasterProvider, *testutil.MockTransactionManager) {
