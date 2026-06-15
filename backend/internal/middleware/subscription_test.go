@@ -130,3 +130,16 @@ func TestSubscriptionMiddleware_RequireModule_CompanyNoPlan(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusForbidden, rec.Code)
 }
+
+func TestSubscriptionMiddleware_CheckEmployeeLimit(t *testing.T) {
+	mock := &mockPlanCache{
+		checkEmpLimit: func(ctx context.Context) (bool, error) {
+			return false, nil
+		},
+	}
+	mw := NewSubscriptionMiddleware(mock)
+
+	allowed, err := mw.CheckEmployeeLimit(context.Background())
+	require.NoError(t, err)
+	assert.False(t, allowed)
+}
