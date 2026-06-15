@@ -13,7 +13,7 @@ type RoleProvider interface {
 }
 
 type CacheProvider interface {
-	FlushDB(ctx context.Context) error
+	Del(ctx context.Context, key string) error
 }
 
 type UserProvider interface {

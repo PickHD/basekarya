@@ -168,8 +168,8 @@ func (m *mockUser) ForceResetPasswordByCompanyID(ctx context.Context, companyID 
 
 type mockCache struct{ mock.Mock }
 
-func (m *mockCache) FlushDB(ctx context.Context) error {
-	return m.Called(ctx).Error(0)
+func (m *mockCache) Del(ctx context.Context, key string) error {
+	return m.Called(ctx, key).Error(0)
 }
 
 type mockService struct{ mock.Mock }
