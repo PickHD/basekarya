@@ -10,8 +10,8 @@ import (
 func (r *Router) SetupOnboardingRoutes(e *echo.Group, sub *middleware.SubscriptionMiddleware) {
 	g := e.Group("", sub.RequireModule("onboarding"))
 
-	// Workflows (require VIEW_ONBOARDING / MANAGE_ONBOARDING_TEMPLATE for creation)
-	g.POST("/workflows", r.container.OnboardingHandler.CreateWorkflow, r.container.AuthMiddleware.GrantPermission(constants.MANAGE_ONBOARDING_TEMPLATE))
+	// Workflows
+	g.POST("/workflows", r.container.OnboardingHandler.CreateWorkflow, r.container.AuthMiddleware.GrantPermission(constants.VIEW_ONBOARDING))
 	g.GET("/workflows", r.container.OnboardingHandler.GetWorkflows, r.container.AuthMiddleware.GrantPermission(constants.VIEW_ONBOARDING))
 	g.GET("/workflows/:id", r.container.OnboardingHandler.GetWorkflowDetail, r.container.AuthMiddleware.GrantPermission(constants.VIEW_ONBOARDING))
 

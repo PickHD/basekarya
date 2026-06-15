@@ -36,7 +36,6 @@ import ContractListPage from "@/pages/admin/ContractListPage";
 import RequisitionListPage from "@/pages/admin/RequisitionListPage";
 import ApplicantBoardPage from "@/pages/admin/ApplicantBoardPage";
 import OnboardingListPage from "@/pages/admin/OnboardingListPage";
-import OnboardingTemplatePage from "@/pages/admin/OnboardingTemplatePage";
 import SubscriptionAdminPage from "@/pages/admin/SubscriptionAdminPage";
 import PlatformAdminDashboard from "@/pages/admin/PlatformAdminDashboard";
 import CompaniesPage from "@/pages/admin/CompaniesPage";
@@ -177,7 +176,6 @@ function App() {
             <Route path="admin/requisitions" element={<RequisitionListPage />} />
             <Route path="admin/requisitions/:id/applicants" element={<ApplicantBoardPage />} />
             <Route path="admin/onboarding" element={<OnboardingListPage />} />
-            <Route path="admin/onboarding/templates" element={<OnboardingTemplatePage />} />
             <Route path="admin/subscriptions" element={<SubscriptionAdminPage />} />
             <Route path="admin/platform-dashboard" element={<PlatformAdminDashboard />} />
             <Route path="admin/companies" element={<CompaniesPage />} />

@@ -162,7 +162,7 @@ func seedPermissions(tx *gorm.DB, roleSuperadmin *rbac.Role) error {
 		{"Announcement", []string{constants.CREATE_ANNOUNCEMENT}},
 		{"Contract", []string{constants.VIEW_CONTRACT, constants.CREATE_CONTRACT, constants.UPDATE_CONTRACT, constants.EXPORT_CONTRACT}},
 		{"Recruitment", []string{constants.VIEW_REQUISITION, constants.CREATE_REQUISITION, constants.APPROVAL_REQUISITION, constants.VIEW_APPLICANT, constants.CREATE_APPLICANT, constants.UPDATE_APPLICANT}},
-		{"Onboarding", []string{constants.VIEW_ONBOARDING, constants.MANAGE_ONBOARDING_TEMPLATE, constants.UPDATE_ONBOARDING_TASK}},
+		{"Onboarding", []string{constants.VIEW_ONBOARDING, constants.UPDATE_ONBOARDING_TASK}},
 		{"Finance", []string{constants.VIEW_FINANCE, constants.CREATE_FINANCE, constants.APPROVAL_FINANCE, constants.EXPORT_FINANCE, constants.MANAGE_FINANCE_CATEGORY, constants.VIEW_FINANCE_DASHBOARD}},
 		{"Asset", []string{constants.MANAGE_ASSET, constants.VIEW_ASSET, constants.VIEW_SELF_ASSET, constants.CREATE_ASSET, constants.APPROVAL_ASSET, constants.EXPORT_ASSET}},
 	}

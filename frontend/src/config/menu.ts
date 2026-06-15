@@ -157,15 +157,6 @@ export const menuItems: MenuItem[] = [
     hideForPlatformAdmin: true,
     requiredModule: "onboarding",
   },
-  {
-    title: "Onboarding Templates",
-    href: "/admin/onboarding/templates",
-    icon: GraduationCap,
-    permission: PERMISSIONS.MANAGE_ONBOARDING_TEMPLATE,
-    group: "Rekrutmen",
-    hideForPlatformAdmin: true,
-    requiredModule: "onboarding",
-  },
 
   {
     title: "Company Settings",
