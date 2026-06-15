@@ -10,13 +10,6 @@ import (
 )
 
 type Repository interface {
-	// Templates
-	CreateTemplate(ctx context.Context, t *OnboardingTemplate) error
-	FindAllTemplates(ctx context.Context) ([]OnboardingTemplate, error)
-	FindTemplateByID(ctx context.Context, id uint) (*OnboardingTemplate, error)
-	UpdateTemplate(ctx context.Context, t *OnboardingTemplate) error
-	DeleteTemplate(ctx context.Context, id uint) error
-
 	// Workflows
 	CreateWorkflow(ctx context.Context, w *OnboardingWorkflow) error
 	CreateTasks(ctx context.Context, tasks []OnboardingTask) error
@@ -44,43 +37,6 @@ func (r *repository) getDB(ctx context.Context) *gorm.DB {
 	return utils.TenantScope(ctx, utils.GetDBFromContext(ctx, r.db))
 }
 
-// ── Templates ─────────────────────────────────────────────────────────────────
-
-func (r *repository) CreateTemplate(ctx context.Context, t *OnboardingTemplate) error {
-	return r.getDB(ctx).Create(t).Error
-}
-
-func (r *repository) FindAllTemplates(ctx context.Context) ([]OnboardingTemplate, error) {
-	var templates []OnboardingTemplate
-	err := r.getDB(ctx).Preload("Items", func(db *gorm.DB) *gorm.DB {
-		return db.Order("sort_order ASC")
-	}).Order("department ASC, name ASC").Find(&templates).Error
-	return templates, err
-}
-
-func (r *repository) FindTemplateByID(ctx context.Context, id uint) (*OnboardingTemplate, error) {
-	var t OnboardingTemplate
-	err := r.getDB(ctx).Preload("Items", func(db *gorm.DB) *gorm.DB {
-		return db.Order("sort_order ASC")
-	}).First(&t, id).Error
-	if err != nil {
-		return nil, err
-	}
-	return &t, nil
-}
-
-func (r *repository) UpdateTemplate(ctx context.Context, t *OnboardingTemplate) error {
-	db := r.getDB(ctx)
-	// Replace items: delete old, create new
-	if err := db.Where("template_id = ?", t.ID).Delete(&OnboardingTemplateItem{}).Error; err != nil {
-		return err
-	}
-	return db.Session(&gorm.Session{FullSaveAssociations: true}).Save(t).Error
-}
-
-func (r *repository) DeleteTemplate(ctx context.Context, id uint) error {
-	return r.getDB(ctx).Delete(&OnboardingTemplate{}, id).Error
-}
 
 // ── Workflows ─────────────────────────────────────────────────────────────────
 
@@ -120,7 +76,7 @@ func (r *repository) FindAllWorkflows(ctx context.Context, filter *WorkflowFilte
 func (r *repository) FindWorkflowByID(ctx context.Context, id uint) (*OnboardingWorkflow, error) {
 	var w OnboardingWorkflow
 	err := r.getDB(ctx).Preload("Tasks", func(db *gorm.DB) *gorm.DB {
-		return db.Order("department ASC, sort_order ASC")
+		return db.Order("sort_order ASC")
 	}).Preload("Tasks.CompletedByUser.Employee").First(&w, id).Error
 	if err != nil {
 		return nil, err

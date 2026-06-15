@@ -17,13 +17,6 @@ import (
 )
 
 type Service interface {
-	// Templates
-	CreateTemplate(ctx context.Context, req *CreateTemplateRequest) error
-	GetTemplates(ctx context.Context) ([]TemplateResponse, error)
-	GetTemplateByID(ctx context.Context, id uint) (*TemplateResponse, error)
-	UpdateTemplate(ctx context.Context, id uint, req *UpdateTemplateRequest) error
-	DeleteTemplate(ctx context.Context, id uint) error
-
 	// Workflows
 	CreateWorkflow(ctx context.Context, req *CreateWorkflowRequest) error
 	GetWorkflows(ctx context.Context, filter *WorkflowFilter) ([]WorkflowListResponse, *response.Meta, error)
@@ -59,99 +52,6 @@ func NewService(
 	return &service{repo, notification, user, email, company, role, department, master, transaction}
 }
 
-// ── Templates ─────────────────────────────────────────────────────────────────
-
-func (s *service) CreateTemplate(ctx context.Context, req *CreateTemplateRequest) error {
-	return s.transaction.RunInTransaction(ctx, func(ctx context.Context) error {
-		t := &OnboardingTemplate{
-			CompanyID:  utils.GetCompanyIDFromCtx(ctx),
-			Name:       req.Name,
-			Department: req.Department,
-		}
-
-		for _, item := range req.Items {
-			t.Items = append(t.Items, OnboardingTemplateItem{
-				CompanyID:   utils.GetCompanyIDFromCtx(ctx),
-				TaskName:    item.TaskName,
-				Description: item.Description,
-				SortOrder:   item.SortOrder,
-			})
-		}
-
-		err := s.repo.CreateTemplate(ctx, t)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-}
-
-func (s *service) GetTemplates(ctx context.Context) ([]TemplateResponse, error) {
-	templates, err := s.repo.FindAllTemplates(ctx)
-	if err != nil {
-		return nil, err
-	}
-	result := make([]TemplateResponse, 0, len(templates))
-	for _, t := range templates {
-		result = append(result, toTemplateResponse(t))
-	}
-	return result, nil
-}
-
-func (s *service) GetTemplateByID(ctx context.Context, id uint) (*TemplateResponse, error) {
-	t, err := s.repo.FindTemplateByID(ctx, id)
-	if err != nil {
-		return nil, errors.New("template not found")
-	}
-	r := toTemplateResponse(*t)
-	return &r, nil
-}
-
-func (s *service) UpdateTemplate(ctx context.Context, id uint, req *UpdateTemplateRequest) error {
-	return s.transaction.RunInTransaction(ctx, func(ctx context.Context) error {
-		existing, err := s.repo.FindTemplateByID(ctx, id)
-		if err != nil {
-			return errors.New("template not found")
-		}
-
-		existing.Name = req.Name
-		existing.Department = req.Department
-		existing.Items = nil
-		for _, item := range req.Items {
-			existing.Items = append(existing.Items, OnboardingTemplateItem{
-				CompanyID:   utils.GetCompanyIDFromCtx(ctx),
-				TemplateID:  id,
-				TaskName:    item.TaskName,
-				Description: item.Description,
-				SortOrder:   item.SortOrder,
-			})
-		}
-
-		err = s.repo.UpdateTemplate(ctx, existing)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-}
-
-func (s *service) DeleteTemplate(ctx context.Context, id uint) error {
-	return s.transaction.RunInTransaction(ctx, func(ctx context.Context) error {
-		_, err := s.repo.FindTemplateByID(ctx, id)
-		if err != nil {
-			return errors.New("template not found")
-		}
-
-		err = s.repo.DeleteTemplate(ctx, id)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-}
 
 // ── Workflows ─────────────────────────────────────────────────────────────────
 
@@ -179,28 +79,20 @@ func (s *service) CreateWorkflow(ctx context.Context, req *CreateWorkflowRequest
 			return err
 		}
 
-		// Copy all template items into workflow tasks
-		templates, err := s.repo.FindAllTemplates(ctx)
-		if err != nil {
-			logger.Errorf("onboarding: failed to load templates: %v", err)
-		} else {
+		// Create tasks from request
+		if len(req.Tasks) > 0 {
 			var tasks []OnboardingTask
-			for _, tmpl := range templates {
-				for _, item := range tmpl.Items {
-					itemID := item.ID
-					tasks = append(tasks, OnboardingTask{
-						CompanyID:            utils.GetCompanyIDFromCtx(ctx),
-						OnboardingWorkflowID: workflow.ID,
-						TemplateItemID:       &itemID,
-						TaskName:             item.TaskName,
-						Description:          item.Description,
-						Department:           tmpl.Department,
-						SortOrder:            item.SortOrder,
-					})
-				}
+			for _, t := range req.Tasks {
+				tasks = append(tasks, OnboardingTask{
+					CompanyID:            utils.GetCompanyIDFromCtx(ctx),
+					OnboardingWorkflowID: workflow.ID,
+					TaskName:             t.TaskName,
+					Description:          t.Description,
+					SortOrder:            t.SortOrder,
+				})
 			}
 			if err := s.repo.CreateTasks(ctx, tasks); err != nil {
-				logger.Errorf("onboarding: failed to create tasks: %v", err)
+				return err
 			}
 		}
 
@@ -305,21 +197,11 @@ func (s *service) GetWorkflowDetail(ctx context.Context, id uint) (*WorkflowDeta
 		Progress:         progress,
 		WelcomeEmailSent: w.WelcomeEmailSent,
 		CreatedAt:        w.CreatedAt,
-		ITTasks:          []TaskResponse{},
-		HRTasks:          []TaskResponse{},
-		OtherTasks:       []TaskResponse{},
+		Tasks:            []TaskResponse{},
 	}
 
 	for _, t := range w.Tasks {
-		tr := toTaskResponse(t)
-		switch t.Department {
-		case "IT":
-			detail.ITTasks = append(detail.ITTasks, tr)
-		case "HR":
-			detail.HRTasks = append(detail.HRTasks, tr)
-		default:
-			detail.OtherTasks = append(detail.OtherTasks, tr)
-		}
+		detail.Tasks = append(detail.Tasks, toTaskResponse(t))
 	}
 
 	return detail, nil
@@ -429,31 +311,11 @@ func (s *service) sendWelcomeEmail(w *OnboardingWorkflow) error {
 	return s.email.Send(w.NewHireEmail, "Welcome to "+company.Name+"!", buf.String())
 }
 
-func toTemplateResponse(t OnboardingTemplate) TemplateResponse {
-	r := TemplateResponse{
-		ID:         t.ID,
-		Name:       t.Name,
-		Department: t.Department,
-		CreatedAt:  t.CreatedAt,
-		Items:      []TemplateItemResponse{},
-	}
-	for _, item := range t.Items {
-		r.Items = append(r.Items, TemplateItemResponse{
-			ID:          item.ID,
-			TaskName:    item.TaskName,
-			Description: item.Description,
-			SortOrder:   item.SortOrder,
-		})
-	}
-	return r
-}
-
 func toTaskResponse(t OnboardingTask) TaskResponse {
 	tr := TaskResponse{
 		ID:          t.ID,
 		TaskName:    t.TaskName,
 		Description: t.Description,
-		Department:  t.Department,
 		IsCompleted: t.IsCompleted,
 		CompletedAt: t.CompletedAt,
 		Notes:       t.Notes,
