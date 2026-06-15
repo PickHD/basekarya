@@ -2,12 +2,11 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 
 	"basekarya-backend/internal/infrastructure"
-	"basekarya-backend/internal/modules/company"
-	"basekarya-backend/internal/modules/subscription"
 	"basekarya-backend/internal/testutil"
 	"basekarya-backend/pkg/constants"
 
@@ -16,17 +15,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newSubscriptionTestDB(t *testing.T) *testutil.TestDB {
-	t.Helper()
-	tdb := testutil.NewTestDB(&subscription.SubscriptionPlan{}, &company.Company{})
-	return tdb
+type mockPlanCache struct {
+	hasAccess     func(ctx context.Context, companyID uint, module string) (bool, error)
+	checkEmpLimit func(ctx context.Context) (bool, error)
+}
+
+func (m *mockPlanCache) HasAccess(ctx context.Context, companyID uint, module string) (bool, error) {
+	if m.hasAccess != nil {
+		return m.hasAccess(ctx, companyID, module)
+	}
+	return false, errors.New("not implemented")
+}
+
+func (m *mockPlanCache) CheckEmployeeLimit(ctx context.Context) (bool, error) {
+	if m.checkEmpLimit != nil {
+		return m.checkEmpLimit(ctx)
+	}
+	return true, nil
 }
 
 func TestSubscriptionMiddleware_RequireModule_PlatformAdminPasses(t *testing.T) {
-	tdb := newSubscriptionTestDB(t)
-	defer tdb.Close()
-
-	mw := NewSubscriptionMiddleware(tdb.DB)
+	mock := &mockPlanCache{}
+	mw := NewSubscriptionMiddleware(mock)
 
 	claims := &infrastructure.MyClaims{
 		UserID:          1,
@@ -47,13 +57,12 @@ func TestSubscriptionMiddleware_RequireModule_PlatformAdminPasses(t *testing.T) 
 }
 
 func TestSubscriptionMiddleware_RequireModule_CompanyHasModule(t *testing.T) {
-	tdb := newSubscriptionTestDB(t)
-	defer tdb.Close()
-
-	tdb.DB.Exec(`INSERT INTO subscription_plans (id, name, slug, max_employees, price_monthly, features, is_active, created_at, updated_at) VALUES (1, 'Pro', 'pro', 10, 99.00, '{"modules":["payroll","attendance"]}', 1, datetime('now'), datetime('now'))`)
-	tdb.DB.Exec(`INSERT INTO companies (id, name, subscription_plan_id, subscription_status, created_at, updated_at) VALUES (1, 'TestCo', 1, 'ACTIVE', datetime('now'), datetime('now'))`)
-
-	mw := NewSubscriptionMiddleware(tdb.DB)
+	mock := &mockPlanCache{
+		hasAccess: func(ctx context.Context, companyID uint, module string) (bool, error) {
+			return true, nil
+		},
+	}
+	mw := NewSubscriptionMiddleware(mock)
 
 	at := testutil.NewAPITest(t, http.MethodGet, "/test", nil)
 
@@ -73,13 +82,12 @@ func TestSubscriptionMiddleware_RequireModule_CompanyHasModule(t *testing.T) {
 }
 
 func TestSubscriptionMiddleware_RequireModule_CompanyMissingModule(t *testing.T) {
-	tdb := newSubscriptionTestDB(t)
-	defer tdb.Close()
-
-	tdb.DB.Exec(`INSERT INTO subscription_plans (id, name, slug, max_employees, price_monthly, features, is_active, created_at, updated_at) VALUES (1, 'Basic', 'basic', 10, 29.00, '{"modules":["attendance"]}', 1, datetime('now'), datetime('now'))`)
-	tdb.DB.Exec(`INSERT INTO companies (id, name, subscription_plan_id, subscription_status, created_at, updated_at) VALUES (1, 'TestCo', 1, 'ACTIVE', datetime('now'), datetime('now'))`)
-
-	mw := NewSubscriptionMiddleware(tdb.DB)
+	mock := &mockPlanCache{
+		hasAccess: func(ctx context.Context, companyID uint, module string) (bool, error) {
+			return false, nil
+		},
+	}
+	mw := NewSubscriptionMiddleware(mock)
 
 	at := testutil.NewAPITest(t, http.MethodGet, "/test", nil)
 
@@ -99,12 +107,12 @@ func TestSubscriptionMiddleware_RequireModule_CompanyMissingModule(t *testing.T)
 }
 
 func TestSubscriptionMiddleware_RequireModule_CompanyNoPlan(t *testing.T) {
-	tdb := newSubscriptionTestDB(t)
-	defer tdb.Close()
-
-	tdb.DB.Exec(`INSERT INTO companies (id, name, subscription_status, created_at, updated_at) VALUES (1, 'TestCo', 'ACTIVE', datetime('now'), datetime('now'))`)
-
-	mw := NewSubscriptionMiddleware(tdb.DB)
+	mock := &mockPlanCache{
+		hasAccess: func(ctx context.Context, companyID uint, module string) (bool, error) {
+			return false, errors.New("subscription plan not found")
+		},
+	}
+	mw := NewSubscriptionMiddleware(mock)
 
 	at := testutil.NewAPITest(t, http.MethodGet, "/test", nil)
 
@@ -121,4 +129,17 @@ func TestSubscriptionMiddleware_RequireModule_CompanyNoPlan(t *testing.T) {
 	rec, err := at.Execute(handler)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+func TestSubscriptionMiddleware_CheckEmployeeLimit(t *testing.T) {
+	mock := &mockPlanCache{
+		checkEmpLimit: func(ctx context.Context) (bool, error) {
+			return false, nil
+		},
+	}
+	mw := NewSubscriptionMiddleware(mock)
+
+	allowed, err := mw.CheckEmployeeLimit(context.Background())
+	require.NoError(t, err)
+	assert.False(t, allowed)
 }

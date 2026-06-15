@@ -2,7 +2,13 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, TrendingUp, TrendingDown, Wallet, Activity } from "lucide-react";
+import {
+  Loader2,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  Activity,
+} from "lucide-react";
 import { useFinanceDashboard } from "@/features/finance/hooks/useFinanceDashboard";
 import {
   Chart as ChartJS,
@@ -16,15 +22,24 @@ import {
 } from "chart.js";
 import { Bar, Doughnut } from "react-chartjs-2";
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+);
 
 export const FinanceDashboardView = () => {
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const today = new Date().toISOString().slice(0, 10);
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
 
   const { data, isLoading } = useFinanceDashboard(
     startDate || undefined,
-    endDate || undefined
+    endDate || undefined,
   );
 
   const formatCurrency = (amount: number) => {
@@ -41,8 +56,8 @@ export const FinanceDashboardView = () => {
   };
 
   const handleReset = () => {
-    setStartDate("");
-    setEndDate("");
+    setStartDate(today);
+    setEndDate(today);
   };
 
   const monthlyChartData = {
@@ -68,10 +83,10 @@ export const FinanceDashboardView = () => {
   };
 
   const incomeBreakdown = (data?.category_breakdown || []).filter(
-    (item) => item.type === "INCOME"
+    (item) => item.type === "INCOME",
   );
   const expenseBreakdown = (data?.category_breakdown || []).filter(
-    (item) => item.type === "EXPENSE"
+    (item) => item.type === "EXPENSE",
   );
 
   const incomeChartData = {
@@ -159,7 +174,9 @@ export const FinanceDashboardView = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Pemasukan</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Pemasukan
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -171,7 +188,9 @@ export const FinanceDashboardView = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Pengeluaran</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Pengeluaran
+            </CardTitle>
             <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
@@ -187,7 +206,9 @@ export const FinanceDashboardView = () => {
             <Wallet className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${(data?.net_balance || 0) >= 0 ? "text-blue-600" : "text-red-600"}`}>
+            <div
+              className={`text-2xl font-bold ${(data?.net_balance || 0) >= 0 ? "text-blue-600" : "text-red-600"}`}
+            >
               {formatCurrency(data?.net_balance || 0)}
             </div>
           </CardContent>
@@ -195,7 +216,9 @@ export const FinanceDashboardView = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Transaksi</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Transaksi
+            </CardTitle>
             <Activity className="h-4 w-4 text-slate-600" />
           </CardHeader>
           <CardContent>
@@ -209,7 +232,9 @@ export const FinanceDashboardView = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Pemasukan vs Pengeluaran per Bulan</CardTitle>
+            <CardTitle className="text-lg">
+              Pemasukan vs Pengeluaran per Bulan
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {(data?.monthly_summary || []).length > 0 ? (
@@ -253,7 +278,9 @@ export const FinanceDashboardView = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Breakdown Pengeluaran per Kategori</CardTitle>
+            <CardTitle className="text-lg">
+              Breakdown Pengeluaran per Kategori
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {expenseBreakdown.length > 0 ? (
@@ -287,7 +314,9 @@ export const FinanceDashboardView = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Breakdown Pemasukan per Kategori</CardTitle>
+            <CardTitle className="text-lg">
+              Breakdown Pemasukan per Kategori
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {incomeBreakdown.length > 0 ? (
@@ -332,11 +361,14 @@ export const FinanceDashboardView = () => {
                     <div>
                       <p className="font-medium text-sm">{tx.category_name}</p>
                       <p className="text-xs text-slate-400">
-                        {new Date(tx.transaction_date).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
+                        {new Date(tx.transaction_date).toLocaleDateString(
+                          "id-ID",
+                          {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          },
+                        )}
                         {" - "}
                         {tx.creator_name}
                       </p>

@@ -19,5 +19,6 @@ func (r *Router) SetupSubscriptionAdminRoutes(e *echo.Group) {
 	g.GET("/companies", r.container.SubscriptionHandler.ListCompanies)
 	g.GET("/companies/:id", r.container.SubscriptionHandler.GetCompanyDetail)
 	g.PUT("/companies/:id/status", r.container.SubscriptionHandler.UpdateCompanyStatus)
+	g.DELETE("/companies/:id/cache", r.container.SubscriptionHandler.RefreshCompanyCache)
 	g.GET("/dashboard", r.container.SubscriptionHandler.GetDashboardStats)
 }

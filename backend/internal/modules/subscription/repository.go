@@ -21,6 +21,7 @@ type Repository interface {
 	FindCompanyDetailByID(ctx context.Context, id uint) (*CompanyDetail, error)
 	UpdateCompanyStatus(ctx context.Context, companyID uint, status string) error
 	GetDashboardStats(ctx context.Context) (*DashboardStatsResponse, error)
+	FindExpiredCompanies(ctx context.Context) ([]uint, error)
 }
 
 type repository struct {
@@ -205,4 +206,14 @@ func (r *repository) GetDashboardStats(ctx context.Context) (*DashboardStatsResp
 	stats.TotalRevenue = totalRevenue
 
 	return &stats, nil
+}
+
+func (r *repository) FindExpiredCompanies(ctx context.Context) ([]uint, error) {
+	var ids []uint
+	err := r.db.WithContext(ctx).Table("companies").
+		Select("id").
+		Where("subscription_status != ?", constants.SubStatusExpired).
+		Where("subscription_expires_at IS NOT NULL AND subscription_expires_at < NOW()").
+		Pluck("id", &ids).Error
+	return ids, err
 }
