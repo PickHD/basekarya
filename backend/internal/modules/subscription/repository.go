@@ -210,7 +210,7 @@ func (r *repository) GetDashboardStats(ctx context.Context) (*DashboardStatsResp
 
 func (r *repository) FindExpiredCompanies(ctx context.Context) ([]uint, error) {
 	var ids []uint
-	err := r.db.Table("companies").
+	err := r.db.WithContext(ctx).Table("companies").
 		Select("id").
 		Where("subscription_status != ?", constants.SubStatusExpired).
 		Where("subscription_expires_at IS NOT NULL AND subscription_expires_at < NOW()").
