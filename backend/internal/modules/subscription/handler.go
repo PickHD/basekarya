@@ -143,3 +143,18 @@ func (h *Handler) GetDashboardStats(ctx echo.Context) error {
 	}
 	return response.NewResponses[any](ctx, http.StatusOK, "Success", stats, nil, nil)
 }
+
+func (h *Handler) RefreshCompanyCache(ctx echo.Context) error {
+	id := ctx.Param("id")
+	var companyID uint
+	if _, err := fmt.Sscanf(id, "%d", &companyID); err != nil {
+		return response.NewResponses[any](ctx, http.StatusBadRequest, "Invalid company ID", nil, err, nil)
+	}
+
+	if err := h.service.RefreshCompanyCache(ctx.Request().Context(), companyID); err != nil {
+		logger.Errorw("Failed to refresh company cache: ", err)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	return response.NewResponses[any](ctx, http.StatusOK, "Cache refreshed for company", nil, nil, nil)
+}

@@ -19,6 +19,7 @@ type Service interface {
 	ListCompanies(ctx context.Context, search string) ([]CompanyListItem, error)
 	GetCompanyDetail(ctx context.Context, id uint) (*CompanyDetail, error)
 	UpdateCompanyStatus(ctx context.Context, companyID uint, req *UpdateCompanyStatusRequest) error
+	RefreshCompanyCache(ctx context.Context, companyID uint) error
 	GetDashboardStats(ctx context.Context) (*DashboardStatsResponse, error)
 }
 
@@ -198,6 +199,12 @@ func (s *service) UpdateCompanyStatus(ctx context.Context, companyID uint, req *
 
 func (s *service) GetDashboardStats(ctx context.Context) (*DashboardStatsResponse, error) {
 	return s.repo.GetDashboardStats(ctx)
+}
+
+func (s *service) RefreshCompanyCache(ctx context.Context, companyID uint) error {
+	s.cache.Del(ctx, fmt.Sprintf(constants.SUBSCRIPTION_FEATURES_CACHE_KEY, companyID))
+	s.cache.Del(ctx, fmt.Sprintf(constants.COMPANY_PROFILE_CACHE_KEY, companyID))
+	return nil
 }
 
 func buildAllowedGroups(planSlug string) []string {
