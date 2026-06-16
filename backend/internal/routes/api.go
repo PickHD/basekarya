@@ -3,6 +3,7 @@ package routes
 import (
 	"basekarya-backend/internal/bootstrap"
 	customMiddleware "basekarya-backend/internal/middleware"
+	"basekarya-backend/internal/modules/bpjs"
 	"basekarya-backend/internal/modules/tax"
 	"basekarya-backend/pkg/utils"
 	"os"
@@ -73,6 +74,7 @@ func (r *Router) setupRoutes() {
 	r.SetupOnboardingRoutes(protected.Group("/onboarding"), r.container.SubscriptionMiddleware)
 	r.SetupFinanceRoutes(protected.Group("/finances"), r.container.SubscriptionMiddleware)
 	tax.RegisterRoutes(protected, r.container.TaxHandler, r.container.AuthMiddleware)
+	bpjs.RegisterRoutes(protected, r.container.BpjsHandler, r.container.AuthMiddleware)
 	r.SetupAssetRoutes(protected.Group("/assets"), r.container.SubscriptionMiddleware)
 	r.SetupSubscriptionRoutes(protected.Group("/subscriptions"))
 	r.SetupSubscriptionAdminRoutes(protected.Group("/admin/subscriptions"))
