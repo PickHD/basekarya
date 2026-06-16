@@ -20,6 +20,8 @@ import {
   Building2,
   Package,
   Building,
+  HeartPulse,
+  Percent,
 } from "lucide-react";
 import type { MenuItem } from "./types";
 import { PERMISSIONS } from "./permissions";
@@ -163,6 +165,22 @@ export const menuItems: MenuItem[] = [
     href: "/admin/company-settings",
     icon: Settings,
     permission: PERMISSIONS.VIEW_COMPANY,
+    group: "Pengaturan",
+    hideForPlatformAdmin: true,
+  },
+  {
+    title: "BPJS Config",
+    href: "/admin/bpjs-config",
+    icon: HeartPulse,
+    permission: PERMISSIONS.VIEW_BPJS_CONFIG,
+    group: "Pengaturan",
+    hideForPlatformAdmin: true,
+  },
+  {
+    title: "PPh 21 Config",
+    href: "/admin/pph21-config",
+    icon: Percent,
+    permission: PERMISSIONS.VIEW_TAX_CONFIG,
     group: "Pengaturan",
     hideForPlatformAdmin: true,
   },
