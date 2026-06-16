@@ -2,6 +2,7 @@ package payroll
 
 import (
 	"basekarya-backend/internal/infrastructure"
+	"basekarya-backend/internal/modules/bpjs"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/logger"
 	"basekarya-backend/pkg/response"
@@ -37,6 +38,8 @@ type service struct {
 	email              EmailProvider
 	loan               LoanProvider
 	overtime           OvertimeProvider
+	taxProv            TaxProvider
+	bpjsProv           BPJSProvider
 }
 
 func NewService(repo Repository,
@@ -49,8 +52,11 @@ func NewService(repo Repository,
 	client *http.Client,
 	email EmailProvider,
 	loan LoanProvider,
-	overtime OvertimeProvider) Service {
-	return &service{repo, user, reimbursement, attendance, company, notification, transactionManager, client, email, loan, overtime}
+	overtime OvertimeProvider,
+	taxProv TaxProvider,
+	bpjsProv BPJSProvider,
+) Service {
+	return &service{repo, user, reimbursement, attendance, company, notification, transactionManager, client, email, loan, overtime, taxProv, bpjsProv}
 }
 
 func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*GenerateResponse, error) {
@@ -128,10 +134,38 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 			}
 		}
 
+		// Calculate PPh 21 TER
+		var pph21Amount float64
+		if s.taxProv != nil {
+			result, err := s.taxProv.CalculateTER(ctx, baseSalary, emp.MaritalStatus, emp.DependentsCount)
+			if err != nil {
+				logger.Warn("failed to calculate PPh 21 for employee %d: %v", emp.ID, err)
+			} else {
+				pph21Amount = result.MonthlyPPh21
+			}
+		}
+
+		// Calculate BPJS contributions
+		var bpjsEmployeeTotal float64
+		var bpjsComponents []bpjs.BPJSComponent
+		if s.bpjsProv != nil {
+			components, err := s.bpjsProv.CalculateAll(ctx, baseSalary)
+			if err != nil {
+				logger.Warn("failed to calculate BPJS for employee %d: %v", emp.ID, err)
+			} else {
+				bpjsComponents = components
+				for _, c := range components {
+					if !c.IsEmployerBorne {
+						bpjsEmployeeTotal += c.EmployeeAmount
+					}
+				}
+			}
+		}
+
 		// calculate net salary
 		latePenaltyAmount := float64(totalLateMinutes * constants.PenaltyPerMinuteLate)
 		totalAllowance := baseSalary + reimburseAmount + overtimeAmount
-		totalDeduction := latePenaltyAmount + loanAmount
+		totalDeduction := latePenaltyAmount + loanAmount + pph21Amount + bpjsEmployeeTotal
 		netSalary := totalAllowance - totalDeduction
 
 		// construct object
@@ -191,6 +225,53 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 				Type:      constants.DetailTypeDeduction,
 				Amount:    loanAmount,
 			})
+		}
+
+		// BPJS employee deductions
+		for _, c := range bpjsComponents {
+			if !c.IsEmployerBorne && c.EmployeeAmount > 0 {
+				code := c.Code
+				group := "BPJS"
+				payroll.Details = append(payroll.Details, PayrollDetail{
+					CompanyID: companyID,
+					Title:     "BPJS " + c.Type,
+					Type:      constants.DetailTypeDeduction,
+					Amount:    c.EmployeeAmount,
+					Code:      &code,
+					Group:     &group,
+				})
+			}
+		}
+
+		// PPh 21
+		if pph21Amount > 0 {
+			code := "PPH21"
+			group := "TAX"
+			payroll.Details = append(payroll.Details, PayrollDetail{
+				CompanyID: companyID,
+				Title:     "PPh 21",
+				Type:      constants.DetailTypeDeduction,
+				Amount:    pph21Amount,
+				Code:      &code,
+				Group:     &group,
+			})
+		}
+
+		// BPJS employer contributions
+		for _, c := range bpjsComponents {
+			if c.IsEmployerBorne && c.EmployerAmount > 0 {
+				code := c.Code
+				group := "BPJS"
+				payroll.Details = append(payroll.Details, PayrollDetail{
+					CompanyID:       companyID,
+					Title:           "BPJS " + c.Type + " (Employer)",
+					Type:            constants.DetailTypeAllowance,
+					Amount:          c.EmployerAmount,
+					Code:            &code,
+					Group:           &group,
+					IsEmployerBorne: true,
+				})
+			}
 		}
 
 		// insert to slice & update success count
