@@ -22,6 +22,10 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 			return err
 		}
 
+		if err := seedTaxAndBPJSData(tx); err != nil {
+			return err
+		}
+
 		roleSuperadmin, err := seedRolesAndAdmin(tx, cfg, hasher)
 		if err != nil {
 			return err
@@ -165,6 +169,8 @@ func seedPermissions(tx *gorm.DB, roleSuperadmin *rbac.Role) error {
 		{"Onboarding", []string{constants.VIEW_ONBOARDING, constants.UPDATE_ONBOARDING_TASK}},
 		{"Finance", []string{constants.VIEW_FINANCE, constants.CREATE_FINANCE, constants.APPROVAL_FINANCE, constants.EXPORT_FINANCE, constants.MANAGE_FINANCE_CATEGORY, constants.VIEW_FINANCE_DASHBOARD}},
 		{"Asset", []string{constants.MANAGE_ASSET, constants.VIEW_ASSET, constants.VIEW_SELF_ASSET, constants.CREATE_ASSET, constants.APPROVAL_ASSET, constants.EXPORT_ASSET}},
+		{"BPJS", []string{constants.VIEW_BPJS_CONFIG, constants.MANAGE_BPJS_CONFIG}},
+		{"Tax", []string{constants.VIEW_TAX_CONFIG, constants.MANAGE_TAX_CONFIG}},
 	}
 
 	var permissionIDs []uint
