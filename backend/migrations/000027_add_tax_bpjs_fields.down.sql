@@ -1,4 +1,4 @@
-ALTER TABLE payroll_details DROP COLUMN is_employer_borne, DROP COLUMN `group`, DROP COLUMN code, DROP INDEX idx_payroll_details_group;
+ALTER TABLE payroll_details DROP COLUMN is_employer_borne, DROP COLUMN `group`, DROP COLUMN code;
 ALTER TABLE companies DROP COLUMN bpjs_ketenagakerjaan_number, DROP COLUMN bpjs_kesehatan_number;
 ALTER TABLE employees DROP COLUMN dependents_count, DROP COLUMN marital_status;
 DROP TABLE IF EXISTS ptkp_configs;

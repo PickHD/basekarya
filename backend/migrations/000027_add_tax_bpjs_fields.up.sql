@@ -52,6 +52,8 @@ CREATE TABLE pph21_term_configs (
   effective_until DATE NULL,
   INDEX idx_term_category (category),
   INDEX idx_term_effective (effective_from),
+  INDEX idx_term_config_company (company_id),
+  INDEX idx_term_config_deleted (deleted_at),
   CONSTRAINT fk_term_config_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
