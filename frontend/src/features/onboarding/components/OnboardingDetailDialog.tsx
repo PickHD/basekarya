@@ -98,7 +98,7 @@ export function OnboardingDetailDialog({ open, onOpenChange, workflowId, canComp
 
   const totalTasks = workflow ? (workflow.tasks?.length ?? 0) : 0;
 
-  const pendingTasks = workflow?.tasks?.filter((t) => !t.is_completed) ?? [];
+  const pendingTasks = workflow?.tasks?.filter((t: OnboardingTask) => !t.is_completed) ?? [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -59,8 +59,8 @@ function PtkpEditDialog({
 }) {
   const { updateMutation } = usePtkpConfigMutations();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<FormValues, unknown, FormValues>({
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       code: config?.code ?? "",
       annual_amount: config?.annual_amount ?? 0,

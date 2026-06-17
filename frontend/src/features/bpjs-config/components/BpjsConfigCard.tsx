@@ -66,8 +66,8 @@ export function BpjsConfigCard({
   const displayConfig = config?.is_active ? config : undefined;
   const isCompanyOverride = displayConfig && displayConfig.company_id !== null;
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<FormValues, unknown, FormValues>({
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       employee_rate: displayConfig?.employee_rate ? displayConfig.employee_rate * 100 : 0,
       employer_rate: displayConfig?.employer_rate ? displayConfig.employer_rate * 100 : 0,

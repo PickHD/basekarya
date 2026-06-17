@@ -121,7 +121,7 @@ export default function CompaniesPage() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {companies.map((company) => (
+              {companies.map((company: CompanyListItem) => (
                 <div
                   key={company.id}
                   className="rounded-lg border bg-card p-4 space-y-3 hover:shadow-md transition-shadow cursor-pointer"

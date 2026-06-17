@@ -42,12 +42,12 @@ export const FinanceDashboardView = () => {
     endDate || undefined,
   );
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | null) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
       minimumFractionDigits: 0,
-    }).format(amount);
+    }).format(amount ?? 0);
   };
 
   const handleFilter = () => {

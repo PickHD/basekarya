@@ -31,7 +31,7 @@ function EditableRow({
   category,
   createMutation,
   updateMutation,
-  deleteMutation,
+  deleteMutation: _unused,
   onCancel,
 }: EditableRowProps) {
   const [bracketNumber, setBracketNumber] = useState(bracket?.bracket_number ?? 0);

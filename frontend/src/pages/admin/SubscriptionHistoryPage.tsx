@@ -118,7 +118,7 @@ export default function SubscriptionHistoryPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {requests.map((req) => (
+                    {requests.map((req: SubscriptionRequestItem) => (
                       <TableRow key={req.id}>
                         <TableCell>
                           <div className="font-medium">{req.company_name}</div>
@@ -170,7 +170,7 @@ export default function SubscriptionHistoryPage() {
               </div>
 
               <div className="md:hidden space-y-3">
-                {requests.map((req) => (
+                {requests.map((req: SubscriptionRequestItem) => (
                   <Card key={req.id} className="p-4">
                     <div className="flex items-start justify-between">
                       <div>
