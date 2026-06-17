@@ -43,6 +43,9 @@ jobs:
           go test ./... -cover -coverprofile=coverage.out -count=1
           go tool cover -func=coverage.out
 
+      - name: Fix coverage paths
+        run: sed -i 's|^basekarya-backend/|backend/|' coverage.out
+
       - name: Coverage summary
         run: |
           echo "## Backend Coverage" >> $GITHUB_STEP_SUMMARY
@@ -62,7 +65,6 @@ jobs:
           token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
           files: backend/coverage.out
           strip-prefix: /home/runner/work/basekarya/basekarya/
-          add-prefix: backend
 
   frontend:
     runs-on: ubuntu-latest
@@ -93,6 +95,9 @@ jobs:
       - name: Run tests with coverage
         run: pnpm test:coverage
 
+      - name: Fix coverage paths
+        run: sed -i 's|^SF:src/|SF:frontend/src/|' coverage/lcov.info
+
       - name: Coverage summary
         run: |
           echo "## Frontend Coverage" >> $GITHUB_STEP_SUMMARY
@@ -113,4 +118,3 @@ jobs:
           token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
           files: frontend/coverage/lcov.info
           strip-prefix: /home/runner/work/basekarya/basekarya/
-          add-prefix: frontend
