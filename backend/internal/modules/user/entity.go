@@ -4,6 +4,7 @@ import (
 	"basekarya-backend/internal/modules/department"
 	"basekarya-backend/internal/modules/master"
 	"basekarya-backend/internal/modules/rbac"
+	"basekarya-backend/pkg/constants"
 	"time"
 )
 
@@ -41,8 +42,10 @@ type Employee struct {
 	BankAccountNumber string `gorm:"type:varchar(50)" json:"bank_account_number"`
 	BankAccountHolder string `gorm:"type:varchar(100)" json:"bank_account_holder"`
 
-	NPWP  string `gorm:"type:varchar(30)" json:"npwp"`
-	Email string `gorm:"type:varchar(255)" json:"email"`
+	NPWP             string                  `gorm:"type:varchar(30)" json:"npwp"`
+	MaritalStatus    constants.MaritalStatus `gorm:"type:varchar(5)" json:"marital_status"`
+	DependentsCount  int                     `gorm:"type:tinyint;default:0" json:"dependents_count"`
+	Email            string                  `gorm:"type:varchar(255)" json:"email"`
 
 	User User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 

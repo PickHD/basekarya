@@ -153,6 +153,7 @@ export default function EmployeeListPage() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-8 w-8"
                               onClick={() => handleEdit(emp)}
                             >
                               <Pencil className="h-4 w-4 text-slate-500" />
@@ -160,6 +161,7 @@ export default function EmployeeListPage() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-8 w-8"
                               onClick={() => handleDeleteClick(emp.id)}
                             >
                               <Trash2 className="h-4 w-4 text-red-500" />

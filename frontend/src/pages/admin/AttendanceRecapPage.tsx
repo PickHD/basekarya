@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Loader2,
   FileSpreadsheet,
@@ -57,10 +57,10 @@ export default function AttendanceRecapPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+          <h2 className="text-3xl font-bold tracking-tight">
             Attendance Recap
           </h2>
-          <p className="text-sm md:text-base text-slate-500">
+          <p className="text-slate-500">
             Monitor and export employee attendance.
           </p>
         </div>
@@ -84,7 +84,8 @@ export default function AttendanceRecapPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex flex-col lg:flex-row gap-4 justify-between">
+          <CardTitle className="text-lg font-semibold">Attendance Recap</CardTitle>
+          <div className="flex flex-col lg:flex-row gap-4 justify-between mt-3">
             <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center w-full lg:w-auto">
               <div className="relative w-full sm:w-auto">
                 <CalIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500 pointer-events-none" />

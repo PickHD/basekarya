@@ -177,6 +177,6 @@ func newTestService() (Service, *mockRepo, *mockUserProvider, *mockReimbursement
 	loanP := new(mockLoanProvider)
 	overtimeP := new(mockOvertimeProvider)
 
-	svc := NewService(repo, userP, reimburse, attend, comp, notif, tm, nil, email, loanP, overtimeP)
+	svc := NewService(repo, userP, reimburse, attend, comp, notif, tm, nil, email, loanP, overtimeP, nil, nil)
 	return svc, repo, userP, reimburse, attend, comp, notif, tm, email, loanP, overtimeP
 }

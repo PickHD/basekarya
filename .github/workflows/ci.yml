@@ -55,12 +55,16 @@ jobs:
           name: backend-coverage
           path: backend/coverage.out
 
+      - name: Fix coverage paths for Qlty
+        run: sed -i 's|^basekarya-backend/|backend/|' coverage.out
+
       - name: Publish backend coverage to Qlty
         uses: qltysh/qlty-action/coverage@v2
         if: always()
         with:
           token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
           files: backend/coverage.out
+          strip-prefix: /home/runner/work/basekarya/basekarya/
 
   frontend:
     runs-on: ubuntu-latest
@@ -91,6 +95,9 @@ jobs:
       - name: Run tests with coverage
         run: pnpm test:coverage
 
+      - name: Fix coverage paths
+        run: sed -i 's|^SF:src/|SF:frontend/src/|' coverage/lcov.info
+
       - name: Coverage summary
         run: |
           echo "## Frontend Coverage" >> $GITHUB_STEP_SUMMARY
@@ -110,3 +117,4 @@ jobs:
         with:
           token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
           files: frontend/coverage/lcov.info
+          strip-prefix: /home/runner/work/basekarya/basekarya/

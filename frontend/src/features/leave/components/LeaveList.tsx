@@ -67,10 +67,10 @@ export const LeaveList = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          <h2 className="text-3xl font-bold tracking-tight">
             Leave Request
           </h2>
-          <p className="text-sm sm:text-base text-slate-500">
+          <p className="text-slate-500">
             Monitor employee leave and absence permissions.
           </p>
         </div>
@@ -134,58 +134,6 @@ export const LeaveList = () => {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-4 md:hidden">
-                {data?.data.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-3"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-bold text-slate-800">
-                          {item.leave_type?.name}
-                        </h4>
-                        <span className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                          <Clock className="h-3 w-3" /> {item.total_days} Days
-                        </span>
-                      </div>
-                      <LeaveStatusBadge status={item.status} />
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm text-slate-700">
-                      <User className="h-4 w-4 text-slate-400" />
-                      <span className="font-medium">
-                        {item.employee_name || "Me"}
-                      </span>
-                    </div>
-
-                    <div className="bg-slate-50 p-3 rounded text-sm grid grid-cols-2 gap-2 text-center">
-                      <div>
-                        <div className="text-xs text-slate-500">Start</div>
-                        <div className="font-medium">
-                          {formatDate(item.start_date)}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-slate-500">End</div>
-                        <div className="font-medium">
-                          {formatDate(item.end_date)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleViewDetail(item.id)}
-                    >
-                      <Eye className="mr-2 h-4 w-4" /> View Details
-                    </Button>
-                  </div>
-                ))}
-              </div>
-
               <div className="hidden md:block rounded-md border">
                 <Table>
                   <TableHeader>
@@ -248,6 +196,58 @@ export const LeaveList = () => {
                     )}
                   </TableBody>
                 </Table>
+              </div>
+
+              <div className="md:hidden space-y-3">
+                {data?.data.map((item) => (
+                  <Card key={item.id} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-bold text-slate-800">
+                              {item.leave_type?.name}
+                            </h4>
+                            <span className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                              <Clock className="h-3 w-3" /> {item.total_days} Days
+                            </span>
+                          </div>
+                          <LeaveStatusBadge status={item.status} />
+                        </div>
+
+                        <div className="flex items-center gap-2 text-sm text-slate-700">
+                          <User className="h-4 w-4 text-slate-400" />
+                          <span className="font-medium">
+                            {item.employee_name || "Me"}
+                          </span>
+                        </div>
+
+                        <div className="bg-slate-50 p-3 rounded text-sm grid grid-cols-2 gap-2 text-center">
+                          <div>
+                            <div className="text-xs text-slate-500">Start</div>
+                            <div className="font-medium">
+                              {formatDate(item.start_date)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-slate-500">End</div>
+                            <div className="font-medium">
+                              {formatDate(item.end_date)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleViewDetail(item.id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
               </div>
 
               {data?.meta && (

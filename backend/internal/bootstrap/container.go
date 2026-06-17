@@ -8,6 +8,7 @@ import (
 	"basekarya-backend/internal/modules/asset"
 	"basekarya-backend/internal/modules/attendance"
 	"basekarya-backend/internal/modules/auth"
+	"basekarya-backend/internal/modules/bpjs"
 	"basekarya-backend/internal/modules/company"
 	"basekarya-backend/internal/modules/contract"
 	"basekarya-backend/internal/modules/department"
@@ -24,6 +25,7 @@ import (
 	"basekarya-backend/internal/modules/recruitment"
 	"basekarya-backend/internal/modules/reimbursement"
 	"basekarya-backend/internal/modules/subscription"
+	"basekarya-backend/internal/modules/tax"
 	"basekarya-backend/internal/modules/user"
 )
 
@@ -60,6 +62,8 @@ type Container struct {
 	FinanceHandler       *finance.Handler
 	AssetHandler         *asset.Handler
 	SubscriptionHandler  *subscription.Handler
+	TaxHandler           *tax.Handler
+	BpjsHandler          *bpjs.Handler
 
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
@@ -110,6 +114,10 @@ func NewContainer() (*Container, error) {
 	astRepo := asset.NewRepository(db.GetDB())
 	subscriptionRepo := subscription.NewRepository(db.GetDB())
 	planCache := subscription.NewPlanCacheService(db.GetDB(), redis)
+	taxRepo := tax.NewRepository(db.GetDB())
+	bpjsRepo := bpjs.NewRepository(db.GetDB())
+	taxSvc := tax.NewService(taxRepo)
+	bpjsSvc := bpjs.NewService(bpjsRepo)
 	subscriptionMW := middleware.NewSubscriptionMiddleware(planCache)
 
 	healthSvc := health.NewService(healthRepo)
@@ -118,7 +126,7 @@ func NewContainer() (*Container, error) {
 	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeWorker, transactionManager, excel)
 	masterSvc := master.NewService(masterRepo, redis)
 	departmentSvc := department.NewService(departmentRepo, redis)
-	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo, notificationSvc, transactionManager, httpClient.GetClient(), email, loanRepo, overtimeRepo)
+	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo, notificationSvc, transactionManager, httpClient.GetClient(), email, loanRepo, overtimeRepo, taxSvc, bpjsSvc)
 	leaveSvc := leave.NewService(leaveRepo, storage, notificationSvc, userRepo, transactionManager, excel)
 	userSvc := user.NewService(userRepo, bcrypt, storage, redis, leaveSvc, transactionManager, subscriptionMW, email)
 	reimburseSvc := reimbursement.NewService(reimburseRepo, storage, notificationSvc, userRepo, transactionManager, excel)
@@ -155,6 +163,8 @@ func NewContainer() (*Container, error) {
 	assetHandler := asset.NewHandler(astSvc)
 	financeHandler := finance.NewHandler(financeSvc)
 	subscriptionHandler := subscription.NewHandler(subscriptionSvc)
+	taxHandler := tax.NewHandler(taxSvc)
+	bpjsHandler := bpjs.NewHandler(bpjsSvc)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 	rateLimiterMiddleware := middleware.NewRateLimiterMiddleware()
@@ -198,6 +208,8 @@ func NewContainer() (*Container, error) {
 		FinanceHandler:       financeHandler,
 		AssetHandler:         assetHandler,
 		SubscriptionHandler:  subscriptionHandler,
+		TaxHandler:           taxHandler,
+		BpjsHandler:          bpjsHandler,
 
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,

@@ -36,9 +36,11 @@ type PayrollDetail struct {
 	PayrollID uint `json:"payroll_id"`
 	CompanyID uint `gorm:"index;not null" json:"company_id"`
 
-	Title string `gorm:"type:varchar(150);not null" json:"title"`
-
-	Type constants.PayrollDetailType `gorm:"type:varchar(20);not null" json:"type"`
+	Title           string                     `gorm:"type:varchar(150);not null" json:"title"`
+	Code            *string                    `gorm:"type:varchar(30)" json:"code"`
+	Group           *string                    `gorm:"type:varchar(30)" json:"group"`
+	IsEmployerBorne bool                       `gorm:"default:false" json:"is_employer_borne"`
+	Type            constants.PayrollDetailType `gorm:"type:varchar(20);not null" json:"type"`
 
 	Amount float64 `gorm:"type:decimal(15,2);not null" json:"amount"`
 }

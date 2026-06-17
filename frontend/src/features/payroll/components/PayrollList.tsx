@@ -242,8 +242,8 @@ export default function PayrollList() {
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
+                          size="icon"
+                          className="h-8 w-8"
                           onClick={() => {
                             setSelectedPayrollId(item.id);
                             setIsDetailOpen(true);
@@ -253,8 +253,8 @@ export default function PayrollList() {
                         </Button>
                         <Button
                           variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
+                          size="icon"
+                          className="h-8 w-8"
                           onClick={() =>
                             handleDownload(
                               item.id,
@@ -342,23 +342,23 @@ export default function PayrollList() {
                   </div>
 
                   <div className="flex flex-col gap-2 pt-1">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="flex gap-1">
                       <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
                         onClick={() => {
                           setSelectedPayrollId(item.id);
                           setIsDetailOpen(true);
                         }}
                       >
-                        <Eye className="mr-2 h-4 w-4" /> View
+                        <Eye className="h-4 w-4" />
                       </Button>
 
                       <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
                         onClick={() =>
                           handleDownload(
                             item.id,
@@ -369,11 +369,10 @@ export default function PayrollList() {
                         disabled={isDownloading === item.id}
                       >
                         {isDownloading === item.id ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                          <Download className="mr-2 h-4 w-4" />
+                          <Download className="h-4 w-4" />
                         )}
-                        PDF
                       </Button>
                     </div>
 

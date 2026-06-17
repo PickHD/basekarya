@@ -2,6 +2,7 @@ import { useAllRequests, useReviewRequest } from "@/features/subscription/hooks/
 import type { SubscriptionRequestItem } from "@/features/subscription/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +11,15 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Loader2, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -78,86 +87,140 @@ export default function SubscriptionHistoryPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">
-          Riwayat Permintaan
-        </h1>
-        <p className="text-muted-foreground mt-1">
+        <h2 className="text-3xl font-bold tracking-tight">Riwayat Permintaan</h2>
+        <p className="text-slate-500">
           Semua permintaan upgrade subscription
         </p>
       </div>
 
-      {requests.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          Belum ada permintaan
-        </div>
-      ) : (
-        <div className="rounded-lg border">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="text-left p-3 font-medium">Perusahaan</th>
-                  <th className="text-left p-3 font-medium">Dari</th>
-                  <th className="text-left p-3 font-medium">Ke</th>
-                  <th className="text-left p-3 font-medium">Selisih</th>
-                  <th className="text-left p-3 font-medium">Status</th>
-                  <th className="text-left p-3 font-medium">Tanggal</th>
-                  <th className="text-left p-3 font-medium">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {requests.map((req) => (
-                  <tr key={req.id} className="border-b last:border-0 hover:bg-muted/30">
-                    <td className="p-3">
-                      <div className="font-medium">{req.company_name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {req.requested_by_name}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-semibold">Request History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {requests.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              Belum ada permintaan
+            </div>
+          ) : (
+            <>
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Perusahaan</TableHead>
+                      <TableHead>Dari</TableHead>
+                      <TableHead>Ke</TableHead>
+                      <TableHead>Selisih</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Tanggal</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {requests.map((req: SubscriptionRequestItem) => (
+                      <TableRow key={req.id}>
+                        <TableCell>
+                          <div className="font-medium">{req.company_name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {req.requested_by_name}
+                          </div>
+                        </TableCell>
+                        <TableCell>{req.current_plan_name}</TableCell>
+                        <TableCell className="font-medium">{req.requested_plan_name}</TableCell>
+                        <TableCell className="text-xs">
+                          +Rp{req.price_difference?.toLocaleString("id-ID")}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={req.status} />
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {new Date(req.created_at).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {req.status === "PENDING" && (
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleReview(req, "APPROVED")}
+                              >
+                                <Check className="h-4 w-4 text-emerald-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleReview(req, "REJECTED")}
+                              >
+                                <X className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="md:hidden space-y-3">
+                {requests.map((req: SubscriptionRequestItem) => (
+                  <Card key={req.id} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-medium">{req.company_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {req.requested_by_name}
+                        </p>
                       </div>
-                    </td>
-                    <td className="p-3">{req.current_plan_name}</td>
-                    <td className="p-3 font-medium">{req.requested_plan_name}</td>
-                    <td className="p-3 text-xs">
-                      +Rp{req.price_difference?.toLocaleString("id-ID")}
-                    </td>
-                    <td className="p-3">
                       <StatusBadge status={req.status} />
-                    </td>
-                    <td className="p-3 text-xs text-muted-foreground">
-                      {new Date(req.created_at).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </td>
-                    <td className="p-3">
-                      {req.status === "PENDING" && (
-                        <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-xs h-7 text-emerald-600 hover:text-emerald-700"
-                            onClick={() => handleReview(req, "APPROVED")}
-                          >
-                            Setujui
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-xs h-7 text-red-600 hover:text-red-700"
-                            onClick={() => handleReview(req, "REJECTED")}
-                          >
-                            Tolak
-                          </Button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
+                    </div>
+                    <div className="mt-3 space-y-1 text-sm">
+                      <p className="text-muted-foreground">
+                        Dari: {req.current_plan_name} → Ke: {req.requested_plan_name}
+                      </p>
+                      <p>+Rp{req.price_difference?.toLocaleString("id-ID")}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(req.created_at).toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                    {req.status === "PENDING" && (
+                      <div className="flex gap-1 mt-3">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleReview(req, "APPROVED")}
+                        >
+                          <Check className="h-4 w-4 text-emerald-600" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleReview(req, "REJECTED")}
+                        >
+                          <X className="h-4 w-4 text-red-600" />
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md">

@@ -36,8 +36,11 @@ func shiftTimeForPresent() string {
 }
 
 func shiftTimeForLate() string {
-	t := time.Now().Add(-2 * time.Hour)
-	return t.Format("15:04:05")
+	now := time.Now()
+	if now.Hour() >= 3 {
+		return now.Add(-2 * time.Hour).Format("15:04:05")
+	}
+	return "02:00:00"
 }
 
 func shiftTimeForTooEarly() string {

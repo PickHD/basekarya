@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { MoreHorizontal, FileText, Trash, Eye, Loader2 } from "lucide-react";
+import { MoreHorizontal, FileText, Pencil, Trash2, Eye, Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { ContractTypeBadge } from "./ContractTypeBadge";
 import type { Contract } from "../types";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -54,94 +55,6 @@ export function ContractList({ data, isLoading, onView, onEdit }: Props) {
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-4 md:hidden">
-        {isLoading ? (
-          <div className="flex justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-          </div>
-        ) : data.length === 0 ? (
-          <div className="text-center p-8 text-slate-500 border rounded-lg bg-slate-50">
-            No contracts found.
-          </div>
-        ) : (
-          data.map((item) => (
-            <div
-              key={item.id}
-              className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-3"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="font-bold text-slate-800">
-                    {item.employee_name || "-"}
-                  </h4>
-                  <p className="text-xs text-muted-foreground">{item.employee_nik || "-"}</p>
-                </div>
-                <ContractTypeBadge type={item.contract_type} />
-              </div>
-
-              <div className="flex items-center gap-2 text-sm text-slate-700">
-                <FileText className="h-4 w-4 text-slate-400" />
-                <span className="font-medium">
-                  {item.contract_number || "-"}
-                </span>
-              </div>
-
-              <div className="bg-slate-50 p-3 rounded text-sm grid grid-cols-2 gap-2 text-center">
-                <div>
-                  <div className="text-xs text-slate-500">Start</div>
-                  <div className="font-medium">
-                    {format(new Date(item.start_date), "dd MMM yyyy")}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-slate-500">End</div>
-                  <div className="font-medium">
-                    {item.end_date ? (
-                      <span className={new Date(item.end_date) < new Date() ? "text-red-500 font-medium" : ""}>
-                        {format(new Date(item.end_date), "dd MMM yyyy")}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-2 w-full pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => onView(item)}
-                >
-                  <Eye className="mr-2 h-4 w-4" /> View
-                </Button>
-                {hasPermission(PERMISSIONS.CREATE_CONTRACT) && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => onEdit(item)}
-                  >
-                    <FileText className="mr-2 h-4 w-4" /> Edit
-                  </Button>
-                )}
-                {hasPermission(PERMISSIONS.UPDATE_CONTRACT) && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="flex-none text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => setDeleteId(item.id)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
       <div className="hidden md:block rounded-md border">
         <Table>
           <TableHeader>
@@ -211,7 +124,7 @@ export function ContractList({ data, isLoading, onView, onEdit }: Props) {
                             className="text-red-600"
                             onClick={() => setDeleteId(item.id)}
                           >
-                            <Trash className="mr-2 h-4 w-4" /> Delete
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
@@ -222,6 +135,94 @@ export function ContractList({ data, isLoading, onView, onEdit }: Props) {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="md:hidden space-y-3">
+        {isLoading ? (
+          <div className="flex justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+          </div>
+        ) : data.length === 0 ? (
+          <div className="text-center p-8 text-slate-500 border rounded-lg bg-slate-50">
+            No contracts found.
+          </div>
+        ) : (
+          data.map((item) => (
+            <Card
+              key={item.id}
+              className="p-4"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-bold text-slate-800">
+                    {item.employee_name || "-"}
+                  </h4>
+                  <p className="text-xs text-muted-foreground">{item.employee_nik || "-"}</p>
+                </div>
+                <ContractTypeBadge type={item.contract_type} />
+              </div>
+
+              <div className="flex items-center gap-2 text-sm text-slate-700">
+                <FileText className="h-4 w-4 text-slate-400" />
+                <span className="font-medium">
+                  {item.contract_number || "-"}
+                </span>
+              </div>
+
+              <div className="bg-slate-50 p-3 rounded text-sm grid grid-cols-2 gap-2 text-center">
+                <div>
+                  <div className="text-xs text-slate-500">Start</div>
+                  <div className="font-medium">
+                    {format(new Date(item.start_date), "dd MMM yyyy")}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-500">End</div>
+                  <div className="font-medium">
+                    {item.end_date ? (
+                      <span className={new Date(item.end_date) < new Date() ? "text-red-500 font-medium" : ""}>
+                        {format(new Date(item.end_date), "dd MMM yyyy")}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-1 justify-end pt-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => onView(item)}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+                {hasPermission(PERMISSIONS.CREATE_CONTRACT) && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => onEdit(item)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+                {hasPermission(PERMISSIONS.UPDATE_CONTRACT) && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    onClick={() => setDeleteId(item.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </Card>
+          ))
+        )}
       </div>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>

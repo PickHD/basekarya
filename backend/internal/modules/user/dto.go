@@ -20,6 +20,8 @@ type UserProfileResponse struct {
 	Email              string  `json:"email"`
 	BaseSalary         float64 `json:"base_salary"`
 	Position           string  `json:"position"`
+	MaritalStatus      string  `json:"marital_status"`
+	DependentsCount    int     `json:"dependents_count"`
 }
 
 type UpdateProfileRequest struct {
@@ -30,6 +32,8 @@ type UpdateProfileRequest struct {
 	BankAccountHolder string `form:"bank_account_holder" json:"bank_account_holder" validate:"omitempty,min=3"`
 	NPWP              string `form:"npwp" json:"npwp" validate:"omitempty,min=12"`
 	Email             string `form:"email" json:"email" validate:"omitempty,email"`
+	MaritalStatus     string `form:"marital_status" json:"marital_status" validate:"omitempty,oneof=TK K"`
+	DependentsCount   *int   `form:"dependents_count" json:"dependents_count" validate:"omitempty,min=0,max=3"`
 }
 
 type ChangePasswordRequest struct {
@@ -39,29 +43,33 @@ type ChangePasswordRequest struct {
 }
 
 type EmployeeListResponse struct {
-	ID             uint    `json:"id"`
-	FullName       string  `json:"full_name"`
-	NIK            string  `json:"nik"`
-	Username       string  `json:"username"`
-	DepartmentID   uint    `json:"department_id"`
-	DepartmentName string  `json:"department_name"`
-	ShiftID        uint    `json:"shift_id"`
-	ShiftName      string  `json:"shift_name"`
-	RoleID         uint    `json:"role_id"`
-	BaseSalary     float64 `json:"base_salary"`
-	Email          string  `json:"email"`
-	Position       string  `json:"position"`
+	ID              uint    `json:"id"`
+	FullName        string  `json:"full_name"`
+	NIK             string  `json:"nik"`
+	Username        string  `json:"username"`
+	DepartmentID    uint    `json:"department_id"`
+	DepartmentName  string  `json:"department_name"`
+	ShiftID         uint    `json:"shift_id"`
+	ShiftName       string  `json:"shift_name"`
+	RoleID          uint    `json:"role_id"`
+	BaseSalary      float64 `json:"base_salary"`
+	Email           string  `json:"email"`
+	Position        string  `json:"position"`
+	MaritalStatus   string  `json:"marital_status"`
+	DependentsCount int     `json:"dependents_count"`
 }
 
 type CreateEmployeeRequest struct {
-	FullName     string  `json:"full_name" validate:"required"`
-	NIK          string  `json:"nik" validate:"required"`
-	DepartmentID uint    `json:"department_id" validate:"required"`
-	ShiftID      uint    `json:"shift_id" validate:"required"`
-	RoleID       uint    `json:"role_id" validate:"required"`
-	BaseSalary   float64 `json:"base_salary" validate:"required"`
-	Email        string  `json:"email" validate:"required,email"`
-	Position     string  `json:"position" validate:"required,min=3,max=100"`
+	FullName        string  `json:"full_name" validate:"required"`
+	NIK             string  `json:"nik" validate:"required"`
+	DepartmentID    uint    `json:"department_id" validate:"required"`
+	ShiftID         uint    `json:"shift_id" validate:"required"`
+	RoleID          uint    `json:"role_id" validate:"required"`
+	BaseSalary      float64 `json:"base_salary" validate:"required"`
+	Email           string  `json:"email" validate:"required,email"`
+	Position        string  `json:"position" validate:"required,min=3,max=100"`
+	MaritalStatus   string  `json:"marital_status" validate:"omitempty,oneof=TK K ''"`
+	DependentsCount *int    `json:"dependents_count" validate:"omitempty,min=0,max=3"`
 }
 
 type CreateEmployeeResponse struct {
@@ -69,12 +77,14 @@ type CreateEmployeeResponse struct {
 }
 
 type UpdateEmployeeRequest struct {
-	FullName     string  `json:"full_name"`
-	NIK          string  `json:"nik"`
-	DepartmentID uint    `json:"department_id"`
-	ShiftID      uint    `json:"shift_id"`
-	RoleID       uint    `json:"role_id"`
-	BaseSalary   float64 `json:"base_salary"`
-	Email        string  `json:"email" validate:"omitempty,email"`
-	Position     string  `json:"position"`
+	FullName        string  `json:"full_name"`
+	NIK             string  `json:"nik"`
+	DepartmentID    uint    `json:"department_id"`
+	ShiftID         uint    `json:"shift_id"`
+	RoleID          uint    `json:"role_id"`
+	BaseSalary      float64 `json:"base_salary"`
+	Email           string  `json:"email" validate:"omitempty,email"`
+	Position        string  `json:"position"`
+	MaritalStatus   *string `json:"marital_status" validate:"omitempty,oneof=TK K ''"`
+	DependentsCount *int    `json:"dependents_count" validate:"omitempty,min=0,max=3"`
 }

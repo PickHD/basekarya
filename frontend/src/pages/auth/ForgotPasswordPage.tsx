@@ -30,7 +30,7 @@ export default function ForgotPasswordPage() {
           <ForgotPasswordForm />
 
           <p className="px-8 text-center text-sm text-slate-500 w-full mt-auto">
-            BaseKarya v2.10 &copy; 2026.
+            BaseKarya v2.12 &copy; 2026.
           </p>
         </div>
       </div>
