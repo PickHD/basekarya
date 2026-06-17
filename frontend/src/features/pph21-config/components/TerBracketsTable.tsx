@@ -22,7 +22,6 @@ interface EditableRowProps {
   category: string;
   createMutation: UseMutationResult<any, Error, any>;
   updateMutation: UseMutationResult<any, Error, any>;
-  deleteMutation: UseMutationResult<any, Error, number>;
   onCancel?: () => void;
 }
 
@@ -31,7 +30,6 @@ function EditableRow({
   category,
   createMutation,
   updateMutation,
-  deleteMutation: _unused,
   onCancel,
 }: EditableRowProps) {
   const [bracketNumber, setBracketNumber] = useState(bracket?.bracket_number ?? 0);
@@ -208,7 +206,6 @@ export function TerBracketsTable() {
                     category={activeCategory}
                     createMutation={createMutation}
                     updateMutation={updateMutation}
-                    deleteMutation={deleteMutation}
                     onCancel={() => setEditingId(null)}
                   />
                 )}
@@ -220,7 +217,6 @@ export function TerBracketsTable() {
                       category={activeCategory}
                       createMutation={createMutation}
                       updateMutation={updateMutation}
-                      deleteMutation={deleteMutation}
                       onCancel={() => setEditingId(null)}
                     />
                   ) : (
