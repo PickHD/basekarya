@@ -41,6 +41,8 @@ import PlatformAdminDashboard from "@/pages/admin/PlatformAdminDashboard";
 import CompaniesPage from "@/pages/admin/CompaniesPage";
 import SubscriptionHistoryPage from "@/pages/admin/SubscriptionHistoryPage";
 import DepartmentListPage from "@/pages/admin/DepartmentListPage";
+import BpjsConfigPage from "@/pages/admin/BpjsConfigPage";
+import Pph21ConfigPage from "@/pages/admin/Pph21ConfigPage";
 
 import { PERMISSIONS } from "@/config/permissions";
 
@@ -163,6 +165,8 @@ function App() {
               PERMISSIONS.VIEW_REQUISITION,
               PERMISSIONS.VIEW_ONBOARDING,
               PERMISSIONS.MANAGE_ONBOARDING_TEMPLATE,
+              PERMISSIONS.VIEW_BPJS_CONFIG,
+              PERMISSIONS.VIEW_TAX_CONFIG,
             ]} />}
           >
             <Route path="admin/employees" element={<EmployeeListPage />} />
@@ -173,6 +177,8 @@ function App() {
             <Route path="admin/payrolls" element={<PayrollListPage />} />
             <Route path="admin/company-settings" element={<CompanySettingsPage />} />
             <Route path="admin/departments" element={<DepartmentListPage />} />
+            <Route path="admin/bpjs-config" element={<BpjsConfigPage />} />
+            <Route path="admin/pph21-config" element={<Pph21ConfigPage />} />
             <Route path="admin/requisitions" element={<RequisitionListPage />} />
             <Route path="admin/requisitions/:id/applicants" element={<ApplicantBoardPage />} />
             <Route path="admin/onboarding" element={<OnboardingListPage />} />

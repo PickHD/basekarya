@@ -38,10 +38,10 @@ export function RoleList() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          <h2 className="text-3xl font-bold tracking-tight">
             Roles Management
           </h2>
-          <p className="text-sm sm:text-base text-slate-500">
+          <p className="text-slate-500">
             Manage system roles and their permissions.
           </p>
         </div>
@@ -76,41 +76,6 @@ export function RoleList() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-4 md:hidden">
-                {roles?.data?.map((role: Role) => (
-                  <div
-                    key={role.id}
-                    className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-3"
-                  >
-                    <div className="flex justify-between items-start gap-2">
-                      <div>
-                        <h4 className="font-semibold text-lg flex items-center gap-2">
-                          <Shield className="h-4 w-4 text-blue-600" />
-                          {role.name}
-                        </h4>
-                      </div>
-                    </div>
-
-                    <div className="pt-2 border-t mt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => handleManagePermissions(role.id)}
-                        disabled={selectedRoleId === role.id && roleDetailsLoading}
-                      >
-                        {selectedRoleId === role.id && roleDetailsLoading ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Settings className="mr-2 h-4 w-4" />
-                        )}
-                        Manage Permissions
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
               {/* Desktop View: Data Table */}
               <div className="hidden md:block rounded-md border">
                 <Table>
@@ -149,6 +114,32 @@ export function RoleList() {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+
+              <div className="md:hidden space-y-3">
+                {roles?.data?.map((role: Role) => (
+                  <Card key={role.id} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-blue-600" />
+                        <p className="font-medium">{role.name}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleManagePermissions(role.id)}
+                        disabled={selectedRoleId === role.id && roleDetailsLoading}
+                      >
+                        {selectedRoleId === role.id && roleDetailsLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Settings className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
               </div>
             </>
           )}

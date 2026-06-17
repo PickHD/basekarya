@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -18,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Eye, Plus, Search, Loader2 } from "lucide-react";
+import { Eye, Plus, Search, Loader2, GraduationCap } from "lucide-react";
 import { useOnboardingWorkflows } from "@/features/onboarding/hooks/useOnboarding";
 import type { OnboardingWorkflowList } from "@/features/onboarding/types";
 import { PaginationControls } from "@/components/shared/PaginationControls";
@@ -43,38 +44,25 @@ export function OnboardingWorkflowList({ onView, onCreateNew, canCreate }: Props
   const meta = data?.meta;
 
   const statusBadge = (s: string) => {
-    if (s === "COMPLETED") return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Completed</Badge>;
-    return <Badge className="bg-blue-100 text-blue-700 border-blue-200">In Progress</Badge>;
+    if (s === "COMPLETED") return <Badge variant="secondary" className="text-xs">Completed</Badge>;
+    return <Badge variant="default" className="text-xs">In Progress</Badge>;
   };
-
-  const progressBar = (pct: number) => (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all ${pct === 100 ? "bg-emerald-500" : "bg-blue-500"}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className="text-xs text-slate-500 w-8 text-right">{pct}%</span>
-    </div>
-  );
 
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex gap-2 flex-1 max-w-md">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              className="pl-9 text-sm"
+              className="pl-9"
               placeholder="Search by name or email..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
           <Select value={status} onValueChange={(v) => { setStatus(v === "ALL" ? "" : v); setPage(1); }}>
-            <SelectTrigger className="w-36 text-sm">
+            <SelectTrigger className="w-36">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -85,79 +73,128 @@ export function OnboardingWorkflowList({ onView, onCreateNew, canCreate }: Props
           </Select>
         </div>
         {canCreate && (
-          <Button onClick={onCreateNew} className="bg-blue-600 hover:bg-blue-700 text-sm">
-            <Plus className="mr-2 h-4 w-4" />
-            New Onboarding
+          <Button onClick={onCreateNew} className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="mr-2 h-4 w-4" /> New Onboarding
           </Button>
         )}
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border border-slate-200 overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-slate-50">
-              <TableHead className="text-xs font-semibold text-slate-600">New Hire</TableHead>
-              <TableHead className="text-xs font-semibold text-slate-600">Position</TableHead>
-              <TableHead className="text-xs font-semibold text-slate-600">Department</TableHead>
-              <TableHead className="text-xs font-semibold text-slate-600">Start Date</TableHead>
-              <TableHead className="text-xs font-semibold text-slate-600">Status</TableHead>
-              <TableHead className="text-xs font-semibold text-slate-600">Progress</TableHead>
-              <TableHead className="text-xs font-semibold text-slate-600 text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-16">
-                  <Loader2 className="h-5 w-5 animate-spin text-slate-400 mx-auto" />
-                </TableCell>
-              </TableRow>
-            ) : workflows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-16 text-slate-400 text-sm">
-                  No onboarding workflows found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              workflows.map((w) => (
-                <TableRow key={w.id} className="hover:bg-slate-50 transition-colors">
-                  <TableCell>
-                    <div>
-                      <p className="text-sm font-medium text-slate-800">{w.new_hire_name}</p>
-                      <p className="text-xs text-slate-500">{w.new_hire_email}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm text-slate-600">{w.position || "—"}</TableCell>
-                  <TableCell className="text-sm text-slate-600">{w.department || "—"}</TableCell>
-                  <TableCell className="text-sm text-slate-600">
-                    {w.start_date ? format(new Date(w.start_date), "dd MMM yyyy") : "—"}
-                  </TableCell>
-                  <TableCell>{statusBadge(w.status)}</TableCell>
-                  <TableCell className="min-w-[140px]">{progressBar(w.progress)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-xs"
-                      onClick={() => onView(w)}
-                    >
-                      <Eye className="h-3.5 w-3.5 mr-1.5" />
-                      View
-                    </Button>
-                  </TableCell>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : workflows.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+          <GraduationCap className="h-12 w-12 mb-2" />
+          <p>No onboarding workflows found</p>
+          {canCreate && <p className="text-sm">Create a new onboarding workflow to get started.</p>}
+        </div>
+      ) : (
+        <>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>New Hire</TableHead>
+                  <TableHead>Position</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Start Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Progress</TableHead>
+                  <TableHead className="w-20 text-right">Actions</TableHead>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {workflows.map((w) => (
+                  <TableRow key={w.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{w.new_hire_name}</p>
+                        <p className="text-xs text-muted-foreground">{w.new_hire_email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>{w.position || "—"}</TableCell>
+                    <TableCell>{w.department || "—"}</TableCell>
+                    <TableCell>
+                      {w.start_date ? format(new Date(w.start_date), "dd MMM yyyy") : "—"}
+                    </TableCell>
+                    <TableCell>{statusBadge(w.status)}</TableCell>
+                    <TableCell className="min-w-[140px]">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${w.progress === 100 ? "bg-emerald-500" : "bg-blue-500"}`}
+                            style={{ width: `${w.progress}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-muted-foreground w-8 text-right">{w.progress}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onView(w)}
+                        className="h-8 w-8"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
 
-      {meta && (
-        <PaginationControls
-          meta={meta}
-          onPageChange={setPage}
-        />
+          <div className="md:hidden space-y-3">
+            {workflows.map((w) => (
+              <Card key={w.id} className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="font-medium">{w.new_hire_name}</p>
+                    <p className="text-sm text-muted-foreground">{w.new_hire_email}</p>
+                    <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                      {w.position && <span>{w.position}</span>}
+                      {w.department && <span>· {w.department}</span>}
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      {statusBadge(w.status)}
+                      {w.start_date && (
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(w.start_date), "dd MMM yyyy")}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <div className="flex-1 max-w-[120px] h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${w.progress === 100 ? "bg-emerald-500" : "bg-blue-500"}`}
+                          style={{ width: `${w.progress}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground">{w.progress}%</span>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onView(w)}
+                    className="h-8 w-8 flex-shrink-0"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {meta && (
+            <PaginationControls
+              meta={meta}
+              onPageChange={setPage}
+            />
+          )}
+        </>
       )}
     </div>
   );

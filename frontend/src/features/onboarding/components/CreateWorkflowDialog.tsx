@@ -234,7 +234,7 @@ export function CreateWorkflowDialog({ open, onOpenChange, applicantId }: Props)
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending} className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Start Onboarding
               </Button>

@@ -174,7 +174,7 @@ export const menuItems: MenuItem[] = [
     icon: HeartPulse,
     permission: PERMISSIONS.VIEW_BPJS_CONFIG,
     group: "Pengaturan",
-    hideForPlatformAdmin: true,
+    requiredModule: "bpjs",
   },
   {
     title: "PPh 21 Config",
@@ -182,7 +182,7 @@ export const menuItems: MenuItem[] = [
     icon: Percent,
     permission: PERMISSIONS.VIEW_TAX_CONFIG,
     group: "Pengaturan",
-    hideForPlatformAdmin: true,
+    requiredModule: "tax",
   },
   {
     title: "Departments",

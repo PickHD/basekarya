@@ -56,8 +56,8 @@ export const AssetAssignmentList = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Permintaan Aset</h2>
-          <p className="text-sm sm:text-base text-slate-500">
+          <h2 className="text-3xl font-bold tracking-tight">Permintaan Aset</h2>
+          <p className="text-slate-500">
             Monitor permintaan dan pengembalian aset karyawan.
           </p>
         </div>
@@ -109,43 +109,6 @@ export const AssetAssignmentList = () => {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-4 md:hidden">
-                {data?.data.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-3"
-                  >
-                    <div className="flex justify-between items-start gap-2">
-                      <div>
-                        <h4 className="font-semibold line-clamp-1">{item.employee_name || "Karyawan"}</h4>
-                        <p className="text-xs text-slate-500">{item.employee_nik}</p>
-                      </div>
-                      <AssetAssignmentStatusBadge status={item.status} />
-                    </div>
-
-                    <div className="space-y-1">
-                      <p className="text-sm"><span className="text-slate-500">Aset:</span> {item.asset_name}</p>
-                      {item.expected_return_date && (
-                        <p className="text-sm text-slate-500">
-                          Estimasi Kembali: {formatDateSafe(item.expected_return_date, "dd MMM yyyy")}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="pt-2 border-t">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => handleViewDetail(item.id)}
-                      >
-                        <Eye className="mr-2 h-4 w-4" /> Detail
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
               <div className="hidden md:block rounded-md border">
                 <Table>
                   <TableHeader>
@@ -200,6 +163,41 @@ export const AssetAssignmentList = () => {
                     )}
                   </TableBody>
                 </Table>
+              </div>
+
+              <div className="md:hidden space-y-3">
+                {data?.data.map((item) => (
+                  <Card key={item.id} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex justify-between items-start gap-2">
+                          <div>
+                            <h4 className="font-semibold line-clamp-1">{item.employee_name || "Karyawan"}</h4>
+                            <p className="text-xs text-slate-500">{item.employee_nik}</p>
+                          </div>
+                          <AssetAssignmentStatusBadge status={item.status} />
+                        </div>
+
+                        <div className="space-y-1">
+                          <p className="text-sm"><span className="text-slate-500">Aset:</span> {item.asset_name}</p>
+                          {item.expected_return_date && (
+                            <p className="text-sm text-slate-500">
+                              Estimasi Kembali: {formatDateSafe(item.expected_return_date, "dd MMM yyyy")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleViewDetail(item.id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
               </div>
 
               {data?.meta && (

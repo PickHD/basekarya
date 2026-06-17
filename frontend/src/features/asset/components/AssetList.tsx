@@ -63,8 +63,8 @@ export const AssetList = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Asset Management</h2>
-          <p className="text-sm sm:text-base text-slate-500">
+          <h2 className="text-3xl font-bold tracking-tight">Asset Management</h2>
+          <p className="text-slate-500">
             Kelola aset perusahaan, tracking status dan kondisi.
           </p>
         </div>
@@ -157,44 +157,6 @@ export const AssetList = () => {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-4 md:hidden">
-                {data?.data.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-3"
-                  >
-                    <div className="flex justify-between items-start gap-2">
-                      <div>
-                        <h4 className="font-semibold line-clamp-1">{item.name}</h4>
-                        <p className="text-xs text-slate-500">
-                          {item.category_name} {item.serial_number && `| SN: ${item.serial_number}`}
-                        </p>
-                      </div>
-                      <AssetStatusBadge status={item.status} />
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <AssetConditionBadge condition={item.condition} />
-                    </div>
-
-                    {item.current_employee && (
-                      <p className="text-sm text-blue-600">Pengguna: {item.current_employee}</p>
-                    )}
-
-                    <div className="pt-2 border-t">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => handleViewDetail(item.id)}
-                      >
-                        <Eye className="mr-2 h-4 w-4" /> Detail
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
               <div className="hidden md:block rounded-md border">
                 <Table>
                   <TableHeader>
@@ -249,6 +211,42 @@ export const AssetList = () => {
                     )}
                   </TableBody>
                 </Table>
+              </div>
+
+              <div className="md:hidden space-y-3">
+                {data?.data.map((item) => (
+                  <Card key={item.id} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex justify-between items-start gap-2">
+                          <div>
+                            <h4 className="font-semibold line-clamp-1">{item.name}</h4>
+                            <p className="text-xs text-slate-500">
+                              {item.category_name} {item.serial_number && `| SN: ${item.serial_number}`}
+                            </p>
+                          </div>
+                          <AssetStatusBadge status={item.status} />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <AssetConditionBadge condition={item.condition} />
+                        </div>
+
+                        {item.current_employee && (
+                          <p className="text-sm text-blue-600">Pengguna: {item.current_employee}</p>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleViewDetail(item.id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
               </div>
 
               {data?.meta && (
