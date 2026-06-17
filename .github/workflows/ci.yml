@@ -59,7 +59,7 @@ jobs:
         uses: qltysh/qlty-action/coverage@v2
         if: always()
         with:
-          token: $QLTY_COVERAGE_TOKEN
+          token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
           files: backend/coverage.out
 
   frontend:
