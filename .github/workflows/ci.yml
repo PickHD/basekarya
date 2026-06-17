@@ -61,6 +61,8 @@ jobs:
         with:
           token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
           files: backend/coverage.out
+          strip-prefix: /home/runner/work/basekarya/basekarya/
+          add-prefix: backend
 
   frontend:
     runs-on: ubuntu-latest
@@ -110,3 +112,5 @@ jobs:
         with:
           token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
           files: frontend/coverage/lcov.info
+          strip-prefix: /home/runner/work/basekarya/basekarya/
+          add-prefix: frontend
