@@ -7,6 +7,8 @@ import {
   Shield,
   BarChart3,
   Crown,
+  HeartPulse,
+  Percent,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -35,6 +37,16 @@ const features = [
     title: "Izin & Cuti",
     desc: "Pengajuan cuti, lembur, pinjaman, dan reimbursement dengan approval flow.",
   },
+  {
+    icon: HeartPulse,
+    title: "BPJS Kesehatan & TK",
+    desc: "Hitung otomatis iuran BPJS Kesehatan dan Ketenagakerjaan per komponen.",
+  },
+  {
+    icon: Percent,
+    title: "PPh 21 TER",
+    desc: "Kalkulasi pajak penghasilan metode TER (PP 58/2023) langsung di payroll.",
+  },
 ];
 
 const tiers = [
@@ -55,15 +67,16 @@ const tiers = [
     priceNote: "/bulan",
     desc: "Untuk bisnis yang berkembang",
     max: "50 Karyawan",
-    features: [
-      "Semua fitur Free",
-      "Lembur",
-      "Pinjaman",
-      "Reimbursement",
-      "Penggajian & Payroll",
-      "Manajemen Kontrak",
-      "Keuangan & Finance",
-    ],
+      features: [
+        "Semua fitur Free",
+        "Lembur",
+        "Pinjaman",
+        "Reimbursement",
+        "Penggajian & Payroll",
+        "Manajemen Kontrak",
+        "Keuangan & Finance",
+        "BPJS & PPh 21",
+      ],
     cta: "Pilih Basic",
     href: "/register?plan=basic",
     highlight: true,
@@ -158,7 +171,7 @@ export default function LandingPage() {
           <AnimatedSection delay={200}>
             <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Sistem manajemen sumber daya manusia terintegrasi — absensi,
-              penggajian, cuti, dan lainnya dalam satu platform.
+              penggajian, BPJS, PPh 21, cuti, dan lainnya dalam satu platform.
             </p>
           </AnimatedSection>
 
@@ -201,7 +214,7 @@ export default function LandingPage() {
               Fitur lengkap untuk mengelola SDM perusahaan Anda secara efisien.
             </p>
           </AnimatedSection>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((f, i) => (
               <AnimatedSection key={f.title} delay={i * 100}>
                 <div className="bg-card rounded-xl p-6 shadow-sm border border-border hover:shadow-md hover:border-primary/20 transition-all duration-300 h-full">
@@ -325,7 +338,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
-              BaseKarya v2.10 &copy; 2026
+              BaseKarya v2.12 &copy; 2026
             </span>
           </div>
           <div className="flex gap-6 text-sm text-muted-foreground">

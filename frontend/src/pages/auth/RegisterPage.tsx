@@ -21,7 +21,7 @@ export default function RegisterPage() {
               "Mulai kelola HR perusahaan Anda dengan mudah. Daftar gratis dan
               nikmati fitur manajemen karyawan, absensi, cuti, dan banyak lagi."
             </p>
-            <footer className="text-sm text-slate-400">BaseKarya v2.10</footer>
+            <footer className="text-sm text-slate-400">BaseKarya v2.12</footer>
           </blockquote>
         </div>
       </div>
@@ -58,7 +58,7 @@ export default function RegisterPage() {
               &larr; Kembali ke Beranda
             </Link>
             <span className="mx-2 text-slate-300">|</span>
-            BaseKarya v2.10 &copy; 2026.
+            BaseKarya v2.12 &copy; 2026.
           </p>
         </div>
       </div>
