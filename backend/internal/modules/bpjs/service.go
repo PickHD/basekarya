@@ -1,6 +1,7 @@
 package bpjs
 
 import (
+	"basekarya-backend/pkg/utils"
 	"context"
 	"fmt"
 	"math"
@@ -26,8 +27,17 @@ func (s *service) CalculateAll(ctx context.Context, grossMonthlyIncome float64) 
 		return nil, fmt.Errorf("failed to get BPJS configs: %w", err)
 	}
 
+	seen := make(map[string]bool)
+	var deduped []BPJSRateConfig
+	for i := len(configs) - 1; i >= 0; i-- {
+		if !seen[configs[i].Type] {
+			seen[configs[i].Type] = true
+			deduped = append([]BPJSRateConfig{configs[i]}, deduped...)
+		}
+	}
+
 	var components []BPJSComponent
-	for _, cfg := range configs {
+	for _, cfg := range deduped {
 		if !cfg.IsActive {
 			continue
 		}
@@ -67,6 +77,7 @@ func (s *service) Create(ctx context.Context, req *BPJSRateConfigRequest) error 
 	if err != nil {
 		return fmt.Errorf("invalid effective_from: %w", err)
 	}
+	companyID := utils.GetCompanyIDFromCtx(ctx)
 	cfg := &BPJSRateConfig{
 		Type:              req.Type,
 		EmployeeRate:      req.EmployeeRate,
@@ -75,6 +86,9 @@ func (s *service) Create(ctx context.Context, req *BPJSRateConfigRequest) error 
 		IndustryRiskLevel: req.IndustryRiskLevel,
 		IsActive:          req.IsActive,
 		EffectiveFrom:     from,
+	}
+	if companyID > 0 {
+		cfg.CompanyID = &companyID
 	}
 	if req.EffectiveUntil != nil {
 		until, err := time.Parse("2006-01-02", *req.EffectiveUntil)
@@ -123,5 +137,19 @@ func (s *service) Delete(ctx context.Context, id uint) error {
 }
 
 func (s *service) List(ctx context.Context, filter BPJSRateConfigFilter) ([]BPJSRateConfig, int64, error) {
-	return s.repo.List(ctx, filter)
+	configs, _, err := s.repo.List(ctx, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	seen := make(map[string]bool)
+	var deduped []BPJSRateConfig
+	for i := len(configs) - 1; i >= 0; i-- {
+		if !seen[configs[i].Type] {
+			seen[configs[i].Type] = true
+			deduped = append([]BPJSRateConfig{configs[i]}, deduped...)
+		}
+	}
+
+	return deduped, int64(len(deduped)), nil
 }

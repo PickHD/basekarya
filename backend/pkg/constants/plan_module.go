@@ -2,8 +2,8 @@ package constants
 
 var PlanModules = map[string][]string{
 	"free":  {"attendance", "leave"},
-	"basic": {"attendance", "leave", "overtime", "loan", "reimbursement", "payroll", "contract", "finance"},
-	"pro":   {"attendance", "leave", "overtime", "loan", "reimbursement", "payroll", "contract", "finance", "recruitment", "onboarding", "asset"},
+	"basic": {"attendance", "leave", "overtime", "loan", "reimbursement", "payroll", "contract", "finance", "bpjs", "tax"},
+	"pro":   {"attendance", "leave", "overtime", "loan", "reimbursement", "payroll", "contract", "finance", "recruitment", "onboarding", "asset", "bpjs", "tax"},
 }
 
 var ModulePermissionGroups = map[string][]string{
@@ -18,6 +18,8 @@ var ModulePermissionGroups = map[string][]string{
 	"recruitment":   {"Recruitment"},
 	"onboarding":    {"Onboarding"},
 	"asset":         {"Asset"},
+	"bpjs":          {"BPJS"},
+	"tax":           {"Tax"},
 }
 
 var AlwaysAvailableGroups = []string{

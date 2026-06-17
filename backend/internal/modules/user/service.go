@@ -75,6 +75,8 @@ func (s *service) GetProfile(userID uint) (*UserProfileResponse, error) {
 			resp.NPWP = user.Employee.NPWP
 			resp.Email = user.Employee.Email
 			resp.Position = user.Employee.Position
+			resp.MaritalStatus = string(user.Employee.MaritalStatus)
+			resp.DependentsCount = user.Employee.DependentsCount
 
 			if user.Employee.Department != nil {
 				resp.DepartmentName = user.Employee.Department.Name
@@ -203,18 +205,20 @@ func (s *service) GetAllEmployees(ctx context.Context, page, limit int, search s
 			}
 
 			list = append(list, EmployeeListResponse{
-				ID:             u.Employee.ID,
-				FullName:       u.Employee.FullName,
-				NIK:            u.Employee.NIK,
-				Username:       u.Username,
-				DepartmentID:   deptID,
-				DepartmentName: deptName,
-				ShiftID:        shiftID,
-				ShiftName:      shiftName,
-				RoleID:         u.Role.ID,
-				BaseSalary:     baseSalary,
-				Email:          u.Employee.Email,
-				Position:       u.Employee.Position,
+				ID:              u.Employee.ID,
+				FullName:        u.Employee.FullName,
+				NIK:             u.Employee.NIK,
+				Username:        u.Username,
+				DepartmentID:    deptID,
+				DepartmentName:  deptName,
+				ShiftID:         shiftID,
+				ShiftName:       shiftName,
+				RoleID:          u.Role.ID,
+				BaseSalary:      baseSalary,
+				Email:           u.Employee.Email,
+				Position:        u.Employee.Position,
+				MaritalStatus:   string(u.Employee.MaritalStatus),
+				DependentsCount: u.Employee.DependentsCount,
 			})
 		}
 	}
@@ -272,6 +276,13 @@ func (s *service) CreateEmployee(ctx context.Context, req *CreateEmployeeRequest
 			BaseSalary:   req.BaseSalary,
 			Email:        req.Email,
 			Position:     req.Position,
+		}
+
+		if req.MaritalStatus != "" {
+			newEmp.MaritalStatus = constants.MaritalStatus(req.MaritalStatus)
+		}
+		if req.DependentsCount != nil {
+			newEmp.DependentsCount = *req.DependentsCount
 		}
 
 		if err := s.repo.CreateEmployee(ctx, &newEmp); err != nil {
@@ -335,6 +346,12 @@ func (s *service) UpdateEmployee(ctx context.Context, id uint, req *UpdateEmploy
 	if req.Position != "" {
 		emp.Position = req.Position
 	}
+	if req.MaritalStatus != nil {
+		emp.MaritalStatus = constants.MaritalStatus(*req.MaritalStatus)
+	}
+	if req.DependentsCount != nil {
+		emp.DependentsCount = *req.DependentsCount
+	}
 
 	if err := s.repo.UpdateEmployee(ctx, emp); err != nil {
 		return err
@@ -388,6 +405,13 @@ func (s *service) buildEmployeeData(ctx context.Context, user *User, req *Update
 
 	if req.Email != "" {
 		user.Employee.Email = req.Email
+	}
+
+	if req.MaritalStatus != "" {
+		user.Employee.MaritalStatus = constants.MaritalStatus(req.MaritalStatus)
+	}
+	if req.DependentsCount != nil {
+		user.Employee.DependentsCount = *req.DependentsCount
 	}
 
 	if file != nil {

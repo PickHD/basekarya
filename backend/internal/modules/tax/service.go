@@ -2,6 +2,7 @@ package tax
 
 import (
 	"basekarya-backend/pkg/constants"
+	"basekarya-backend/pkg/utils"
 	"context"
 	"errors"
 	"fmt"
@@ -40,11 +41,14 @@ func (s *service) CalculateTER(ctx context.Context, grossMonthlyIncome float64, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to find TER brackets: %w", err)
 	}
-	if len(brackets) == 0 {
+
+	deduped := deduplicateBrackets(brackets)
+
+	if len(deduped) == 0 {
 		return nil, errors.New("no TER brackets found for category " + terCategory)
 	}
 
-	rate := findTERRate(brackets, grossMonthlyIncome)
+	rate := findTERRate(deduped, grossMonthlyIncome)
 	monthlyPPh21 := math.Round(grossMonthlyIncome * rate)
 
 	return &PPh21Result{
@@ -93,10 +97,14 @@ func (s *service) CreateTERBracket(ctx context.Context, req *TERBracketRequest) 
 	if err != nil {
 		return fmt.Errorf("invalid effective_from: %w", err)
 	}
+	companyID := utils.GetCompanyIDFromCtx(ctx)
 	b := &TERBracket{
 		Category: req.Category, BracketNumber: req.BracketNumber,
 		MinMonthlySalary: req.MinMonthlySalary, Rate: req.Rate,
 		EffectiveFrom: from,
+	}
+	if companyID > 0 {
+		b.CompanyID = &companyID
 	}
 	if req.EffectiveUntil != nil {
 		until, err := time.Parse("2006-01-02", *req.EffectiveUntil)
@@ -143,7 +151,13 @@ func (s *service) DeleteTERBracket(ctx context.Context, id uint) error {
 }
 
 func (s *service) ListTERBrackets(ctx context.Context, filter TERBracketFilter) ([]TERBracket, int64, error) {
-	return s.repo.ListTERBrackets(ctx, filter)
+	brackets, _, err := s.repo.ListTERBrackets(ctx, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	deduped := deduplicateBrackets(brackets)
+	return deduped, int64(len(deduped)), nil
 }
 
 func (s *service) CreatePTKPConfig(ctx context.Context, req *PTKPConfigRequest) error {
@@ -172,6 +186,18 @@ func (s *service) DeletePTKPConfig(ctx context.Context, id uint) error {
 
 func (s *service) ListPTKPConfigs(ctx context.Context, year int) ([]PTKPConfig, int64, error) {
 	return s.repo.ListPTKPConfigs(ctx, year)
+}
+
+func deduplicateBrackets(brackets []TERBracket) []TERBracket {
+	seen := make(map[int]bool)
+	var result []TERBracket
+	for i := len(brackets) - 1; i >= 0; i-- {
+		if !seen[brackets[i].BracketNumber] {
+			seen[brackets[i].BracketNumber] = true
+			result = append([]TERBracket{brackets[i]}, result...)
+		}
+	}
+	return result
 }
 
 func derivePTKPCode(maritalStatus constants.MaritalStatus, dependents int) string {
