@@ -43,9 +43,6 @@ jobs:
           go test ./... -cover -coverprofile=coverage.out -count=1
           go tool cover -func=coverage.out
 
-      - name: Fix coverage paths
-        run: sed -i 's|^basekarya-backend/|backend/|' coverage.out
-
       - name: Coverage summary
         run: |
           echo "## Backend Coverage" >> $GITHUB_STEP_SUMMARY
@@ -57,6 +54,9 @@ jobs:
         with:
           name: backend-coverage
           path: backend/coverage.out
+
+      - name: Fix coverage paths for Qlty
+        run: sed -i 's|^basekarya-backend/|backend/|' coverage.out
 
       - name: Publish backend coverage to Qlty
         uses: qltysh/qlty-action/coverage@v2
