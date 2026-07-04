@@ -36,6 +36,7 @@ type SubscriptionRequestResponse struct {
 	RequestedByName    string  `json:"requested_by_name"`
 	RequestedByEmail   string  `json:"requested_by_email"`
 	Notes              string  `json:"notes"`
+	ProofPaymentURL    *string `json:"proof_payment_url"`
 	CreatedAt          string  `json:"created_at"`
 }
 
