@@ -2,6 +2,7 @@ package subscription
 
 import (
 	"context"
+	"mime/multipart"
 )
 
 
@@ -18,4 +19,8 @@ type CacheProvider interface {
 
 type UserProvider interface {
 	ForceResetPasswordByCompanyID(ctx context.Context, companyID uint) error
+}
+
+type StorageProvider interface {
+	UploadFileMultipart(ctx context.Context, file *multipart.FileHeader, objectName string) (string, error)
 }
