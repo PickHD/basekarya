@@ -80,6 +80,7 @@ func (r *repository) FindAllPendingRequests(ctx context.Context) ([]Subscription
 			u.username as requested_by_name,
 			u.username as requested_by_email,
 			subscription_requests.notes,
+			subscription_requests.proof_payment_url,
 			subscription_requests.created_at`).
 		Joins("JOIN companies ON companies.id = subscription_requests.company_id").
 		Joins("JOIN subscription_plans cp ON cp.id = subscription_requests.current_plan_id").
@@ -109,6 +110,7 @@ func (r *repository) FindAllRequests(ctx context.Context) ([]SubscriptionRequest
 			u.username as requested_by_name,
 			u.username as requested_by_email,
 			subscription_requests.notes,
+			subscription_requests.proof_payment_url,
 			subscription_requests.created_at`).
 		Joins("JOIN companies ON companies.id = subscription_requests.company_id").
 		Joins("JOIN subscription_plans cp ON cp.id = subscription_requests.current_plan_id").
