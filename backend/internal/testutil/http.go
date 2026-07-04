@@ -7,6 +7,7 @@ import (
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/utils"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -71,6 +72,40 @@ func (at *APITest) WithAuthContext(claims *infrastructure.MyClaims) *APITest {
 	ctx = context.WithValue(ctx, constants.UserIDContextKey, claims.UserID)
 	at.Context.SetRequest(at.Context.Request().WithContext(ctx))
 	return at
+}
+
+// NewMultipartAPITest creates an API test helper with multipart/form-data body.
+// fields: form field key-value pairs, fileName: the file name for the proof_payment field (empty to skip file).
+func NewMultipartAPITest(t *testing.T, method, target string, fields map[string]string, fileName string, fileData []byte) *APITest {
+	t.Helper()
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	for k, v := range fields {
+		w.WriteField(k, v)
+	}
+	if fileName != "" {
+		part, err := w.CreateFormFile("proof_payment", fileName)
+		if err != nil {
+			t.Fatalf("failed to create form file: %v", err)
+		}
+		part.Write(fileData)
+	}
+	w.Close()
+
+	req := httptest.NewRequest(method, target, &b)
+	req.Header.Set(echo.HeaderContentType, w.FormDataContentType())
+	rec := httptest.NewRecorder()
+
+	e := echo.New()
+	e.Validator = utils.NewValidator()
+	_ = e
+
+	return &APITest{
+		Echo:    e,
+		Req:     req,
+		Rec:     rec,
+		Context: e.NewContext(req, rec),
+	}
 }
 
 // WithPathParams sets path parameters on the echo context.

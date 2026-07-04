@@ -1,0 +1,1 @@
+ALTER TABLE subscription_requests DROP COLUMN proof_payment_url;
