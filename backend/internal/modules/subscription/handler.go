@@ -1,9 +1,11 @@
 package subscription
 
 import (
+	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/logger"
 	"basekarya-backend/pkg/response"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -61,16 +63,27 @@ func (h *Handler) ReviewRequest(ctx echo.Context) error {
 		return response.NewResponses[any](ctx, http.StatusBadRequest, "Invalid request ID", nil, err, nil)
 	}
 
-	var req ReviewRequest
-	if err := ctx.Bind(&req); err != nil {
+	status := ctx.FormValue("status")
+	notes := ctx.FormValue("notes")
+
+	req := &ReviewRequest{Status: status, Notes: notes}
+	if err := ctx.Validate(req); err != nil {
 		return response.NewResponses[any](ctx, http.StatusBadRequest, "Invalid Request", nil, err, nil)
 	}
 
-	if err := ctx.Validate(&req); err != nil {
-		return response.NewResponses[any](ctx, http.StatusBadRequest, "Invalid Request", nil, err, nil)
+	var proofPayment *multipart.FileHeader
+	if status == constants.SubReqStatusApproved {
+		fileHeader, err := ctx.FormFile("proof_payment")
+		if err != nil {
+			return response.NewResponses[any](ctx, http.StatusBadRequest, "Proof of payment is required", nil, err, nil)
+		}
+		if fileHeader.Size > 5*1024*1024 {
+			return response.NewResponses[any](ctx, http.StatusBadRequest, "File size exceeds 5MB limit", nil, nil, nil)
+		}
+		proofPayment = fileHeader
 	}
 
-	if err := h.service.ReviewRequest(ctx.Request().Context(), requestID, &req); err != nil {
+	if err := h.service.ReviewRequest(ctx.Request().Context(), requestID, req, proofPayment); err != nil {
 		logger.Errorw("Failed to review request: ", err)
 		return response.NewResponses[any](ctx, http.StatusBadRequest, err.Error(), nil, err, nil)
 	}
