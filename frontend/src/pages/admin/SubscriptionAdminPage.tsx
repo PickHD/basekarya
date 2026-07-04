@@ -51,6 +51,12 @@ export default function SubscriptionAdminPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  function cleanupPreview() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    setSelectedFile(null);
+  }
+
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -62,6 +68,7 @@ export default function SubscriptionAdminPage() {
       return;
     }
 
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
   }
@@ -87,17 +94,18 @@ export default function SubscriptionAdminPage() {
     setSelectedRequest(request);
     setReviewAction(action);
     setNotes("");
-    setSelectedFile(null);
-    setPreviewUrl(null);
+    cleanupPreview();
     setIsDialogOpen(true);
   }
 
   function confirmReview() {
     if (!selectedRequest) return;
 
-    if (reviewAction === "APPROVED" && !selectedFile) {
-      toast.error("Bukti pembayaran wajib diunggah", {
-        description: "Silakan unggah bukti pembayaran sebelum menyetujui.",
+    if (reviewAction === "APPROVED" && (!selectedFile || selectedFile.size > 5 * 1024 * 1024)) {
+      toast.error("Bukti pembayaran tidak valid", {
+        description: !selectedFile
+          ? "Silakan unggah bukti pembayaran sebelum menyetujui."
+          : "Ukuran file maksimal 5MB.",
       });
       return;
     }
@@ -110,10 +118,9 @@ export default function SubscriptionAdminPage() {
       },
       {
         onSettled: () => {
+          cleanupPreview();
           setIsDialogOpen(false);
           setSelectedRequest(null);
-          setSelectedFile(null);
-          setPreviewUrl(null);
         },
       }
     );
@@ -306,7 +313,7 @@ export default function SubscriptionAdminPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!open) cleanupPreview(); setIsDialogOpen(open); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
@@ -372,8 +379,7 @@ export default function SubscriptionAdminPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        setSelectedFile(null);
-                        setPreviewUrl(null);
+                        cleanupPreview();
                         if (fileInputRef.current) {
                           fileInputRef.current.value = "";
                         }
