@@ -34,6 +34,7 @@ export interface SubscriptionRequestItem {
   requested_by_name: string;
   requested_by_email: string;
   notes: string;
+  proof_payment_url?: string;
   created_at: string;
 }
 
