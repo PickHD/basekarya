@@ -191,7 +191,7 @@ export default function SubscriptionAdminPage() {
           ) : filtered.length === 0 ? (
             <div className="text-center py-10 text-slate-500">
               {allRequests.length === 0
-                ? "Tidak ada permintaan upgrade yang menunggu."
+                ? "Tidak ada permintaan upgrade."
                 : "Tidak ada hasil yang cocok."}
             </div>
           ) : (
@@ -623,7 +623,7 @@ export default function SubscriptionAdminPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-slate-400 italic">
-                    Tidak ada bukti pembayaran.
+                    Tidak ada bukti pembayaran
                   </p>
                 )}
               </div>
