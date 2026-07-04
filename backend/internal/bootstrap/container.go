@@ -140,7 +140,7 @@ func NewContainer() (*Container, error) {
 	recruitmentSvc := recruitment.NewService(recruitmentRepo, storage, notificationSvc, userRepo, onboardingSvc, transactionManager)
 	astSvc := asset.NewService(astRepo, notificationSvc, userRepo, transactionManager, excel)
 	financeSvc := finance.NewService(financeRepo, notificationSvc, userRepo, transactionManager, excel)
-	subscriptionSvc := subscription.NewService(subscriptionRepo, companyRepo, rbacRepo, userRepo, planCache)
+	subscriptionSvc := subscription.NewService(subscriptionRepo, companyRepo, rbacRepo, userRepo, planCache, storage)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)
