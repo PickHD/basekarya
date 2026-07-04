@@ -162,7 +162,7 @@ export default function SubscriptionAdminPage() {
               Permintaan Upgrade
             </CardTitle>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -196,7 +196,7 @@ export default function SubscriptionAdminPage() {
             </div>
           ) : (
             <>
-              <div className="hidden md:block">
+              <div className="hidden md:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -510,7 +510,7 @@ export default function SubscriptionAdminPage() {
 
           {detailRequest && (
             <div className="space-y-4 py-2">
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-slate-500">Perusahaan</p>
                   <p className="font-medium">{detailRequest.company_name}</p>
