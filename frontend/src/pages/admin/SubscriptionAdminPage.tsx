@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Crown, Loader2, CheckCircle2, XCircle, Search } from "lucide-react";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -46,6 +47,24 @@ export default function SubscriptionAdminPage() {
   );
   const [notes, setNotes] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File terlalu besar", {
+        description: "Ukuran maksimal 5MB.",
+      });
+      return;
+    }
+
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  }
 
   const allRequests: SubscriptionRequestItem[] = data?.data || [];
 
@@ -68,17 +87,33 @@ export default function SubscriptionAdminPage() {
     setSelectedRequest(request);
     setReviewAction(action);
     setNotes("");
+    setSelectedFile(null);
+    setPreviewUrl(null);
     setIsDialogOpen(true);
   }
 
   function confirmReview() {
     if (!selectedRequest) return;
+
+    if (reviewAction === "APPROVED" && !selectedFile) {
+      toast.error("Bukti pembayaran wajib diunggah", {
+        description: "Silakan unggah bukti pembayaran sebelum menyetujui.",
+      });
+      return;
+    }
+
     reviewRequest(
-      { id: selectedRequest.id, payload: { status: reviewAction, notes } },
+      {
+        id: selectedRequest.id,
+        payload: { status: reviewAction, notes },
+        file: selectedFile || undefined,
+      },
       {
         onSettled: () => {
           setIsDialogOpen(false);
           setSelectedRequest(null);
+          setSelectedFile(null);
+          setPreviewUrl(null);
         },
       }
     );
@@ -305,6 +340,52 @@ export default function SubscriptionAdminPage() {
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
             />
+            {reviewAction === "APPROVED" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Bukti Pembayaran <span className="text-red-500">*</span>
+                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                {!selectedFile ? (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full rounded-lg border-2 border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
+                  >
+                    Klik untuk unggah bukti pembayaran
+                    <br />
+                    <span className="text-xs text-slate-400">Maks. 5MB (JPG, PNG)</span>
+                  </button>
+                ) : (
+                  <div className="relative rounded-lg border border-slate-200 overflow-hidden">
+                    <img
+                      src={previewUrl!}
+                      alt="Preview bukti pembayaran"
+                      className="w-full h-40 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedFile(null);
+                        setPreviewUrl(null);
+                        if (fileInputRef.current) {
+                          fileInputRef.current.value = "";
+                        }
+                      }}
+                      className="absolute top-2 right-2 rounded-full bg-white/80 p-1 text-slate-600 hover:bg-white hover:text-red-600 shadow-sm"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <DialogFooter>
