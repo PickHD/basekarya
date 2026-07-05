@@ -28,6 +28,7 @@ type SubscriptionRequest struct {
 	ReviewedBy      *uint      `json:"reviewed_by"`
 	ReviewedAt      *time.Time `json:"reviewed_at"`
 	Notes           string     `gorm:"type:text" json:"notes"`
+	ProofPaymentURL *string    `gorm:"type:varchar(255)" json:"proof_payment_url"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 }

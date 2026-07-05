@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"mime/multipart"
 	"time"
 )
 
@@ -15,7 +16,7 @@ type Service interface {
 	RequestUpgrade(ctx context.Context, req *UpgradeRequest) (*UpgradeResponse, error)
 	ListPendingRequests(ctx context.Context) ([]SubscriptionRequestResponse, error)
 	ListAllRequests(ctx context.Context) ([]SubscriptionRequestResponse, error)
-	ReviewRequest(ctx context.Context, requestID uint, req *ReviewRequest) error
+	ReviewRequest(ctx context.Context, requestID uint, req *ReviewRequest, proofPayment *multipart.FileHeader) error
 	ListCompanies(ctx context.Context, search string) ([]CompanyListItem, error)
 	GetCompanyDetail(ctx context.Context, id uint) (*CompanyDetail, error)
 	UpdateCompanyStatus(ctx context.Context, companyID uint, req *UpdateCompanyStatusRequest) error
@@ -29,10 +30,11 @@ type service struct {
 	role    RoleProvider
 	user    UserProvider
 	cache   CacheProvider
+	storage StorageProvider
 }
 
-func NewService(repo Repository, companyRepo company.Repository, role RoleProvider, user UserProvider, cache CacheProvider) Service {
-	return &service{repo: repo, company: companyRepo, role: role, user: user, cache: cache}
+func NewService(repo Repository, companyRepo company.Repository, role RoleProvider, user UserProvider, cache CacheProvider, storage StorageProvider) Service {
+	return &service{repo: repo, company: companyRepo, role: role, user: user, cache: cache, storage: storage}
 }
 
 func (s *service) ListPlans(ctx context.Context) ([]PlanResponse, error) {
@@ -116,7 +118,7 @@ func (s *service) ListPendingRequests(ctx context.Context) ([]SubscriptionReques
 	return s.repo.FindAllPendingRequests(ctx)
 }
 
-func (s *service) ReviewRequest(ctx context.Context, requestID uint, req *ReviewRequest) error {
+func (s *service) ReviewRequest(ctx context.Context, requestID uint, req *ReviewRequest, proofPayment *multipart.FileHeader) error {
 	subReq, err := s.repo.FindRequestByID(ctx, requestID)
 	if err != nil {
 		return errors.New("request not found")
@@ -124,6 +126,19 @@ func (s *service) ReviewRequest(ctx context.Context, requestID uint, req *Review
 
 	if subReq.Status != constants.SubReqStatusPending {
 		return errors.New("request already reviewed")
+	}
+
+	if req.Status == constants.SubReqStatusApproved {
+		if proofPayment == nil {
+			return errors.New("proof of payment is required")
+		}
+
+		objectName := fmt.Sprintf("subscriptions/requests/%d/proof-payment-%d.jpg", requestID, time.Now().UnixNano())
+		proofURL, err := s.storage.UploadFileMultipart(ctx, proofPayment, objectName)
+		if err != nil {
+			return fmt.Errorf("failed to upload proof of payment: %w", err)
+		}
+		subReq.ProofPaymentURL = &proofURL
 	}
 
 	reviewerID := utils.GetUserIDFromCtx(ctx)

@@ -1,0 +1,1 @@
+ALTER TABLE subscription_requests ADD COLUMN proof_payment_url VARCHAR(255) NULL;

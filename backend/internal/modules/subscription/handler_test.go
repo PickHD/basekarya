@@ -179,17 +179,22 @@ func TestHandler_ReviewRequest(t *testing.T) {
 	tests := []struct {
 		name         string
 		pathParams   map[string]string
-		body         interface{}
+		fields       map[string]string
+		fileName     string
+		fileData     []byte
 		setupMocks   func(*mockService)
 		setupContext func(*testutil.APITest)
 		wantStatus   int
+		wantMsg      string
 	}{
 		{
 			name:       "approve success",
 			pathParams: map[string]string{"id": "1"},
-			body:       ReviewRequest{Status: constants.SubReqStatusApproved, Notes: "ok"},
+			fields:     map[string]string{"status": constants.SubReqStatusApproved, "notes": "ok"},
+			fileName:   "receipt.png",
+			fileData:   []byte("fake-payment-proof"),
 			setupMocks: func(svc *mockService) {
-				svc.On("ReviewRequest", mock.Anything, uint(1), mock.AnythingOfType("*subscription.ReviewRequest")).Return(nil)
+				svc.On("ReviewRequest", mock.Anything, uint(1), mock.AnythingOfType("*subscription.ReviewRequest"), mock.AnythingOfType("*multipart.FileHeader")).Return(nil)
 			},
 			setupContext: func(at *testutil.APITest) {
 				at.WithAuthContext(&infrastructure.MyClaims{
@@ -203,7 +208,9 @@ func TestHandler_ReviewRequest(t *testing.T) {
 		{
 			name:       "invalid request id",
 			pathParams: map[string]string{"id": "abc"},
-			body:       ReviewRequest{Status: constants.SubReqStatusApproved},
+			fields:     map[string]string{"status": constants.SubReqStatusApproved},
+			fileName:   "receipt.png",
+			fileData:   []byte("fake-payment-proof"),
 			setupMocks: func(svc *mockService) {},
 			setupContext: func(at *testutil.APITest) {
 				at.WithAuthContext(&infrastructure.MyClaims{
@@ -217,7 +224,7 @@ func TestHandler_ReviewRequest(t *testing.T) {
 		{
 			name:       "invalid status",
 			pathParams: map[string]string{"id": "1"},
-			body:       ReviewRequest{Status: "INVALID"},
+			fields:     map[string]string{"status": "INVALID"},
 			setupMocks: func(svc *mockService) {},
 			setupContext: func(at *testutil.APITest) {
 				at.WithAuthContext(&infrastructure.MyClaims{
@@ -231,9 +238,11 @@ func TestHandler_ReviewRequest(t *testing.T) {
 		{
 			name:       "service error",
 			pathParams: map[string]string{"id": "1"},
-			body:       ReviewRequest{Status: constants.SubReqStatusApproved},
+			fields:     map[string]string{"status": constants.SubReqStatusApproved},
+			fileName:   "receipt.png",
+			fileData:   []byte("fake-payment-proof"),
 			setupMocks: func(svc *mockService) {
-				svc.On("ReviewRequest", mock.Anything, uint(1), mock.AnythingOfType("*subscription.ReviewRequest")).Return(errors.New("request already reviewed"))
+				svc.On("ReviewRequest", mock.Anything, uint(1), mock.AnythingOfType("*subscription.ReviewRequest"), mock.AnythingOfType("*multipart.FileHeader")).Return(errors.New("request already reviewed"))
 			},
 			setupContext: func(at *testutil.APITest) {
 				at.WithAuthContext(&infrastructure.MyClaims{
@@ -244,6 +253,38 @@ func TestHandler_ReviewRequest(t *testing.T) {
 			},
 			wantStatus: http.StatusBadRequest,
 		},
+		{
+			name:       "file too large returns error",
+			pathParams: map[string]string{"id": "1"},
+			fields:     map[string]string{"status": constants.SubReqStatusApproved, "notes": "ok"},
+			fileName:   "large.jpg",
+			fileData:   make([]byte, 6*1024*1024),
+			setupMocks: func(svc *mockService) {},
+			setupContext: func(at *testutil.APITest) {
+				at.WithAuthContext(&infrastructure.MyClaims{
+					UserID:          10,
+					CompanyID:       1,
+					IsPlatformAdmin: true,
+				})
+			},
+			wantStatus: http.StatusBadRequest,
+			wantMsg:    "File size exceeds 5MB limit",
+		},
+		{
+			name:       "missing file for approved returns error",
+			pathParams: map[string]string{"id": "1"},
+			fields:     map[string]string{"status": constants.SubReqStatusApproved, "notes": "ok"},
+			setupMocks: func(svc *mockService) {},
+			setupContext: func(at *testutil.APITest) {
+				at.WithAuthContext(&infrastructure.MyClaims{
+					UserID:          10,
+					CompanyID:       1,
+					IsPlatformAdmin: true,
+				})
+			},
+			wantStatus: http.StatusBadRequest,
+			wantMsg:    "Proof of payment is required",
+		},
 	}
 
 	for _, tt := range tests {
@@ -252,13 +293,18 @@ func TestHandler_ReviewRequest(t *testing.T) {
 			tt.setupMocks(svc)
 			handler := NewHandler(svc)
 
-			at := testutil.NewAPITest(t, http.MethodPost, "/api/subscription/requests/:id/review", tt.body)
+			at := testutil.NewMultipartAPITest(t, http.MethodPost, "/api/subscription/requests/:id/review", tt.fields, tt.fileName, tt.fileData)
 			at.WithPathParams(tt.pathParams)
 			tt.setupContext(at)
 
 			rec, err := at.Execute(handler.ReviewRequest)
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantStatus, rec.Code)
+			if tt.wantMsg != "" {
+				var resp map[string]interface{}
+				require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+				assert.Equal(t, tt.wantMsg, resp["message"])
+			}
 		})
 	}
 }

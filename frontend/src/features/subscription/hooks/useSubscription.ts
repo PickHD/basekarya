@@ -48,19 +48,43 @@ export const useReviewRequest = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, payload }: { id: number; payload: ReviewPayload }) => {
-      const { data } = await api.put(`/admin/subscriptions/${id}/review`, payload);
+    mutationFn: async ({
+      id,
+      payload,
+      file,
+    }: {
+      id: number;
+      payload: ReviewPayload;
+      file?: File;
+    }) => {
+      const formData = new FormData();
+      formData.append("status", payload.status);
+      formData.append("notes", payload.notes || "");
+      if (file) {
+        formData.append("proof_payment", file);
+      }
+      const { data } = await api.put(
+        `/admin/subscriptions/${id}/review`,
+        formData
+      );
       return data;
     },
     onSuccess: () => {
-      toast.success("Berhasil", { description: "Permintaan berhasil diproses." });
-      queryClient.invalidateQueries({ queryKey: ["pending-subscription-requests"] });
-      queryClient.invalidateQueries({ queryKey: ["all-subscription-requests"] });
+      toast.success("Berhasil", {
+        description: "Permintaan berhasil diproses.",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["pending-subscription-requests"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["all-subscription-requests"],
+      });
       queryClient.invalidateQueries({ queryKey: ["admin-companies"] });
       queryClient.invalidateQueries({ queryKey: ["admin-dashboard-stats"] });
     },
     onError: (error: any) => {
-      const msg = error.response?.data?.message || "Gagal memproses permintaan";
+      const msg =
+        error.response?.data?.message || "Gagal memproses permintaan";
       toast.error("Gagal", { description: msg });
     },
   });

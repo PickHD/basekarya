@@ -1,18 +1,39 @@
 package subscription
 
 import (
+	"bytes"
 	stdcontext "context"
 	"errors"
+	"mime/multipart"
+	"net/http/httptest"
 	"testing"
 
 	"basekarya-backend/internal/modules/company"
 	"basekarya-backend/internal/testutil"
 	"basekarya-backend/pkg/constants"
 
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
+
+func newTestFileHeader(t *testing.T) *multipart.FileHeader {
+	t.Helper()
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	part, err := w.CreateFormFile("proof_payment", "receipt.png")
+	require.NoError(t, err)
+	_, err = part.Write([]byte("fake-payment-proof"))
+	require.NoError(t, err)
+	w.Close()
+
+	req := httptest.NewRequest("POST", "/", &b)
+	req.Header.Set(echo.HeaderContentType, w.FormDataContentType())
+	_, fh, err := req.FormFile("proof_payment")
+	require.NoError(t, err)
+	return fh
+}
 
 func TestService_ListPlans(t *testing.T) {
 	tests := []struct {
@@ -52,7 +73,7 @@ func TestService_ListPlans(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _ := newTestSubscriptionService()
+			svc, repo, _, _, _, _, _ := newTestSubscriptionService()
 			tt.setupMocks(repo)
 
 			result, err := svc.ListPlans(testutil.CtxWithTenant(1, 1, false))
@@ -205,7 +226,7 @@ func TestService_RequestUpgrade(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, companyRepo, _, _, _ := newTestSubscriptionService()
+			svc, repo, companyRepo, _, _, _, _ := newTestSubscriptionService()
 			tt.setupMocks(repo, companyRepo)
 
 			result, err := svc.RequestUpgrade(tt.ctx(), tt.req)
@@ -251,7 +272,7 @@ func TestService_ListPendingRequests(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _ := newTestSubscriptionService()
+			svc, repo, _, _, _, _, _ := newTestSubscriptionService()
 			tt.setupMocks(repo)
 
 			result, err := svc.ListPendingRequests(testutil.CtxWithTenant(1, 1, false))
@@ -271,13 +292,14 @@ func TestService_ReviewRequest(t *testing.T) {
 	reviewerID := uint(10)
 
 	tests := []struct {
-		name       string
-		requestID  uint
-		ctx        func() stdcontext.Context
-		req        *ReviewRequest
-		setupMocks func(*mockRepo, *mockCompanyRepo, *mockRole, *mockUser, *mockCache)
-		wantErr    bool
-		errMsg     string
+		name         string
+		requestID    uint
+		ctx          func() stdcontext.Context
+		req          *ReviewRequest
+		needsProof   bool
+		setupMocks   func(*mockRepo, *mockCompanyRepo, *mockRole, *mockUser, *mockCache, *mockStorage)
+		wantErr      bool
+		errMsg       string
 	}{
 		{
 			name:      "approve success",
@@ -285,8 +307,9 @@ func TestService_ReviewRequest(t *testing.T) {
 			ctx: func() stdcontext.Context {
 				return testutil.CtxWithTenant(1, reviewerID, true)
 			},
-			req: &ReviewRequest{Status: constants.SubReqStatusApproved, Notes: "ok"},
-			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache) {
+			req:          &ReviewRequest{Status: constants.SubReqStatusApproved, Notes: "ok"},
+			needsProof:   true,
+			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache, storage *mockStorage) {
 				repo.On("FindRequestByID", mock.Anything, uint(1)).Return(&SubscriptionRequest{
 					ID: 1, CompanyID: 1, CurrentPlanID: 1, RequestedPlanID: proPlanID, Status: constants.SubReqStatusPending,
 				}, nil)
@@ -300,8 +323,42 @@ func TestService_ReviewRequest(t *testing.T) {
 				cache.On("Del", mock.Anything, "subscription:features:1").Return(nil)
 				cache.On("Del", mock.Anything, "company:profile:1").Return(nil)
 				user.On("ForceResetPasswordByCompanyID", mock.Anything, uint(1)).Return(nil)
+				storage.On("UploadFileMultipart", mock.Anything, mock.AnythingOfType("*multipart.FileHeader"), mock.AnythingOfType("string")).Return("http://example.com/proof.jpg", nil)
 			},
 			wantErr: false,
+		},
+		{
+			name:      "approve without proof returns error",
+			requestID: 1,
+			ctx: func() stdcontext.Context {
+				return testutil.CtxWithTenant(1, reviewerID, true)
+			},
+			req:        &ReviewRequest{Status: constants.SubReqStatusApproved, Notes: "ok"},
+			needsProof: false,
+			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache, storage *mockStorage) {
+				repo.On("FindRequestByID", mock.Anything, uint(1)).Return(&SubscriptionRequest{
+					ID: 1, CompanyID: 1, Status: constants.SubReqStatusPending,
+				}, nil)
+			},
+			wantErr: true,
+			errMsg:  "proof of payment is required",
+		},
+		{
+			name:      "approve with upload failure returns error",
+			requestID: 1,
+			ctx: func() stdcontext.Context {
+				return testutil.CtxWithTenant(1, reviewerID, true)
+			},
+			req:        &ReviewRequest{Status: constants.SubReqStatusApproved, Notes: "ok"},
+			needsProof: true,
+			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache, storage *mockStorage) {
+				repo.On("FindRequestByID", mock.Anything, uint(1)).Return(&SubscriptionRequest{
+					ID: 1, CompanyID: 1, Status: constants.SubReqStatusPending,
+				}, nil)
+				storage.On("UploadFileMultipart", mock.Anything, mock.AnythingOfType("*multipart.FileHeader"), mock.AnythingOfType("string")).Return("", errors.New("upload failed"))
+			},
+			wantErr: true,
+			errMsg:  "failed to upload proof of payment: upload failed",
 		},
 		{
 			name:      "reject success",
@@ -310,7 +367,7 @@ func TestService_ReviewRequest(t *testing.T) {
 				return testutil.CtxWithTenant(1, reviewerID, true)
 			},
 			req: &ReviewRequest{Status: constants.SubReqStatusRejected, Notes: "not eligible"},
-			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache) {
+			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache, storage *mockStorage) {
 				repo.On("FindRequestByID", mock.Anything, uint(1)).Return(&SubscriptionRequest{
 					ID: 1, CompanyID: 1, Status: constants.SubReqStatusPending,
 				}, nil)
@@ -325,7 +382,7 @@ func TestService_ReviewRequest(t *testing.T) {
 				return testutil.CtxWithTenant(1, reviewerID, true)
 			},
 			req: &ReviewRequest{Status: constants.SubReqStatusApproved},
-			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache) {
+			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache, storage *mockStorage) {
 				repo.On("FindRequestByID", mock.Anything, uint(99)).Return(nil, errors.New("not found"))
 			},
 			wantErr: true,
@@ -338,7 +395,7 @@ func TestService_ReviewRequest(t *testing.T) {
 				return testutil.CtxWithTenant(1, reviewerID, true)
 			},
 			req: &ReviewRequest{Status: constants.SubReqStatusApproved},
-			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache) {
+			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache, storage *mockStorage) {
 				repo.On("FindRequestByID", mock.Anything, uint(1)).Return(&SubscriptionRequest{
 					ID: 1, Status: constants.SubReqStatusApproved,
 				}, nil)
@@ -353,7 +410,7 @@ func TestService_ReviewRequest(t *testing.T) {
 				return testutil.CtxWithTenant(1, reviewerID, true)
 			},
 			req: &ReviewRequest{Status: constants.SubReqStatusRejected},
-			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache) {
+			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache, storage *mockStorage) {
 				repo.On("FindRequestByID", mock.Anything, uint(1)).Return(&SubscriptionRequest{
 					ID: 1, Status: constants.SubReqStatusPending,
 				}, nil)
@@ -368,12 +425,14 @@ func TestService_ReviewRequest(t *testing.T) {
 			ctx: func() stdcontext.Context {
 				return testutil.CtxWithTenant(1, reviewerID, true)
 			},
-			req: &ReviewRequest{Status: constants.SubReqStatusApproved},
-			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache) {
+			req:          &ReviewRequest{Status: constants.SubReqStatusApproved},
+			needsProof:   true,
+			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache, storage *mockStorage) {
 				repo.On("FindRequestByID", mock.Anything, uint(1)).Return(&SubscriptionRequest{
 					ID: 1, CompanyID: 1, RequestedPlanID: proPlanID, Status: constants.SubReqStatusPending,
 				}, nil)
 				repo.On("UpdateRequest", mock.Anything, mock.AnythingOfType("*subscription.SubscriptionRequest")).Return(nil)
+				storage.On("UploadFileMultipart", mock.Anything, mock.AnythingOfType("*multipart.FileHeader"), mock.AnythingOfType("string")).Return("http://example.com/proof.jpg", nil)
 				companyRepo.On("FindByID", mock.Anything, uint(1)).Return(nil, errors.New("not found"))
 			},
 			wantErr: true,
@@ -385,12 +444,14 @@ func TestService_ReviewRequest(t *testing.T) {
 			ctx: func() stdcontext.Context {
 				return testutil.CtxWithTenant(1, reviewerID, true)
 			},
-			req: &ReviewRequest{Status: constants.SubReqStatusApproved},
-			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache) {
+			req:          &ReviewRequest{Status: constants.SubReqStatusApproved},
+			needsProof:   true,
+			setupMocks: func(repo *mockRepo, companyRepo *mockCompanyRepo, role *mockRole, user *mockUser, cache *mockCache, storage *mockStorage) {
 				repo.On("FindRequestByID", mock.Anything, uint(1)).Return(&SubscriptionRequest{
 					ID: 1, CompanyID: 1, RequestedPlanID: proPlanID, Status: constants.SubReqStatusPending,
 				}, nil)
 				repo.On("UpdateRequest", mock.Anything, mock.AnythingOfType("*subscription.SubscriptionRequest")).Return(nil)
+				storage.On("UploadFileMultipart", mock.Anything, mock.AnythingOfType("*multipart.FileHeader"), mock.AnythingOfType("string")).Return("http://example.com/proof.jpg", nil)
 				companyRepo.On("FindByID", mock.Anything, uint(1)).Return(&company.Company{ID: 1}, nil)
 				companyRepo.On("Update", mock.Anything, mock.AnythingOfType("*company.Company")).Return(errors.New("db error"))
 			},
@@ -401,10 +462,15 @@ func TestService_ReviewRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, companyRepo, role, user, cache := newTestSubscriptionService()
-			tt.setupMocks(repo, companyRepo, role, user, cache)
+			svc, repo, companyRepo, role, user, cache, storage := newTestSubscriptionService()
+			tt.setupMocks(repo, companyRepo, role, user, cache, storage)
 
-			err := svc.ReviewRequest(tt.ctx(), tt.requestID, tt.req)
+			var proofPayment *multipart.FileHeader
+			if tt.needsProof {
+				proofPayment = newTestFileHeader(t)
+			}
+
+			err := svc.ReviewRequest(tt.ctx(), tt.requestID, tt.req, proofPayment)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -459,7 +525,7 @@ func TestService_ListCompanies(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _ := newTestSubscriptionService()
+			svc, repo, _, _, _, _, _ := newTestSubscriptionService()
 			tt.setupMocks(repo)
 
 			result, err := svc.ListCompanies(testutil.CtxWithTenant(1, 1, true), tt.search)
@@ -501,7 +567,7 @@ func TestService_GetCompanyDetail(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _ := newTestSubscriptionService()
+			svc, repo, _, _, _, _, _ := newTestSubscriptionService()
 			tt.setupMocks(repo)
 
 			result, err := svc.GetCompanyDetail(testutil.CtxWithTenant(1, 1, true), tt.id)
@@ -553,7 +619,7 @@ func TestService_UpdateCompanyStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, cache := newTestSubscriptionService()
+			svc, repo, _, _, _, cache, _ := newTestSubscriptionService()
 			tt.setupMocks(repo)
 			if tt.setupCache != nil {
 				tt.setupCache(cache)
@@ -598,7 +664,7 @@ func TestService_GetDashboardStats(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc, repo, _, _, _, _ := newTestSubscriptionService()
+			svc, repo, _, _, _, _, _ := newTestSubscriptionService()
 			tt.setupMocks(repo)
 
 			result, err := svc.GetDashboardStats(testutil.CtxWithTenant(1, 1, true))

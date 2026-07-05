@@ -2,6 +2,7 @@ package subscription
 
 import (
 	"context"
+	"mime/multipart"
 
 	"basekarya-backend/internal/modules/company"
 
@@ -180,6 +181,13 @@ func (m *mockCache) Del(ctx context.Context, key string) error {
 	return m.Called(ctx, key).Error(0)
 }
 
+type mockStorage struct{ mock.Mock }
+
+func (m *mockStorage) UploadFileMultipart(ctx context.Context, file *multipart.FileHeader, objectName string) (string, error) {
+	args := m.Called(ctx, file, objectName)
+	return args.String(0), args.Error(1)
+}
+
 type mockService struct{ mock.Mock }
 
 func (m *mockService) ListPlans(ctx context.Context) ([]PlanResponse, error) {
@@ -214,8 +222,8 @@ func (m *mockService) ListAllRequests(ctx context.Context) ([]SubscriptionReques
 	return args.Get(0).([]SubscriptionRequestResponse), args.Error(1)
 }
 
-func (m *mockService) ReviewRequest(ctx context.Context, requestID uint, req *ReviewRequest) error {
-	return m.Called(ctx, requestID, req).Error(0)
+func (m *mockService) ReviewRequest(ctx context.Context, requestID uint, req *ReviewRequest, proofPayment *multipart.FileHeader) error {
+	return m.Called(ctx, requestID, req, proofPayment).Error(0)
 }
 
 func (m *mockService) ListCompanies(ctx context.Context, search string) ([]CompanyListItem, error) {
@@ -250,13 +258,14 @@ func (m *mockService) RefreshCompanyCache(ctx context.Context, companyID uint) e
 	return m.Called(ctx, companyID).Error(0)
 }
 
-func newTestSubscriptionService() (Service, *mockRepo, *mockCompanyRepo, *mockRole, *mockUser, *mockCache) {
+func newTestSubscriptionService() (Service, *mockRepo, *mockCompanyRepo, *mockRole, *mockUser, *mockCache, *mockStorage) {
 	repo := new(mockRepo)
 	companyRepo := new(mockCompanyRepo)
 	role := new(mockRole)
 	user := new(mockUser)
 	cache := new(mockCache)
+	storage := new(mockStorage)
 
-	svc := NewService(repo, companyRepo, role, user, cache)
-	return svc, repo, companyRepo, role, user, cache
+	svc := NewService(repo, companyRepo, role, user, cache, storage)
+	return svc, repo, companyRepo, role, user, cache, storage
 }
