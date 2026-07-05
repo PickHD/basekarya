@@ -11,6 +11,7 @@ export interface Employee {
   base_salary: number;
   email: string;
   position: string;
+  marital_status: string;
 }
 
 export interface AttendanceRecap {
@@ -35,6 +36,7 @@ export interface CreateEmployeePayload {
   base_salary: number;
   email: string;
   position: string;
+  marital_status: string;
 }
 
 export interface LookupItem {

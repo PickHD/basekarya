@@ -35,12 +35,9 @@ import {
 import { useRoles } from "@/features/role/hooks/useRole";
 
 const formSchema = z.object({
-  full_name: z.string().min(1, "full_name required").trim(),
+  full_name: z.string().min(1, "full_name is required").trim(),
 
-  nik: z
-    .string()
-    .length(16, "NIK must be 16 digit")
-    .regex(/^\d+$/, "NIK must be a numbers"),
+  nik: z.string().min(1, "nik is required"),
 
   department_id: z.string().min(1, "Select Dept."),
 
@@ -70,6 +67,7 @@ const formSchema = z.object({
     ),
 
   position: z.string().min(1, "Position is required"),
+  marital_status: z.string().min(1, "marital status is required"),
 });
 
 interface EmployeeFormDialogProps {
@@ -103,7 +101,8 @@ export function EmployeeFormDialog({
       role_id: "",
       base_salary: 0,
       email: "",
-      position:""
+      position: "",
+      marital_status: "",
     },
   });
 
@@ -113,12 +112,17 @@ export function EmployeeFormDialog({
         form.reset({
           full_name: employeeToEdit.full_name,
           nik: employeeToEdit.nik,
-          department_id: employeeToEdit.department_id ? String(employeeToEdit.department_id) : "",
+          department_id: employeeToEdit.department_id
+            ? String(employeeToEdit.department_id)
+            : "",
           role_id: employeeToEdit.role_id ? String(employeeToEdit.role_id) : "",
-          shift_id: employeeToEdit.shift_id ? String(employeeToEdit.shift_id) : "",
+          shift_id: employeeToEdit.shift_id
+            ? String(employeeToEdit.shift_id)
+            : "",
           base_salary: employeeToEdit.base_salary,
           email: employeeToEdit.email,
           position: employeeToEdit.position,
+          marital_status: employeeToEdit.marital_status,
         });
       } else {
         form.reset({
@@ -126,10 +130,11 @@ export function EmployeeFormDialog({
           nik: "",
           department_id: "",
           shift_id: "",
-          role_id:"",
+          role_id: "",
           base_salary: 0,
           email: "",
-          position:""
+          position: "",
+          marital_status: "",
         });
       }
     }
@@ -161,7 +166,8 @@ export function EmployeeFormDialog({
                 role_id: Number(values.role_id),
                 base_salary: Number(values.base_salary),
                 email: values.email,
-                position: values.position
+                position: values.position,
+                marital_status: values.marital_status,
               };
               onSubmit(payload);
             })}
@@ -275,9 +281,7 @@ export function EmployeeFormDialog({
                   <FormLabel>Role</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={
-                      field.value ? String(field.value) : undefined
-                    }
+                    defaultValue={field.value ? String(field.value) : undefined}
                     value={field.value ? String(field.value) : undefined}
                   >
                     <FormControl>
@@ -301,7 +305,7 @@ export function EmployeeFormDialog({
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="base_salary"
@@ -351,6 +355,27 @@ export function EmployeeFormDialog({
                   <FormLabel>Position</FormLabel>
                   <FormControl>
                     <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="marital_status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Marital Status</FormLabel>
+                  <FormControl>
+                    <select
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      {...field}
+                    >
+                      <option value="">Pilih</option>
+                      <option value="TK">Tidak Kawin / Single</option>
+                      <option value="K">Kawin</option>
+                    </select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

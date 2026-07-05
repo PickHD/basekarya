@@ -21,7 +21,7 @@ func (h *Handler) GetProfile(ctx echo.Context) error {
 	if err != nil {
 		logger.Errorw("Get company profile failed: ", err)
 
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to get company profile", nil, err, nil)
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Success get company profile", company, nil, nil)
@@ -37,13 +37,19 @@ func (h *Handler) UpdateProfile(ctx echo.Context) error {
 		return response.NewResponses[any](ctx, http.StatusBadRequest, "Invalid Request", nil, err, nil)
 	}
 
-	file, _ := ctx.FormFile("logo_url")
+	file, err := ctx.FormFile("logo_url")
+	if err != nil && err != http.ErrMissingFile {
+		file = nil
+	}
+	if file != nil && file.Size > 5<<20 {
+		return response.NewResponses[any](ctx, http.StatusBadRequest, "File size exceeds 5MB limit", nil, nil, nil)
+	}
 
-	err := h.service.UpdateProfile(ctx.Request().Context(), &req, file)
+	err = h.service.UpdateProfile(ctx.Request().Context(), &req, file)
 	if err != nil {
 		logger.Errorw("Update company profile failed : ", err)
 
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to update company profile", nil, err, nil)
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Update company profile successfully", nil, nil, nil)

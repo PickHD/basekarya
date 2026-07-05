@@ -77,14 +77,14 @@ type CreateEmployeeResponse struct {
 }
 
 type UpdateEmployeeRequest struct {
-	FullName        string  `json:"full_name"`
-	NIK             string  `json:"nik"`
-	DepartmentID    uint    `json:"department_id"`
-	ShiftID         uint    `json:"shift_id"`
-	RoleID          uint    `json:"role_id"`
-	BaseSalary      float64 `json:"base_salary"`
+	FullName        string  `json:"full_name" validate:"omitempty,min=3,max=100"`
+	NIK             string  `json:"nik" validate:"omitempty,min=1"`
+	DepartmentID    uint    `json:"department_id" validate:"omitempty,min=1"`
+	ShiftID         uint    `json:"shift_id" validate:"omitempty,min=1"`
+	RoleID          uint    `json:"role_id" validate:"omitempty,min=1"`
+	BaseSalary      float64 `json:"base_salary" validate:"omitempty,min=0"`
 	Email           string  `json:"email" validate:"omitempty,email"`
-	Position        string  `json:"position"`
+	Position        string  `json:"position" validate:"omitempty,min=3,max=100"`
 	MaritalStatus   *string `json:"marital_status" validate:"omitempty,oneof=TK K ''"`
 	DependentsCount *int    `json:"dependents_count" validate:"omitempty,min=0,max=3"`
 }

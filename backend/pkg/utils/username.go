@@ -1,13 +1,11 @@
 package utils
 
 import (
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"strings"
-	"time"
 )
-
-var rng = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 const alphanum = "abcdefghijklmnopqrstuvwxyz0123456789"
 
@@ -24,7 +22,8 @@ func GenerateUsername(fullName string) string {
 
 	suffix := make([]byte, 6)
 	for i := range suffix {
-		suffix[i] = alphanum[rng.Intn(len(alphanum))]
+		n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(alphanum))))
+		suffix[i] = alphanum[n.Int64()]
 	}
 
 	return fmt.Sprintf("%s_%s", firstName, string(suffix))

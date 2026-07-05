@@ -37,12 +37,14 @@ type (
 // NewResponses return dynamic JSON responses
 func NewResponses[T any](ctx echo.Context, statusCode int, message string, data T, err error, meta *Meta) error {
 	var errVal any
+	var msgVal = message
 
 	if err != nil {
 		if he, ok := err.(*echo.HTTPError); ok {
 			errVal = he.Message
 		} else if statusCode >= 500 {
 			errVal = "internal server error"
+			msgVal = "internal server error"
 		} else {
 			errVal = err.Error()
 		}
@@ -50,7 +52,7 @@ func NewResponses[T any](ctx echo.Context, statusCode int, message string, data 
 
 	if statusCode < 400 {
 		return ctx.JSON(statusCode, &baseResponse{
-			Message: message,
+			Message: msgVal,
 			Data:    data,
 			Error:   nil,
 			Meta:    meta,
@@ -59,7 +61,7 @@ func NewResponses[T any](ctx echo.Context, statusCode int, message string, data 
 	}
 
 	return ctx.JSON(statusCode, &baseResponse{
-		Message: message,
+		Message: msgVal,
 		Data:    data,
 		Error:   errVal,
 		Meta:    nil,

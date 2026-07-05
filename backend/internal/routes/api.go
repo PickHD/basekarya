@@ -4,6 +4,7 @@ import (
 	"basekarya-backend/internal/bootstrap"
 	customMiddleware "basekarya-backend/internal/middleware"
 	"basekarya-backend/pkg/utils"
+	"fmt"
 	"os"
 	"strings"
 
@@ -26,6 +27,9 @@ func newRouter(container *bootstrap.Container) *Router {
 }
 
 func (r *Router) setupMiddleware() {
+	cfg := r.container.Config
+	bodyLimit := fmt.Sprintf("%dM", cfg.FileUpload.MaxRequestBodySizeMB)
+	r.app.Use(middleware.BodyLimit(bodyLimit))
 	r.app.Use(middleware.Recover())
 	r.app.Use(customMiddleware.SecurityHeaders())
 	r.app.Use(middleware.CORSWithConfig(middleware.CORSConfig{

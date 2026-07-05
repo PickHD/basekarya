@@ -179,13 +179,30 @@ func (s *service) SendOrResendOTP(ctx context.Context, req *SendOrResendOTPReque
 		return err
 	}
 
+	err = s.cache.Set(ctx, fmt.Sprintf("otp_reverse:%s", code), req.Email, 5*time.Minute)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (s *service) VerifyOTP(ctx context.Context, req *VerifyOTPRequest) (*VerifyOTPResponse, error) {
-	return &VerifyOTPResponse{
-		IsValid: true,
-	}, nil
+	email, err := s.cache.Get(ctx, fmt.Sprintf("otp_reverse:%s", req.Code))
+	if err != nil {
+		return &VerifyOTPResponse{IsValid: false}, nil
+	}
+
+	storedCode, err := s.cache.Get(ctx, fmt.Sprintf("otp:%s", email))
+	if err != nil {
+		return &VerifyOTPResponse{IsValid: false}, nil
+	}
+
+	if storedCode != req.Code {
+		return &VerifyOTPResponse{IsValid: false}, nil
+	}
+
+	return &VerifyOTPResponse{IsValid: true}, nil
 }
 
 func (s *service) ResetPassword(ctx context.Context, req *ResetPasswordRequest) error {
@@ -209,6 +226,7 @@ func (s *service) ResetPassword(ctx context.Context, req *ResetPasswordRequest) 
 	}
 
 	_ = s.cache.Del(ctx, fmt.Sprintf("otp:%s", req.Email))
+	_ = s.cache.Del(ctx, fmt.Sprintf("otp_reverse:%s", req.Code))
 
 	return nil
 }

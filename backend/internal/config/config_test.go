@@ -25,10 +25,14 @@ func TestLoad_Defaults(t *testing.T) {
 	os.Setenv("JWT_SECRET", "test-secret")
 	os.Setenv("SUPERADMIN_USERNAME", "superadmin")
 	os.Setenv("SUPERADMIN_PASSWORD", "superpass")
+	os.Setenv("MYSQL_PASSWORD", "test-db-password")
+	os.Setenv("MYSQL_DATABASE", "test-hris-db")
 	t.Cleanup(func() {
 		os.Unsetenv("JWT_SECRET")
 		os.Unsetenv("SUPERADMIN_USERNAME")
 		os.Unsetenv("SUPERADMIN_PASSWORD")
+		os.Unsetenv("MYSQL_PASSWORD")
+		os.Unsetenv("MYSQL_DATABASE")
 	})
 
 	cfg := Load()
@@ -42,11 +46,11 @@ func TestLoad_Defaults(t *testing.T) {
 	if cfg.Database.User != "root" {
 		t.Errorf("expected Database.User root, got %s", cfg.Database.User)
 	}
-	if cfg.Database.Password != "root_password" {
-		t.Errorf("expected Database.Password root_password, got %s", cfg.Database.Password)
+	if cfg.Database.Password != "test-db-password" {
+		t.Errorf("expected Database.Password test-db-password, got %s", cfg.Database.Password)
 	}
-	if cfg.Database.DBName != "hris_db" {
-		t.Errorf("expected Database.DBName hris_db, got %s", cfg.Database.DBName)
+	if cfg.Database.DBName != "test-hris-db" {
+		t.Errorf("expected Database.DBName test-hris-db, got %s", cfg.Database.DBName)
 	}
 	if cfg.Database.SSLMode != "disable" {
 		t.Errorf("expected Database.SSLMode disable, got %s", cfg.Database.SSLMode)
@@ -83,6 +87,8 @@ func TestLoad_Defaults(t *testing.T) {
 func TestLoad_EnvVars(t *testing.T) {
 	os.Setenv("MYSQL_HOST", "dbhost")
 	os.Setenv("MYSQL_PORT", "5432")
+	os.Setenv("MYSQL_PASSWORD", "testpassword")
+	os.Setenv("MYSQL_DATABASE", "testdb")
 	os.Setenv("JWT_SECRET", "mysecret")
 	os.Setenv("JWT_EXPIRES_IN_HOUR", "48")
 	os.Setenv("SERVER_PORT", "9090")
@@ -95,6 +101,8 @@ func TestLoad_EnvVars(t *testing.T) {
 	t.Cleanup(func() {
 		os.Unsetenv("MYSQL_HOST")
 		os.Unsetenv("MYSQL_PORT")
+		os.Unsetenv("MYSQL_PASSWORD")
+		os.Unsetenv("MYSQL_DATABASE")
 		os.Unsetenv("JWT_SECRET")
 		os.Unsetenv("JWT_EXPIRES_IN_HOUR")
 		os.Unsetenv("SERVER_PORT")

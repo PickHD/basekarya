@@ -22,14 +22,14 @@ func NewHandler(service Service) *Handler {
 func (h *Handler) GetProfile(ctx echo.Context) error {
 	userContext, err := utils.GetUserContext(ctx)
 	if err != nil {
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusUnauthorized, "Unauthorized", nil, err, nil)
 	}
 
 	user, err := h.service.GetProfile(userContext.UserID)
 	if err != nil {
 		logger.Errorw("Get profile failed: ", err)
 
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to get profile", nil, err, nil)
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Success get profile", user, nil, nil)
@@ -38,7 +38,7 @@ func (h *Handler) GetProfile(ctx echo.Context) error {
 func (h *Handler) UpdateProfile(ctx echo.Context) error {
 	userContext, err := utils.GetUserContext(ctx)
 	if err != nil {
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusUnauthorized, "Unauthorized", nil, err, nil)
 	}
 
 	var req UpdateProfileRequest
@@ -50,13 +50,19 @@ func (h *Handler) UpdateProfile(ctx echo.Context) error {
 		return response.NewResponses[any](ctx, http.StatusBadRequest, "Invalid Request", nil, err, nil)
 	}
 
-	file, _ := ctx.FormFile("photo")
+	file, err := ctx.FormFile("photo")
+	if err != nil && err != http.ErrMissingFile {
+		file = nil
+	}
+	if file != nil && file.Size > 5<<20 {
+		return response.NewResponses[any](ctx, http.StatusBadRequest, "File size exceeds 5MB limit", nil, nil, nil)
+	}
 
 	err = h.service.UpdateProfile(ctx.Request().Context(), userContext.UserID, &req, file)
 	if err != nil {
 		logger.Errorw("Update profile failed : ", err)
 
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to update profile", nil, err, nil)
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Update profile successfully", nil, nil, nil)
@@ -65,7 +71,7 @@ func (h *Handler) UpdateProfile(ctx echo.Context) error {
 func (h *Handler) ChangePassword(ctx echo.Context) error {
 	userContext, err := utils.GetUserContext(ctx)
 	if err != nil {
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusUnauthorized, "Unauthorized", nil, err, nil)
 	}
 
 	var req ChangePasswordRequest
@@ -81,7 +87,7 @@ func (h *Handler) ChangePassword(ctx echo.Context) error {
 	if err != nil {
 		logger.Errorw("Change password failed : ", err)
 
-		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, "Failed to change password", nil, err, nil)
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Password changed successfully", nil, nil, nil)

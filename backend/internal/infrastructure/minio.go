@@ -8,12 +8,71 @@ import (
 	"basekarya-backend/pkg/logger"
 	"io"
 	"mime/multipart"
+	"path/filepath"
 	"strings"
 
 	"github.com/disintegration/imaging"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
+
+var allowedMimeTypes = map[string]bool{
+	"image/jpeg":      true,
+	"image/jpg":       true,
+	"image/png":       true,
+	"image/webp":      true,
+	"application/pdf": true,
+}
+
+var allowedExtensions = map[string]bool{
+	".jpg":  true,
+	".jpeg": true,
+	".png":  true,
+	".webp": true,
+	".pdf":  true,
+}
+
+func validateFileType(fileName string, contentType string) error {
+	ext := strings.ToLower(filepath.Ext(fileName))
+	if !allowedExtensions[ext] {
+		return fmt.Errorf("file type not allowed: %s", ext)
+	}
+
+	detectedType, err := detectContentType(fileName, contentType)
+	if err != nil {
+		return err
+	}
+
+	if !allowedMimeTypes[detectedType] {
+		return fmt.Errorf("file content type not allowed: %s", detectedType)
+	}
+
+	return nil
+}
+
+func detectContentType(fileName string, contentType string) (string, error) {
+	if contentType != "" {
+		cleaned := strings.ToLower(strings.Split(contentType, ";")[0])
+		cleaned = strings.TrimSpace(cleaned)
+		if cleaned != "" {
+			return cleaned, nil
+		}
+	}
+
+	ext := strings.ToLower(filepath.Ext(fileName))
+	switch ext {
+	case ".jpg", ".jpeg":
+		return "image/jpeg", nil
+	case ".png":
+		return "image/png", nil
+	case ".webp":
+		return "image/webp", nil
+	case ".pdf":
+		return "application/pdf", nil
+	default:
+		return "", fmt.Errorf("unknown file extension: %s", ext)
+	}
+}
 
 type MinioStorageProvider struct {
 	client       *minio.Client
@@ -42,6 +101,10 @@ func NewMinioStorage(cfg *config.MinioConfig) *MinioStorageProvider {
 }
 
 func (m *MinioStorageProvider) UploadFileMultipart(ctx context.Context, file *multipart.FileHeader, objectName string) (string, error) {
+	if err := validateFileType(file.Filename, file.Header.Get("Content-Type")); err != nil {
+		return "", err
+	}
+
 	src, err := file.Open()
 	if err != nil {
 		return "", err

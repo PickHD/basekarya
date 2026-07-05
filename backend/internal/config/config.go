@@ -100,8 +100,8 @@ func Load() *Config {
 			Host:     getEnv("MYSQL_HOST", "localhost"),
 			Port:     getEnv("MYSQL_PORT", "3306"),
 			User:     getEnv("MYSQL_USER", "root"),
-			Password: getEnv("MYSQL_PASSWORD", "root_password"),
-			DBName:   getEnv("MYSQL_DATABASE", "hris_db"),
+			Password: MustGetEnv("MYSQL_PASSWORD"),
+			DBName:   MustGetEnv("MYSQL_DATABASE"),
 			SSLMode:  getEnv("MYSQL_SSLMODE", "disable"),
 		},
 		JWT: JWTConfig{

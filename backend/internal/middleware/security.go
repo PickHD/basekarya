@@ -13,6 +13,8 @@ func SecurityHeaders() echo.MiddlewareFunc {
 			ctx.Response().Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 			ctx.Response().Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
 			ctx.Response().Header().Set("Cache-Control", "no-store")
+			ctx.Response().Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+			ctx.Response().Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https:; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'")
 			return next(ctx)
 		}
 	}
