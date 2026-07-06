@@ -148,7 +148,7 @@ func (r *repository) CountActiveEmployee(ctx context.Context) (int64, error) {
 	var totalActive int64
 	if err := utils.TenantScope(ctx, db.Model(&User{})).
 		Joins("JOIN roles on roles.id = users.role_id").
-		Where("users.is_active = ? AND roles.name = ?", true, string(constants.UserRoleEmployee)).
+		Where("users.is_active = ? AND roles.name != ?", true, string(constants.UserRoleSuperAdmin)).
 		Count(&totalActive).Error; err != nil {
 		return 0, err
 	}
@@ -163,7 +163,7 @@ func (r *repository) FindAllEmployeeActive(ctx context.Context) ([]Employee, err
 	if err := utils.TenantScope(ctx, db.Model(&Employee{})).
 		Joins("User").
 		Joins("JOIN roles on roles.id = User.role_id").
-		Where("User.is_active = ? AND roles.name NOT IN ?", true, []string{string(constants.UserRolePlatformAdmin), "SUPERADMIN"}).
+		Where("User.is_active = ? AND roles.name NOT IN ?", true, []string{string(constants.UserRolePlatformAdmin), string(constants.UserRoleSuperAdmin)}).
 		Preload("User").
 		Preload("User.Role").
 		Preload("Department").
