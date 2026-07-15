@@ -11,6 +11,8 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"gorm.io/gorm/migrator"
+	"gorm.io/gorm/schema"
 )
 
 var enumRegex = regexp.MustCompile(`enum\([^)]*\)`)
@@ -23,15 +25,12 @@ type TestDB struct {
 // NewTestDB creates an in-memory SQLite database and runs auto-migration.
 // It strips MySQL-specific type tags (e.g., enum) that are incompatible with SQLite.
 func NewTestDB(models ...interface{}) *TestDB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+	db, err := gorm.Open(SQLiteEnumDialector{sqlite.Open(":memory:")}, &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
 		panic("failed to connect test database: " + err.Error())
 	}
-
-	// Register a callback to rewrite enum types in CREATE TABLE SQL
-	db.Callback().Create().Before("gorm:create_table").Register("testutil:enum_rewrite", rewriteEnumCallback)
 
 	if err := db.AutoMigrate(models...); err != nil {
 		panic("failed to migrate test database: " + err.Error())
@@ -40,9 +39,29 @@ func NewTestDB(models ...interface{}) *TestDB {
 	return &TestDB{DB: db}
 }
 
-// rewriteEnumCallback rewrites MySQL enum() types to TEXT for SQLite compatibility.
-func rewriteEnumCallback(d *gorm.DB) {
-	// no-op: we handle this at migrator level
+// SQLiteEnumDialector wraps the SQLite dialector to rewrite MySQL enum types as TEXT.
+type SQLiteEnumDialector struct {
+	gorm.Dialector
+}
+
+func (d SQLiteEnumDialector) DataTypeOf(field *schema.Field) string {
+	if enumRegex.MatchString(string(field.DataType)) {
+		return "text"
+	}
+	return d.Dialector.DataTypeOf(field)
+}
+
+func (d SQLiteEnumDialector) Migrator(db *gorm.DB) gorm.Migrator {
+	return sqlite.Migrator{Migrator: migrator.Migrator{Config: migrator.Config{
+		DB:                          db,
+		Dialector:                   d,
+		CreateIndexAfterCreateTable: true,
+	}}}
+}
+
+// NewSQLiteEnumDialector creates a SQLite dialector that rewrites enum types for SQLite compatibility.
+func NewSQLiteEnumDialector(dsn string) gorm.Dialector {
+	return SQLiteEnumDialector{sqlite.Open(dsn)}
 }
 
 // Close cleans up the test database.

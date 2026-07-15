@@ -43,7 +43,7 @@ type Employee struct {
 	BankAccountHolder string `gorm:"type:varchar(100)" json:"bank_account_holder"`
 
 	NPWP             string                  `gorm:"type:varchar(30)" json:"npwp"`
-	MaritalStatus    constants.MaritalStatus `gorm:"type:varchar(5)" json:"marital_status"`
+	MaritalStatus    constants.MaritalStatus `gorm:"type:enum('TK','K')" json:"marital_status"`
 	DependentsCount  int                     `gorm:"type:tinyint;default:0" json:"dependents_count"`
 	Email            string                  `gorm:"type:varchar(255)" json:"email"`
 

@@ -295,14 +295,15 @@ func TestHandler_CreateEmployee(t *testing.T) {
 		{
 			name: "success",
 			body: CreateEmployeeRequest{
-				FullName:     "Jane Doe",
-				NIK:          "EMP002",
-				DepartmentID: 1,
-				ShiftID:      1,
-				RoleID:       1,
-				BaseSalary:   5000000,
-				Email:        "jane@example.com",
-				Position:     "Designer",
+				FullName:      "Jane Doe",
+				NIK:           "EMP002",
+				DepartmentID:  1,
+				ShiftID:       1,
+				RoleID:        1,
+				BaseSalary:    5000000,
+				Email:         "jane@example.com",
+				Position:      "Designer",
+				MaritalStatus: "TK",
 			},
 			setupMocks: func(svc *mockService) {
 				svc.On("CreateEmployee", mock.Anything, mock.AnythingOfType("*user.CreateEmployeeRequest")).
@@ -319,14 +320,15 @@ func TestHandler_CreateEmployee(t *testing.T) {
 		{
 			name: "service error",
 			body: CreateEmployeeRequest{
-				FullName:     "Jane Doe",
-				NIK:          "EMP002",
-				DepartmentID: 1,
-				ShiftID:      1,
-				RoleID:       1,
-				BaseSalary:   5000000,
-				Email:        "jane@example.com",
-				Position:     "Designer",
+				FullName:      "Jane Doe",
+				NIK:           "EMP002",
+				DepartmentID:  1,
+				ShiftID:       1,
+				RoleID:        1,
+				BaseSalary:    5000000,
+				Email:         "jane@example.com",
+				Position:      "Designer",
+				MaritalStatus: "TK",
 			},
 			setupMocks: func(svc *mockService) {
 				svc.On("CreateEmployee", mock.Anything, mock.AnythingOfType("*user.CreateEmployeeRequest")).

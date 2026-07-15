@@ -68,7 +68,7 @@ type CreateEmployeeRequest struct {
 	BaseSalary      float64 `json:"base_salary" validate:"required"`
 	Email           string  `json:"email" validate:"required,email"`
 	Position        string  `json:"position" validate:"required,min=3,max=100"`
-	MaritalStatus   string  `json:"marital_status" validate:"omitempty,oneof=TK K ''"`
+	MaritalStatus   string  `json:"marital_status" validate:"oneof=TK K"`
 	DependentsCount *int    `json:"dependents_count" validate:"omitempty,min=0,max=3"`
 }
 
@@ -85,6 +85,6 @@ type UpdateEmployeeRequest struct {
 	BaseSalary      float64 `json:"base_salary" validate:"omitempty,min=0"`
 	Email           string  `json:"email" validate:"omitempty,email"`
 	Position        string  `json:"position" validate:"omitempty,min=3,max=100"`
-	MaritalStatus   *string `json:"marital_status" validate:"omitempty,oneof=TK K ''"`
+	MaritalStatus   *string `json:"marital_status" validate:"omitempty,oneof=TK K"`
 	DependentsCount *int    `json:"dependents_count" validate:"omitempty,min=0,max=3"`
 }
