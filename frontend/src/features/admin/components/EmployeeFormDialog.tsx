@@ -68,6 +68,7 @@ const formSchema = z.object({
 
   position: z.string().min(1, "Position is required"),
   marital_status: z.string().min(1, "marital status is required"),
+  dependents_count: z.string().min(1, "dependents count is required"),
 });
 
 interface EmployeeFormDialogProps {
@@ -103,6 +104,7 @@ export function EmployeeFormDialog({
       email: "",
       position: "",
       marital_status: "",
+      dependents_count: "0",
     },
   });
 
@@ -123,6 +125,7 @@ export function EmployeeFormDialog({
           email: employeeToEdit.email,
           position: employeeToEdit.position,
           marital_status: employeeToEdit.marital_status,
+          dependents_count: String(employeeToEdit.dependents_count ?? 0),
         });
       } else {
         form.reset({
@@ -135,6 +138,7 @@ export function EmployeeFormDialog({
           email: "",
           position: "",
           marital_status: "",
+          dependents_count: "0",
         });
       }
     }
@@ -168,6 +172,7 @@ export function EmployeeFormDialog({
                 email: values.email,
                 position: values.position,
                 marital_status: values.marital_status,
+                dependents_count: Number(values.dependents_count),
               };
               onSubmit(payload);
             })}
@@ -377,6 +382,35 @@ export function EmployeeFormDialog({
                       <option value="K">Kawin</option>
                     </select>
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dependents_count"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dependents Count</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value || "0"}
+                    value={field.value || "0"}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select count" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {[0, 1, 2, 3].map((n) => (
+                        <SelectItem key={n} value={String(n)}>
+                          {n}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
