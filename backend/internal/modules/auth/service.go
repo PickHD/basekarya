@@ -55,7 +55,7 @@ func (s *service) Login(ctx context.Context, username, password string) (*LoginR
 	}
 
 	var employeeID *uint
-	if foundUser.Employee != nil && foundUser.Role != nil && foundUser.Role.Name != "PLATFORM_ADMIN" {
+	if foundUser.Employee != nil && foundUser.Role != nil && foundUser.Role.Name != string(constants.UserRolePlatformAdmin) {
 		employeeID = &foundUser.Employee.ID
 	}
 
