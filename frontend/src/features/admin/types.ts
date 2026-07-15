@@ -12,6 +12,7 @@ export interface Employee {
   email: string;
   position: string;
   marital_status: string;
+  dependents_count: number;
 }
 
 export interface AttendanceRecap {
@@ -37,6 +38,7 @@ export interface CreateEmployeePayload {
   email: string;
   position: string;
   marital_status: string;
+  dependents_count: number;
 }
 
 export interface LookupItem {
